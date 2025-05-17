@@ -1,0 +1,54 @@
+﻿@page "/game/nitro"
+
+@layout EmptyLayout
+
+@using NextHave.Components.Layout
+@using System.Text
+@using NextHave.Utils
+@using NextHave.Clients
+@using NextHave.Parsers
+
+@inject IJSRuntime JS
+@inject IServiceProvider provider
+
+<link rel="modulepreload" crossorigin href="/nitro/vendor-Hoa71TEC.js" />
+<link rel="stylesheet" href="/nitro/index.css" />
+
+<PageTitle>Client</PageTitle>
+
+<noscript>You need to enable JavaScript to run this app.</noscript>
+<div id="root" class="w-100 h-100"></div>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("loadNitro");
+            await JS.InvokeVoidAsync("waitForNitro");
+            var blazorReference = DotNetObjectReference.Create(this);
+            var sessionId = Guid.NewGuid().ToString();
+            await JS.InvokeVoidAsync("Nitro.communication.connection.setBlazorInstance", blazorReference, sessionId);
+        }
+    }
+
+    [JSInvokable]
+    public Task OnNitroMessage(string sessionId, List<byte> data)
+    {
+        var buffer = data.ToArray();
+
+        if (!Clients.ConnectedClients.TryGetValue(sessionId, out var client))
+        {
+            client = new Client(sessionId);
+            client.Init(JS);
+            client.Channels.Add(sessionId.GetSessionChannel());
+            Clients.ConnectedClients.TryAdd(sessionId, client);
+        }
+
+        var gameParser = provider.GetRequiredKeyedService<IParser>("GameParser");
+        gameParser.HandlePacketData(buffer, buffer.Count(), sessionId);
+        gameParser.OnNewPacket += client.Handler!.Handle;
+        client.Handler.PacketHandled += () => gameParser.OnNewPacket -= client.Handler.Handle;
+        return Task.CompletedTask;
+    }
+}
