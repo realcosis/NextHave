@@ -1,8 +1,8 @@
 ﻿using Dolphin.Core.Database;
 using Dolphin.Core.Injection;
-using Dolphin.Core.Configurations;
 using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
+using Dolphin.Core.Configurations.Models;
 
 namespace NextHave.DAL.Mongo
 {

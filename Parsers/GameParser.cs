@@ -1,8 +1,10 @@
 ﻿using NextHave.Utils;
 using NextHave.Messages;
+using Dolphin.Core.Injection;
 
 namespace NextHave.Parsers
 {
+    [Service(ServiceLifetime.Singleton, Keyed = true, Key = "GameParser")]
     public class GameParser : IParser
     {
         public delegate void HandlePacket(ClientMessage message, short header);

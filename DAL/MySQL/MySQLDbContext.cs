@@ -2,9 +2,9 @@
 using MySqlConnector;
 using Dolphin.Core.Database;
 using Dolphin.Core.Injection;
-using Dolphin.Core.Configurations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Dolphin.Core.Configurations.Models;
 
 namespace NextHave.DAL.MySQL
 {
