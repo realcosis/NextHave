@@ -5,12 +5,15 @@ using Dolphin.Core.Injection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Dolphin.Core.Configurations.Models;
+using NextHave.DAL.MySQL.Entities;
 
 namespace NextHave.DAL.MySQL
 {
     [Service(ServiceLifetime.Scoped)]
     public class MySQLDbContext(IOptions<MySQLConfiguration> mysqlConfigurationOptions, IOptions<PoolConfiguration> poolConfigurationOptions) : MySQLDBContext(mysqlConfigurationOptions, poolConfigurationOptions)
     {
+        public DbSet<ItemDefinitionEntity> ItemDefinitions { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);

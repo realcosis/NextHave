@@ -1,13 +1,14 @@
-using NextHave.DAL.MySQL;
-using NextHave.DAL.Mongo;
-using NextHave.Components;
-using Dolphin.Core.Injection;
 using Dolphin.Core.Configurations;
 using Dolphin.Core.Database;
+using Dolphin.Core.Injection;
+using NextHave;
+using NextHave.Components;
+using NextHave.DAL.Mongo;
+using NextHave.DAL.MySQL;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Host.ConfigureDolphinApplication("Dolphin");
+builder.Host.ConfigureDolphinApplication("Dolphin", ProjectConstants.ProjectVersion);
 
 builder.Services.AddDbContextFactory<MySQLDbContext>();
 builder.Services.AddDbContextFactory<MongoDbContext>();

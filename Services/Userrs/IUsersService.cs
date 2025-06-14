@@ -5,7 +5,7 @@ using System.Collections.Concurrent;
 
 namespace NextHave.Services.Users
 {
-    public interface IUsersManager
+    public interface IUsersService
     {
         ConcurrentDictionary<int, User> Users { get; }
 
