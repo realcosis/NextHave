@@ -16,6 +16,7 @@
 
 	<ItemGroup>
 		<Folder Include="Mappers\" />
+		<Folder Include="Models\Catalogs\" />
 	</ItemGroup>
 
 </Project>
