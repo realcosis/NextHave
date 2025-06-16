@@ -52,7 +52,7 @@ namespace NextHave.Messages.Input
                 if (string.IsNullOrWhiteSpace(authTicket))
                     return;
 
-                var serverMessage = ServerMessageFactory.GetServerMessage(OutputCode.AuthenticationOKComposer);
+                await using var serverMessage = ServerMessageFactory.GetServerMessage(OutputCode.AuthenticationOKComposer);
                 await Client.Send(Client.SessionId!.GetSessionChannel(), serverMessage.Bytes());
 
                 PacketHandled?.Invoke();

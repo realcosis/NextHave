@@ -13,24 +13,27 @@ namespace NextHave.Messages
         public string SessionId
             => sessionId;
 
+        public int Position
+            => position;
+
+        public byte[] Content
+            => body;
+
         public int ReadShort()
             => body.ToInt16(ref position);
 
         public string ReadString()
         {
-            int num = ReadShort();
-            if (num == 0 || position + num > body.Length)
+            var length = ReadShort();
+            if (length == 0 || position + length > body.Length)
                 return string.Empty;
-            var @string = Encoding.GetString(body, position, num);
-            position += num;
-            return @string;
+            var value = Encoding.GetString(body, position, length);
+            position += length;
+            return value;
         }
 
         public int ReadInt()
             => body.ToInt32(ref position);
-
-        public uint ReadUInt()
-            => (uint)ReadInt();
 
         public bool ReadBool()
             => body[position++] == 1;
@@ -41,18 +44,15 @@ namespace NextHave.Messages
                 bytes = RemainingLength;
             var array = new byte[bytes];
             for (int i = 0; i < bytes; i++)
-            {
                 array[i] = body[position++];
-            }
             return array;
         }
 
-        public override string ToString()
-            => $"BODY: {Encoding.GetString(body)}";
-
         public void Dispose()
         {
-            // ClientMessageFactory.Enqueue(this); TODO: Packet Queue
+            body = [];
+            position = default;
+            sessionId = string.Empty;
             GC.SuppressFinalize(this);
         }
     }
