@@ -19,11 +19,6 @@ namespace Dolphin.HabboHotel.Users.Models
     {
         ConcurrentDictionary<int, User> IUsersService.Users => throw new NotImplementedException();
 
-        Task<User?> IUsersService.GetHabbo(int userId)
-        {
-            throw new NotImplementedException();
-        }
-
         Task IUsersService.GiveBadge(int userId, UserBadge badge)
         {
             throw new NotImplementedException();
@@ -34,10 +29,18 @@ namespace Dolphin.HabboHotel.Users.Models
             throw new NotImplementedException();
         }
 
-        async Task<User?> IUsersService.LoadHabbo(string authTicket)
+        #region Init
+
+        Task<User?> IUsersService.GetHabbo(int userId)
+        {
+            throw new NotImplementedException();
+        }
+
+        async Task<User?> IUsersService.LoadHabbo(string authTicket, int time)
         {
             try
             {
+                var date = DateTime.Now.AddSeconds(time);
                 await using var mysqlDbContext = await mysqlDbContextFactory.CreateDbContextAsync();
                 var userTicket = await mysqlDbContext
                                         .UserTickets
@@ -46,17 +49,22 @@ namespace Dolphin.HabboHotel.Users.Models
 
                 var user = await mysqlDbContext
                                     .Users
-                                        .AsNoTracking()
                                         .FirstOrDefaultAsync(u => u.Id == userTicket.UserId) ?? throw new DolphinException(Errors.UserNotFound);
 
-                userTicket.UsedAt = DateTime.Now;
+                userTicket.UsedAt = date;
+                user.LastOnline = date;
 
+                mysqlDbContext.Users.Update(user);
                 mysqlDbContext.UserTickets.Update(userTicket);
                 await mysqlDbContext.SaveChangesAsync();
 
                 return new User
                 {
-                    
+                    Id = user.Id,
+                    IsOnline = user.Online,
+                    LastOnline = user.LastOnline,
+                    Motto = user.Motto,
+                    Username = user.Username
                 };
             }
             catch (Exception ex)
@@ -65,6 +73,8 @@ namespace Dolphin.HabboHotel.Users.Models
                 return default;
             }
         }
+
+        #endregion
 
         Task IUsersService.RemoveBadge(int userId, UserBadge badge)
         {

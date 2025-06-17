@@ -11,7 +11,7 @@ namespace NextHave.Services.Users
 
         Task<User?> GetHabbo(int userId);
 
-        Task<User?> LoadHabbo(string authTicket);
+        Task<User?> LoadHabbo(string authTicket, int time);
 
         Task GiveBadge(int userId, UserBadge badge);
 

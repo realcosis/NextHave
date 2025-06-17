@@ -29,6 +29,6 @@ namespace NextHave.DAL.MySQL.Entities
 
         public int? HomeRoom { get; set; }
 
-
+        public ICollection<UserTicketEntity> Tickets { get; set; } = [];
     }
 }

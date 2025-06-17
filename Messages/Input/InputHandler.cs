@@ -1,73 +1,54 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using NextHave.Clients;
-using NextHave.Messages.Output;
-using NextHave.Services.Users;
-using NextHave.Utils;
-using System.Collections.Concurrent;
+﻿using NextHave.Clients;
+using NextHave.Messages.Parsers;
+using System.Text;
 
 namespace NextHave.Messages.Input
 {
     public class InputHandler
     {
-        public delegate void Handled();
-
-        public readonly static ConcurrentDictionary<short, Func<InputHandler, IServiceScopeFactory, Task>> handlers = [];
-
-        public static bool InputLoaded { get; private set; } = false;
-
-        public static ClientMessage? Message { get; private set; }
+        readonly Dictionary<short, IParser> Parsers = [];
 
         public Client? Client { get; set; }
 
-        public event Handled? PacketHandled;
-
-        public static void RegisterPacketLibary()
+        public InputHandler()
         {
-            if (!InputLoaded)
-            {
-                handlers.TryAdd(InputCode.SSOTicketMessageEvent, SSOLogin);
-                InputLoaded = true;
-            }
+            RegisterParsers();
         }
-
-        public void Callback()
-            => PacketHandled?.Invoke();
-
-        public static async Task SSOLogin(InputHandler handler, IServiceScopeFactory serviceScopeFactory)
-            => await handler.SSOLogin(serviceScopeFactory);
 
         public async Task Handle(ClientMessage message, IServiceScopeFactory serviceScopeFactory, short header)
         {
             if (header < 0 || header >= 4095)
                 return;
 
-            RegisterPacketLibary();
-            var now = DateTime.Now;
-            Message = message;
-
-            if (handlers.TryGetValue(header, out var handler) && handler != default)
-                await handler(this, serviceScopeFactory);
+            message.Handler = this;
+            using var scope = serviceScopeFactory.CreateScope();
+            var packetsService = scope.ServiceProvider.GetRequiredService<IPacketsService>();
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<InputHandler>>();
+            if (TryGetParser(header, out var parser))
+                await parser!.HandleAsync(Client!, message, packetsService);
+            else 
+                logger.LogDebug("No matching parser found for message {header}:{msg}", header, message);
+            message.Handler = default;
         }
 
-        public async Task SSOLogin(IServiceScopeFactory serviceScopeFactory)
+        #region private methods
+
+        void RegisterParsers()
         {
-            if (Client != default)
-            {
-                var authTicket = Message?.ReadString();
-                if (string.IsNullOrWhiteSpace(authTicket))
-                    return;
-
-                using var scope = serviceScopeFactory.CreateScope();
-                var usersService = scope.ServiceProvider.GetRequiredService<IUsersService>();
-                var user = await usersService.LoadHabbo(authTicket);
-
-                if (user != default)
-                {
-                    await using var serverMessage = ServerMessageFactory.GetServerMessage(OutputCode.AuthenticationOKComposer);
-                    await Client.Send(Client.SessionId!.GetSessionChannel(), serverMessage.Bytes());
-                }
-            }
-            Callback();
+            Parsers.Add(InputCode.SSOTicketMessageEvent, new SSOTicketMessageParser());
         }
+
+        bool TryGetParser(short header, out IParser? parser)
+        {
+            if (Parsers.TryGetValue(header, out var p))
+            {
+                parser = p;
+                return true;
+            }
+            parser = default;
+            return false;
+        }
+
+        #endregion
     }
 }

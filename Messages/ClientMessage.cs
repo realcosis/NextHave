@@ -1,4 +1,5 @@
 using System.Text;
+using NextHave.Messages.Input;
 using NextHave.Utils;
 
 namespace NextHave.Messages
@@ -18,6 +19,8 @@ namespace NextHave.Messages
 
         public byte[] Content
             => body;
+
+        public InputHandler? Handler { get; set; }
 
         public int ReadShort()
             => body.ToInt16(ref position);
