@@ -1,6 +1,8 @@
-﻿using NextHave.Utils;
+﻿using Microsoft.Extensions.DependencyInjection;
 using NextHave.Clients;
 using NextHave.Messages.Output;
+using NextHave.Services.Users;
+using NextHave.Utils;
 using System.Collections.Concurrent;
 
 namespace NextHave.Messages.Input
@@ -9,7 +11,7 @@ namespace NextHave.Messages.Input
     {
         public delegate void Handled();
 
-        public readonly static ConcurrentDictionary<short, Func<InputHandler, Task>> handlers = [];
+        public readonly static ConcurrentDictionary<short, Func<InputHandler, IServiceScopeFactory, Task>> handlers = [];
 
         public static bool InputLoaded { get; private set; } = false;
 
@@ -23,15 +25,18 @@ namespace NextHave.Messages.Input
         {
             if (!InputLoaded)
             {
-                handlers.TryAdd(InputCode.SSOTicketMessageEvent, SSOLogin); 
+                handlers.TryAdd(InputCode.SSOTicketMessageEvent, SSOLogin);
                 InputLoaded = true;
             }
         }
 
-        internal static async Task SSOLogin(InputHandler handler)
-            => await handler.SSOLogin();
+        public void Callback()
+            => PacketHandled?.Invoke();
 
-        public async Task Handle(ClientMessage message, short header)
+        public static async Task SSOLogin(InputHandler handler, IServiceScopeFactory serviceScopeFactory)
+            => await handler.SSOLogin(serviceScopeFactory);
+
+        public async Task Handle(ClientMessage message, IServiceScopeFactory serviceScopeFactory, short header)
         {
             if (header < 0 || header >= 4095)
                 return;
@@ -41,10 +46,10 @@ namespace NextHave.Messages.Input
             Message = message;
 
             if (handlers.TryGetValue(header, out var handler) && handler != default)
-                await handler(this);
+                await handler(this, serviceScopeFactory);
         }
 
-        public async Task SSOLogin()
+        public async Task SSOLogin(IServiceScopeFactory serviceScopeFactory)
         {
             if (Client != default)
             {
@@ -52,14 +57,17 @@ namespace NextHave.Messages.Input
                 if (string.IsNullOrWhiteSpace(authTicket))
                     return;
 
-                await using var serverMessage = ServerMessageFactory.GetServerMessage(OutputCode.AuthenticationOKComposer);
-                await Client.Send(Client.SessionId!.GetSessionChannel(), serverMessage.Bytes());
+                using var scope = serviceScopeFactory.CreateScope();
+                var usersService = scope.ServiceProvider.GetRequiredService<IUsersService>();
+                var user = await usersService.LoadHabbo(authTicket);
 
-                PacketHandled?.Invoke();
+                if (user != default)
+                {
+                    await using var serverMessage = ServerMessageFactory.GetServerMessage(OutputCode.AuthenticationOKComposer);
+                    await Client.Send(Client.SessionId!.GetSessionChannel(), serverMessage.Bytes());
+                }
             }
+            Callback();
         }
-
-        public void ClearMessage()
-            => Message = default;
     }
 }

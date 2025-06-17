@@ -1,15 +1,18 @@
-﻿using NextHave.Utils;
+﻿using Dolphin.Core.Injection;
+using Microsoft.Extensions.DependencyInjection;
 using NextHave.Messages;
-using Dolphin.Core.Injection;
+using NextHave.Utils;
 
 namespace NextHave.Parsers
 {
     [Service(ServiceLifetime.Singleton, Keyed = true, Key = "GameParser")]
     public class GameParser : IParser
     {
+        readonly IServiceScopeFactory _serviceScopeFactory;
+
         public delegate void HandlePacket(ClientMessage message, short header);
 
-        public event Func<ClientMessage, short, Task>? OnNewPacket;
+        public event Func<ClientMessage, IServiceScopeFactory, short, Task>? OnNewPacket;
 
         static readonly int INT_SIZE = 4;
 
@@ -19,8 +22,9 @@ namespace NextHave.Parsers
 
         readonly byte[] bufferedData;
 
-        public GameParser()
+        public GameParser(IServiceScopeFactory serviceScopeFactory)
         {
+            _serviceScopeFactory = serviceScopeFactory;
             ResetState();
             bufferedData = new byte[4096];
         }
@@ -80,7 +84,7 @@ namespace NextHave.Parsers
             var header = packetData.ToInt16(ref packetStart);
 
             using var message = ClientMessageFactory.GetClientMessage(packetData, packetStart, sessionId);
-            OnNewPacket?.Invoke(message, header);
+            OnNewPacket?.Invoke(message, _serviceScopeFactory, header);
 
             position += currentPacketLength;
 

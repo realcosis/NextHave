@@ -2,6 +2,10 @@
 {
     public class Tables
     {
+        public const string Users = "users";
+
+        public const string UserTickets = "user_tickets";
+
         public const string CatalogPages = "catalog_pages";
 
         public const string ItemDefinitions = "item_definitions";
