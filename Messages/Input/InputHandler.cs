@@ -1,6 +1,5 @@
 ﻿using NextHave.Clients;
 using NextHave.Messages.Parsers;
-using System.Text;
 
 namespace NextHave.Messages.Input
 {

@@ -1,11 +1,9 @@
 ﻿using Dolphin.Core.Injection;
-using Microsoft.EntityFrameworkCore;
-using NextHave.DAL.Mongo;
 
 namespace NextHave.Services.Catalogs
 {
     [Service(ServiceLifetime.Singleton)]
-    class CatalogsService(ILogger<ICatalogsService> logger, IDbContextFactory<MongoDbContext> mongoDbContextFactory) : ICatalogsService, IStartableService
+    class CatalogsService(ILogger<ICatalogsService> logger, IServiceProvider serviceProvider) : ICatalogsService, IStartableService
     {
         ICatalogsService Instance => this;
 

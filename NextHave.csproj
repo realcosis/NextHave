@@ -4,6 +4,7 @@
 		<TargetFramework>net9.0</TargetFramework>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
+		<RootNamespace>NextHave</RootNamespace>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -11,27 +12,22 @@
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="RealCosis.Dolphin.Core" Version="2025.602.1358" />
+		<PackageReference Include="RealCosis.Dolphin.Core" Version="2025.618.2352" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<Folder Include="Mappers\" />
-		<Folder Include="Models\Catalogs\" />
+		<Compile Update="Localizations\Errors.Designer.cs">
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>Errors.resx</DependentUpon>
+		</Compile>
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Compile Update="Localizations\Errors.Designer.cs">
-	    <DesignTime>True</DesignTime>
-	    <AutoGen>True</AutoGen>
-	    <DependentUpon>Errors.resx</DependentUpon>
-	  </Compile>
-	</ItemGroup>
-
-	<ItemGroup>
-	  <EmbeddedResource Update="Localizations\Errors.resx">
-	    <Generator>PublicResXFileCodeGenerator</Generator>
-	    <LastGenOutput>Errors.Designer.cs</LastGenOutput>
-	  </EmbeddedResource>
+		<EmbeddedResource Update="Localizations\Errors.resx">
+			<Generator>PublicResXFileCodeGenerator</Generator>
+			<LastGenOutput>Errors.Designer.cs</LastGenOutput>
+		</EmbeddedResource>
 	</ItemGroup>
 
 </Project>

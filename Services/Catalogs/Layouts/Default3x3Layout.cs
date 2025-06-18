@@ -1,13 +1,11 @@
 ﻿using Dolphin.Core.Injection;
-using Microsoft.EntityFrameworkCore;
-using NextHave.DAL.Mongo;
 using NextHave.DAL.Mongo.Entities;
 using NextHave.Messages;
 
 namespace NextHave.Services.Catalogs.Layouts
 {
-    [Service(ServiceLifetime.Singleton)]
-    class Default3x3Layout(IDbContextFactory<MongoDbContext> mongoDbContextFactory) : ICatalogLayout
+    [Service(ServiceLifetime.Singleton, Keyed = true, Key = "Default3x3Layout")]
+    class Default3x3Layout(IServiceProvider serviceProvider) : ICatalogLayout
     {
         ICatalogLayout Instance => this;
 

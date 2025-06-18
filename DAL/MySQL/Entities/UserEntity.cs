@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using NextHave.DAL.Enums;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace NextHave.DAL.MySQL.Entities
@@ -21,7 +22,7 @@ namespace NextHave.DAL.MySQL.Entities
         [Required]
         public string? Look { get; set; }
 
-        public string? Gender { get; set; }
+        public GenderTypes? Gender { get; set; }
 
         public bool Online { get; set; }
 

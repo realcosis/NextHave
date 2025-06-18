@@ -45,7 +45,7 @@
             Clients.ConnectedClients.TryAdd(sessionId, client);
         }
 
-        var gameParser = provider.GetRequiredKeyedService<IParser>("GameParser");
+        var gameParser = provider.GetRequiredService<IParser>();
         gameParser.HandlePacketData(buffer, buffer.Count(), sessionId);
         gameParser.OnNewPacket += client.Handler!.Handle;
         return Task.CompletedTask;

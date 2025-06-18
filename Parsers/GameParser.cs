@@ -1,11 +1,10 @@
 ﻿using Dolphin.Core.Injection;
-using Microsoft.Extensions.DependencyInjection;
 using NextHave.Messages;
 using NextHave.Utils;
 
 namespace NextHave.Parsers
 {
-    [Service(ServiceLifetime.Singleton, Keyed = true, Key = "GameParser")]
+    [Service(ServiceLifetime.Singleton)]
     public class GameParser : IParser
     {
         readonly IServiceScopeFactory _serviceScopeFactory;

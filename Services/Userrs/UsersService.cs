@@ -1,5 +1,4 @@
 ﻿using NextHave.DAL.MySQL;
-using NextHave.DAL.Mongo;
 using Dolphin.Core.Events;
 using NextHave.Services.Users;
 using Microsoft.EntityFrameworkCore;
@@ -14,8 +13,7 @@ using NextHave.Localizations;
 namespace Dolphin.HabboHotel.Users.Models
 {
     [Service(ServiceLifetime.Scoped)]
-    class UsersService(IDbContextFactory<MySQLDbContext> mysqlDbContextFactory, IEventsManager eventsManager,
-                       IDbContextFactory<MongoDbContext> mongoDbcontextFactory, ILogger<IUsersService> logger) : IUsersService
+    class UsersService(MySQLDbContext mysqlDbContext, IEventsManager eventsManager, ILogger<IUsersService> logger) : IUsersService
     {
         ConcurrentDictionary<int, User> IUsersService.Users => throw new NotImplementedException();
 
@@ -40,12 +38,11 @@ namespace Dolphin.HabboHotel.Users.Models
         {
             try
             {
-                var date = DateTime.Now.AddSeconds(time);
-                await using var mysqlDbContext = await mysqlDbContextFactory.CreateDbContextAsync();
+                var date = DateTime.Now.AddMilliseconds(time);
                 var userTicket = await mysqlDbContext
                                         .UserTickets
                                             .Include(ut => ut.User)
-                                            .FirstOrDefaultAsync(ut => ut.Ticket == authTicket) ?? throw new DolphinException(Errors.UserTicketNotFound);
+                                            .FirstOrDefaultAsync(ut => ut.Ticket == authTicket && !ut.UsedAt.HasValue) ?? throw new DolphinException(Errors.UserTicketNotFound);
 
                 var user = await mysqlDbContext
                                     .Users
