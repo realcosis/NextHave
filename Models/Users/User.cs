@@ -14,6 +14,9 @@ namespace NextHave.Models.Users
         
         public bool IsOnline { get; set; }
 
+        
+        public int Rank { get; set; }
+
         public Client? Client { get; set; }
     }
 }

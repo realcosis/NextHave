@@ -9,6 +9,7 @@ using NextHave.Models.Wardrobes;
 using Dolphin.Core.Injection;
 using Dolphin.Core.Exceptions;
 using NextHave.Localizations;
+using System.Diagnostics;
 
 namespace Dolphin.HabboHotel.Users.Models
 {
@@ -48,7 +49,9 @@ namespace Dolphin.HabboHotel.Users.Models
                                     .Users
                                         .FirstOrDefaultAsync(u => u.Id == userTicket.UserId) ?? throw new DolphinException(Errors.UserNotFound);
 
-                userTicket.UsedAt = date;
+                if (!Debugger.IsAttached)
+                    userTicket.UsedAt = date;
+                
                 user.LastOnline = date;
 
                 mysqlDbContext.Users.Update(user);
@@ -61,6 +64,7 @@ namespace Dolphin.HabboHotel.Users.Models
                     IsOnline = user.Online,
                     LastOnline = user.LastOnline,
                     Motto = user.Motto,
+                    Rank = user.Rank,
                     Username = user.Username
                 };
             }

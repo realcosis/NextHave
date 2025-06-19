@@ -35,6 +35,8 @@ namespace NextHave.Messages.Input
         void RegisterParsers()
         {
             Parsers.Add(InputCode.SSOTicketMessageEvent, new SSOTicketMessageParser());
+
+            Parsers.Add(InputCode.InfoRetrieveMessageEvent, new InfoRetrieveParser());
         }
 
         bool TryGetParser(short header, out IParser? parser)
