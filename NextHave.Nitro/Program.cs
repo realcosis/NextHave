@@ -6,11 +6,10 @@ using NextHave.DAL.Mongo;
 using NextHave.DAL.MySQL;
 using NextHave.BL.Clients;
 using NextHave.Nitro.Clients;
-using NextHave.BL;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Host.ConfigureDolphinApplication("NextHave", ProjectConstants.ProjectVersion);
+builder.Host.ConfigureDolphinApplication("NextHave", "1");
 
 builder.Services.AddScoped<IClient, Client>();
 builder.Services.AddDbContext<DbContext, MySQLDbContext>();
