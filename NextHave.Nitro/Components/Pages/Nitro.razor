@@ -2,16 +2,16 @@
 
 @layout EmptyLayout
 
-@using System.Text
-@using NextHave.Nitro.Components.Layout
-@using NextHave.Nitro.Clients
-@using NextHave.Nitro.Parsers
-@using NextHave.BL.Utils
-
 @inject IJSRuntime JS
-@inject IServiceProvider provider
 
-<link rel="modulepreload" crossorigin href="/nitro/vendor-Hoa71TEC.js" />
+@using System.Text
+@using NextHave.BL.Clients
+@using NextHave.Nitro.Components.Layout
+@using NextHave.BL.Parsers
+@using NextHave.BL.Utils
+@using System.Diagnostics
+
+<link rel="modulepreload" crossorigin href="/nitro/vendor-C03uLZeS.js" />
 <link rel="stylesheet" href="/nitro/index.css" />
 
 <PageTitle>Client</PageTitle>
@@ -26,28 +26,30 @@
         {
             await JS.InvokeVoidAsync("loadNitro");
             await JS.InvokeVoidAsync("waitForNitro");
-            var blazorReference = DotNetObjectReference.Create(this);
-            var sessionId = Guid.NewGuid().ToString();
-            await JS.InvokeVoidAsync("Nitro.communication.connection.setBlazorInstance", blazorReference, sessionId);
         }
     }
 
-    [JSInvokable]
-    public Task OnNitroMessage(string sessionId, List<byte> data)
-    {
-        var buffer = data.ToArray();
+    // [JSInvokable]
+    // public Task OnNitroMessage(string sessionId, List<byte> data)
+    // {
+    //     var buffer = data.ToArray();
 
-        if (!Clients.ConnectedClients.TryGetValue(sessionId, out var client))
-        {
-            client = new Client(sessionId);
-            client.Init(JS);
-            client.Channels.Add(sessionId.GetSessionChannel());
-            Clients.ConnectedClients.TryAdd(sessionId, client);
-        }
+    //     if (Clients.ConnectedClients.TryGetValue(sessionId, out var client))
+    //     {
+    //         var scope = serviceScopeFactory.CreateScope();
+    //         var gameParser = scope.ServiceProvider.GetRequiredService<IPacketParser>();
+    //         gameParser.HandlePacketData(buffer, buffer.Count(), sessionId);
+    //         gameParser.OnNewPacket += client.Handler!.Handle;
+    //     }
 
-        var gameParser = provider.GetRequiredService<IParser>();
-        gameParser.HandlePacketData(buffer, buffer.Count(), sessionId);
-        gameParser.OnNewPacket += client.Handler!.Handle;
-        return Task.CompletedTask;
-    }
+    //     return Task.CompletedTask;
+    // }
+
+    // [JSInvokable]
+    // public async Task OnDestroy(string sessionId)
+    // {
+    //     if (Clients.ConnectedClients.TryRemove(sessionId, out var client))
+    //         await client.Dispose();
+    //     await Task.CompletedTask;
+    // }
 }

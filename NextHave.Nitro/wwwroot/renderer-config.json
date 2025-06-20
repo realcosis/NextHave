@@ -1,6 +1,8 @@
 {
   "socket.enabled": false,
-  "socket.url": "ws://localhost:2096/",
+  "socket.url": "ws://localhost:2069/",
+  "signalr.enabled": true,
+  "signalr.url": "/socket",
   "asset.url": "http://localhost/nitro",
   "image.library.url": "${asset.url}/c_images/",
   "images.url": "${asset.url}/images",

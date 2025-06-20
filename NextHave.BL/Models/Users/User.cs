@@ -14,9 +14,12 @@ namespace NextHave.BL.Models.Users
         
         public bool IsOnline { get; set; }
 
-        
+        public string? Look { get; set; }
+
         public int Rank { get; set; }
 
-        public IClient? Client { get; set; }
+        public string? Gender { get; set; }
+
+        public Client? Client { get; set; }
     }
 }

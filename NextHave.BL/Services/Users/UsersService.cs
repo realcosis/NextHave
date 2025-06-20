@@ -10,11 +10,12 @@ using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NextHave.BL.Localizations;
+using Dolphin.Core.Extensions;
 
 namespace NextHave.BL.Services.Users
 {
     [Service(ServiceLifetime.Scoped)]
-    class UsersService(MySQLDbContext mysqlDbContext, ILogger<IUsersService> logger) : IUsersService
+    class UsersService(IDbContextFactory<MySQLDbContext> mysqlDbContextFactory, ILogger<IUsersService> logger) : IUsersService
     {
         ConcurrentDictionary<int, User> IUsersService.Users => throw new NotImplementedException();
 
@@ -40,6 +41,7 @@ namespace NextHave.BL.Services.Users
             try
             {
                 var date = DateTime.Now.AddMilliseconds(time);
+                await using var mysqlDbContext = await mysqlDbContextFactory.CreateDbContextAsync();
                 var userTicket = await mysqlDbContext
                                         .UserTickets
                                             .Include(ut => ut.User)
@@ -64,7 +66,9 @@ namespace NextHave.BL.Services.Users
                     IsOnline = user.Online,
                     LastOnline = user.LastOnline,
                     Motto = user.Motto,
-                    Rank = user.Rank,
+                    Rank = user.Rank!.Value,
+                    Gender = user.Gender!.Value.GetDescription<EnumsDescriptions>(),
+                    Look = user.Look,
                     Username = user.Username
                 };
             }

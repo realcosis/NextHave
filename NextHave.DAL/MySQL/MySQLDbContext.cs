@@ -24,6 +24,8 @@ namespace NextHave.DAL.MySQL
         protected override void OnConfiguring(DbContextOptionsBuilder builder)
         {
             base.OnConfiguring(builder);
+
+            builder.EnableSensitiveDataLogging();
         }
     }
 }

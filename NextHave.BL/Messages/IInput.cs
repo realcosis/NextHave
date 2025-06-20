@@ -1,6 +1,6 @@
 ﻿namespace NextHave.BL.Messages
 {
-    public interface IMessageEvent
+    public interface IInput
     {
     }
 }

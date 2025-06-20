@@ -5,7 +5,7 @@
     config.src = "/nitro/nitro-config.js";
 
     const mainModule = document.createElement("script");
-    mainModule.src = "/nitro/index-C6nMtzsI.js";
+    mainModule.src = "/nitro/index-D1dKApSo.js";
     mainModule.type = "module";
 
     document.head.appendChild(config);

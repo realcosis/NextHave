@@ -1,8 +1,8 @@
-﻿using NextHave.BL.Messages.Parsers;
-using NextHave.BL.Clients;
-using NextHave.BL.Services.Packets;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using NextHave.BL.Clients;
+using NextHave.BL.Messages.Parsers;
+using NextHave.BL.Services.Packets;
 
 namespace NextHave.BL.Messages.Input
 {
@@ -10,27 +10,21 @@ namespace NextHave.BL.Messages.Input
     {
         readonly Dictionary<short, IParser> Parsers = [];
 
-        public IClient? Client { get; set; }
+        public Client? Client { get; set; }
 
         public InputHandler()
-        {
-            RegisterParsers();
-        }
+            => RegisterParsers();
 
         public async Task Handle(ClientMessage message, IServiceScopeFactory serviceScopeFactory, short header)
         {
-            if (header < 0 || header >= 4095)
+            if (Client == default || header < 0 || header >= 4095)
                 return;
 
-            message.Handler = this;
             using var scope = serviceScopeFactory.CreateScope();
             var packetsService = scope.ServiceProvider.GetRequiredService<IPacketsService>();
             var logger = scope.ServiceProvider.GetRequiredService<ILogger<InputHandler>>();
             if (TryGetParser(header, out var parser))
                 await parser!.HandleAsync(Client!, message, packetsService);
-            else 
-                logger.LogDebug("No matching parser found for message {header}:{msg}", header, message);
-            message.Handler = default;
         }
 
         #region private methods

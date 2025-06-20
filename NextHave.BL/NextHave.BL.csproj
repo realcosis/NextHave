@@ -4,7 +4,6 @@
 		<TargetFramework>net9.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
-		<RootNamespace>NextHave.BL</RootNamespace>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -12,10 +11,17 @@
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
+		<PackageReference Include="Microsoft.AspNetCore.SignalR.Core" Version="1.2.0" />
+		<PackageReference Include="Microsoft.JSInterop" Version="9.0.6" />
 		<ProjectReference Include="..\NextHave.DAL\NextHave.DAL.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Compile Update="Localizations\EnumsDescriptions.Designer.cs">
+	    <DesignTime>True</DesignTime>
+	    <AutoGen>True</AutoGen>
+	    <DependentUpon>EnumsDescriptions.resx</DependentUpon>
+	  </Compile>
 	  <Compile Update="Localizations\Errors.Designer.cs">
 	    <DependentUpon>Errors.resx</DependentUpon>
 	    <DesignTime>True</DesignTime>
@@ -24,6 +30,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <EmbeddedResource Update="Localizations\EnumsDescriptions.resx">
+	    <Generator>ResXFileCodeGenerator</Generator>
+	    <LastGenOutput>EnumsDescriptions.Designer.cs</LastGenOutput>
+	  </EmbeddedResource>
 	  <EmbeddedResource Update="Localizations\Errors.resx">
 	    <LastGenOutput>Errors.Designer.cs</LastGenOutput>
 	    <Generator>PublicResXFileCodeGenerator</Generator>

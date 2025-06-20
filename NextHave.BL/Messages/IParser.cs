@@ -5,8 +5,8 @@ namespace NextHave.BL.Messages
 {
     public interface IParser
     {
-        public IMessageEvent Parse(ClientMessage packet);
+        public IInput Parse(ClientMessage packet);
 
-        public Task HandleAsync(IClient client, ClientMessage message, IPacketsService packetsService);
+        public Task HandleAsync(Client client, ClientMessage message, IPacketsService packetsService);
     }
 }

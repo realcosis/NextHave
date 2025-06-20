@@ -20,8 +20,6 @@ namespace NextHave.BL.Messages
         public byte[] Content
             => body;
 
-        public InputHandler? Handler { get; set; }
-
         public int ReadShort()
             => body.ToInt16(ref position);
 

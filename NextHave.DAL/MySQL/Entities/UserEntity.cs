@@ -17,11 +17,13 @@ namespace NextHave.DAL.MySQL.Entities
 
         public string? Motto { get; set; }
 
-        public int Rank { get; set; } = 1;
+        [Required]
+        public int? Rank { get; set; }
 
         [Required]
         public string? Look { get; set; }
 
+        [Required]
         public GenderTypes? Gender { get; set; }
 
         public bool Online { get; set; }
@@ -29,6 +31,21 @@ namespace NextHave.DAL.MySQL.Entities
         public DateTime? LastOnline { get; set; }
 
         public int? HomeRoom { get; set; }
+
+        [Required]
+        [MaxLength(64)]
+        public string? Volume { get; set; }
+
+        [Required]
+        public DateTime? AccountCreated { get; set; }
+
+        [Required]
+        [MaxLength(512)]
+        public string? CurrentIp { get; set; }
+
+        [Required]
+        [MaxLength(512)]
+        public string? LastIp { get; set; }
 
         public ICollection<UserTicketEntity> Tickets { get; set; } = [];
     }

@@ -1,6 +1,6 @@
 ﻿namespace NextHave.BL.Messages.Input.Handshake
 {
-    public record SSOTicketMessage : IMessageEvent
+    public record SSOTicketMessage : IInput
     {
         public string? SSO { get; init; }
 

@@ -12,31 +12,32 @@ namespace NextHave.BL.Services.Packets
     {
         readonly List<ListenerRef> listeners = [];
 
-        readonly object listenerLock = new();
+        readonly Lock listenerLock = new();
 
-        bool IPacketsService.Exists<T>(object subscriber, Func<T, IClient, Task> handler)
+        bool IPacketsService.Exists<T>(object subscriber, Func<T, Client, Task> handler)
         {
             lock (listenerLock)
                 return listeners.Any(x => Equals(x.Sender, subscriber) && typeof(T).Equals(x.Type) && x.Action!.Equals(handler));
         }
 
-        async Task IPacketsService.Publish<T>(T message, IClient IClient)
+        async Task IPacketsService.Publish<T>(T message, Client Client)
         {
-            foreach (var listener in GetAliveHandlers<T>())
+            var listeners = GetAliveHandlers<T>();
+            foreach (var listener in listeners)
             {
                 switch (listener.Action)
                 {
-                    case Action<T, IClient> action:
-                        action(message, IClient);
+                    case Action<T, Client> action:
+                        action(message, Client);
                         break;
-                    case Func<T, IClient, Task> func:
-                        await func(message, IClient);
+                    case Func<T, Client, Task> func:
+                        await func(message, Client);
                         break;
                 }
             }
         }
 
-        void IPacketsService.Subscribe<T>(object subscriber, Func<T, IClient, Task> handler)
+        void IPacketsService.Subscribe<T>(object subscriber, Func<T, Client, Task> handler)
         {
             var item = new ListenerRef
             {
@@ -49,7 +50,7 @@ namespace NextHave.BL.Services.Packets
                 listeners.Add(item);
         }
 
-        void IPacketsService.Unsubscribe<T>(object subscriber, Func<T, IClient, Task> handler)
+        void IPacketsService.Unsubscribe<T>(object subscriber, Func<T, Client, Task> handler)
         {
             lock (listenerLock)
             {
@@ -67,10 +68,10 @@ namespace NextHave.BL.Services.Packets
 
         #region private methods
 
-        List<ListenerRef> GetAliveHandlers<T>() where T : IMessageEvent
+        List<ListenerRef> GetAliveHandlers<T>() where T : IInput
         {
             PruneHandlers();
-            return listeners.Where(h => h.Type!.GetTypeInfo().IsAssignableFrom(typeof(T).GetTypeInfo())).ToList();
+            return [.. listeners.Where(h => h.Type!.GetTypeInfo().IsAssignableFrom(typeof(T).GetTypeInfo()))];
         }
 
         void PruneHandlers()

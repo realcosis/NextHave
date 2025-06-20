@@ -5,12 +5,12 @@ namespace NextHave.BL.Services.Packets
 {
     public interface IPacketsService
     {
-        Task Publish<T>(T message, IClient client) where T : IMessageEvent;
+        Task Publish<T>(T message, Client client) where T : IInput;
 
-        void Subscribe<T>(object subscriber, Func<T, IClient, Task> handler) where T : IMessageEvent;
+        void Subscribe<T>(object subscriber, Func<T, Client, Task> handler) where T : IInput;
 
-        void Unsubscribe<T>(object subscriber, Func<T, IClient, Task> handler) where T : IMessageEvent;
+        void Unsubscribe<T>(object subscriber, Func<T, Client, Task> handler) where T : IInput;
 
-        bool Exists<T>(object subscriber, Func<T, IClient, Task> handler) where T : IMessageEvent;
+        bool Exists<T>(object subscriber, Func<T, Client, Task> handler) where T : IInput;
     }
 }
