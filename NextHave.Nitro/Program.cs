@@ -33,9 +33,9 @@ builder.Services.AddCors(options =>
               .AllowCredentials();
     });
 });
-builder.Services.AddAuthentication("NextHave").AddCookie("NextHave", options =>
+builder.Services.AddAuthentication("NextHaveAuth").AddCookie("NextHaveAuth", options =>
 {
-    options.Cookie.Name = "NextHave";
+    options.Cookie.Name = "NextHave.Auth";
     options.Cookie.HttpOnly = true;
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
     options.Cookie.SameSite = SameSiteMode.Lax;

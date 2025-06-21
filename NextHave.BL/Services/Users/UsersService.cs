@@ -13,6 +13,7 @@ using NextHave.BL.Localizations;
 using Dolphin.Core.Extensions;
 using NextHave.BL.Validations;
 using NextHave.BL.Extensions;
+using System.Text;
 
 namespace NextHave.BL.Services.Users
 {
@@ -100,6 +101,7 @@ namespace NextHave.BL.Services.Users
             var user = await mysqlDbContext
                                     .Users
                                         .FirstOrDefaultAsync(u => u.Username == userLogin!.Username || u.Mail == userLogin!.Username) ?? throw new DolphinException(Errors.UserNotFound);
+            var originalHash = Convert.FromBase64String(user.Password.Split(':')[1]);
 
             if (!userLogin!.Password!.VerifyPassword(user.Password!))
                 throw new DolphinException(Errors.InvalidPassword);
