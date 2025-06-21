@@ -14,11 +14,15 @@ namespace NextHave.DAL.MySQL
 
         public DbSet<UserTicketEntity> UserTickets { get; set; }
 
+        public DbSet<NextHaveSettingEntity> NextHaveSettings { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
 
             builder.Entity<UserTicketEntity>().HasKey(e => new { e.UserId, e.Ticket });
+
+            builder.Entity<NextHaveSettingEntity>().HasKey(e => new { e.Key, e.Type });
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder builder)

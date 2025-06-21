@@ -11,6 +11,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NextHave.BL.Localizations;
 using Dolphin.Core.Extensions;
+using NextHave.BL.Validations;
+using NextHave.BL.Extensions;
 
 namespace NextHave.BL.Services.Users
 {
@@ -44,7 +46,6 @@ namespace NextHave.BL.Services.Users
                 await using var mysqlDbContext = await mysqlDbContextFactory.CreateDbContextAsync();
                 var userTicket = await mysqlDbContext
                                         .UserTickets
-                                            .Include(ut => ut.User)
                                             .FirstOrDefaultAsync(ut => ut.Ticket == authTicket && !ut.UsedAt.HasValue) ?? throw new DolphinException(Errors.UserTicketNotFound);
 
                 var user = await mysqlDbContext
@@ -53,7 +54,7 @@ namespace NextHave.BL.Services.Users
 
                 if (!Debugger.IsAttached)
                     userTicket.UsedAt = date;
-                
+
                 user.LastOnline = date;
 
                 mysqlDbContext.Users.Update(user);
@@ -89,6 +90,21 @@ namespace NextHave.BL.Services.Users
         Task IUsersService.UpsertSlot(int userId, UserWardrobe wardrobe)
         {
             throw new NotImplementedException();
+        }
+
+        async Task<bool> IUsersService.Login(UserLoginWrite userLogin)
+        {
+            userLogin?.Validate();
+
+            await using var mysqlDbContext = await mysqlDbContextFactory.CreateDbContextAsync();
+            var user = await mysqlDbContext
+                                    .Users
+                                        .FirstOrDefaultAsync(u => u.Username == userLogin!.Username || u.Mail == userLogin!.Username) ?? throw new DolphinException(Errors.UserNotFound);
+
+            if (!userLogin!.Password!.VerifyPassword(user.Password!))
+                throw new DolphinException(Errors.InvalidPassword);
+
+            return true;
         }
     }
 }

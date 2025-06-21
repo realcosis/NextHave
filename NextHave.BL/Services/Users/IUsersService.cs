@@ -20,5 +20,7 @@ namespace NextHave.BL.Services.Users
         Task RemoveBadge(int userId, UserBadge badge);
 
         Task UpsertSlot(int userId, UserWardrobe wardrobe);
+
+        Task<bool> Login(UserLoginWrite userLogin);
     }
 }

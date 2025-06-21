@@ -28,28 +28,4 @@
             await JS.InvokeVoidAsync("waitForNitro");
         }
     }
-
-    // [JSInvokable]
-    // public Task OnNitroMessage(string sessionId, List<byte> data)
-    // {
-    //     var buffer = data.ToArray();
-
-    //     if (Clients.ConnectedClients.TryGetValue(sessionId, out var client))
-    //     {
-    //         var scope = serviceScopeFactory.CreateScope();
-    //         var gameParser = scope.ServiceProvider.GetRequiredService<IPacketParser>();
-    //         gameParser.HandlePacketData(buffer, buffer.Count(), sessionId);
-    //         gameParser.OnNewPacket += client.Handler!.Handle;
-    //     }
-
-    //     return Task.CompletedTask;
-    // }
-
-    // [JSInvokable]
-    // public async Task OnDestroy(string sessionId)
-    // {
-    //     if (Clients.ConnectedClients.TryRemove(sessionId, out var client))
-    //         await client.Dispose();
-    //     await Task.CompletedTask;
-    // }
 }

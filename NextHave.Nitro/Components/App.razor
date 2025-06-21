@@ -1,22 +1,29 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+﻿@using NextHave.BL.Services.Settings
 
+@inject ISettingsService settingsService
+
+<!DOCTYPE html>
+<html lang="en">
 <head>
+
+    <title>@hotelName</title>
+
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
-    <link rel="stylesheet" href="@Assets["lib/bootstrap/dist/css/bootstrap.min.css"]" />
-    <link rel="stylesheet" href="@Assets["app.css"]" />
-    <link rel="stylesheet" href="@Assets["NextHave.styles.css"]" />
-    <ImportMap />
     <link rel="icon" type="image/png" href="favicon.png" />
+    <ImportMap />
     <HeadOutlet @rendermode="InteractiveServer" />
-</head>
 
+</head>
 <body>
+    
     <Routes @rendermode="InteractiveServer" />
     <script src="_framework/blazor.web.js"></script>
-    <script src="/js/utils.js"></script>
-</body>
 
+</body>
 </html>
+
+@code {
+    string? hotelName => settingsService.GetSetting("hotel_name");
+}

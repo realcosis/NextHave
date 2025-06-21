@@ -1,0 +1,53 @@
+﻿@using NextHave.BL.Services.Settings
+
+@inject ISettingsService settingsService
+
+<header class="glass-effect sticky top-0 z-50 border-b border-white/10">
+
+    <div class="container mx-auto px-6 py-4">
+
+        <div class="flex items-center justify-between">
+
+            <div class="flex items-center space-x-4 animate-smooth-slide-in-left">
+
+                <div class="w-12 h-12 bg-gradient-to-br from-habbo-yellow to-habbo-orange rounded-2xl flex items-center justify-center shadow-glass animate-subtle-glow">
+
+                    <span class="text-white font-pixel text-sm">@logo</span>
+
+                </div>
+
+                <span class="text-2xl font-pixel text-white">
+
+                    @hotelName Hotel
+
+                </span>
+
+            </div>
+
+            <nav class="lg:flex items-center space-x-6">
+
+                <a href="" class="font-system font-medium text-white/80 hover:text-white transition-all duration-200 hover:scale-105 px-3 py-2 rounded-lg hover:bg-white/5">
+                   test
+                </a>
+
+            </nav>
+
+            <div class="flex items-center gap-4">
+
+                <button class="bg-gradient-to-r from-habbo-yellow to-habbo-orange text-black px-6 py-2 rounded-xl font-bold hover:from-habbo-orange hover:to-habbo-yellow transition-all duration-200 hover:scale-105 flex items-center gap-2 shadow-lg">
+                    <span class="material-icons">play_arrow</span>
+                    <span class="hidden sm:inline">Gioca</span>
+                </button>
+
+            </div>
+
+        </div>
+    </div>
+
+</header>
+
+@code {
+    string? hotelName => settingsService.GetSetting("hotel_name");
+
+    char? logo => hotelName?.Take(1).FirstOrDefault();
+}

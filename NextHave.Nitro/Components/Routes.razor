@@ -1,6 +1,14 @@
-﻿<Router AppAssembly="typeof(Program).Assembly">
+﻿<Router AppAssembly="@typeof(Program).Assembly">
     <Found Context="routeData">
-        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
-        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(Layout.MainLayout)" />
     </Found>
 </Router>
+
+<BlazoredToasts @rendermode="InteractiveServer" Position="ToastPosition.TopRight"
+                ShowProgressBar="true"
+                PauseProgressOnHover="true"
+                IconType="IconType.Material"
+                SuccessClass="success-toast-override"
+                SuccessIcon="check_circle"
+                ErrorIcon="bug_report"
+                Timeout="10" />

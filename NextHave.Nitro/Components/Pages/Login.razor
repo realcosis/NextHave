@@ -1,0 +1,61 @@
+﻿@page "/login"
+
+<PageTitle>@hotelName ~ Accedi in un mondo di divertimento!</PageTitle>
+
+@using Dolphin.Core.Exceptions
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.Extensions.DependencyInjection
+@using NextHave.BL.Models.Users
+@using NextHave.BL.Services.Users
+@using Microsoft.AspNetCore.Authentication;
+@using System.Security.Claims
+
+@inject NavigationManager navigation
+@inject AuthenticationStateProvider authProvider
+@inject IServiceScopeFactory serviceScopeFactory
+@inject IToastService toastService
+@inject IHttpContextAccessor contextAccessor
+
+@code {
+    public UserLoginWrite model = new();
+
+    [CascadingParameter]
+    public string? hotelName { get; set; }
+
+    public async Task HandleLogin()
+    {
+        try
+        {
+            if (contextAccessor.HttpContext != default)
+            {
+                using var scope = serviceScopeFactory.CreateScope();
+                var usersService = scope.ServiceProvider.GetRequiredService<IUsersService>();
+
+                var logged = await usersService.Login(model);
+
+                if (!logged)
+                {
+                    return;
+                }
+
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.Name, model.Username!)
+                };
+
+                var identity = new ClaimsIdentity(claims, "NextHave");
+                var principal = new ClaimsPrincipal(identity);
+
+                await contextAccessor.HttpContext.SignInAsync("NextHave", principal);
+
+                toastService.ShowSuccess("Benvenuto su NextHave!");
+                navigation.NavigateTo("/");
+            }
+        }
+        catch (DolphinException ex)
+        {
+            string formatted = string.Join("\\n", ex.Messages);
+            toastService.ShowError(formatted);
+        }
+    }
+}

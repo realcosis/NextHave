@@ -61,6 +61,15 @@ namespace NextHave.BL.Localizations {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Passsword non corretta..
+        /// </summary>
+        public static string InvalidPassword {
+            get {
+                return ResourceManager.GetString("InvalidPassword", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Utente non trovato..
         /// </summary>
         public static string UserNotFound {

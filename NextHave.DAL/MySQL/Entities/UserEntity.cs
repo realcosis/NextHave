@@ -15,6 +15,14 @@ namespace NextHave.DAL.MySQL.Entities
         [MaxLength(64)]
         public string? Username { get; set; }
 
+        [Required]
+        [MaxLength(128)]
+        public string? Password { get; set; }
+
+        [Required]
+        [MaxLength(512)]
+        public string? Mail { get; set; }
+
         public string? Motto { get; set; }
 
         [Required]
