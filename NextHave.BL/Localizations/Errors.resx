@@ -120,6 +120,12 @@
   <data name="InvalidPassword" xml:space="preserve">
     <value>Passsword non corretta.</value>
   </data>
+  <data name="MailAlreadyTaked" xml:space="preserve">
+    <value>Indirizzo mail già registrato.</value>
+  </data>
+  <data name="UsernameAlreadyTaked" xml:space="preserve">
+    <value>Username già registrato.</value>
+  </data>
   <data name="UserNotFound" xml:space="preserve">
     <value>Utente non trovato.</value>
   </data>

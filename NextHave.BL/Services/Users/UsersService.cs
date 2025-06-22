@@ -14,11 +14,13 @@ using Dolphin.Core.Extensions;
 using NextHave.BL.Validations;
 using NextHave.BL.Extensions;
 using System.Text;
+using NextHave.BL.Mappers;
+using NextHave.BL.Services.Settings;
 
 namespace NextHave.BL.Services.Users
 {
     [Service(ServiceLifetime.Scoped)]
-    class UsersService(IDbContextFactory<MySQLDbContext> mysqlDbContextFactory, ILogger<IUsersService> logger) : IUsersService
+    class UsersService(IDbContextFactory<MySQLDbContext> mysqlDbContextFactory, ILogger<IUsersService> logger, ISettingsService settingsService) : IUsersService
     {
         ConcurrentDictionary<int, User> IUsersService.Users => throw new NotImplementedException();
 
@@ -62,17 +64,7 @@ namespace NextHave.BL.Services.Users
                 mysqlDbContext.UserTickets.Update(userTicket);
                 await mysqlDbContext.SaveChangesAsync();
 
-                return new User
-                {
-                    Id = user.Id,
-                    IsOnline = user.Online,
-                    LastOnline = user.LastOnline,
-                    Motto = user.Motto,
-                    Rank = user.Rank!.Value,
-                    Gender = user.Gender!.Value.GetDescription<EnumsDescriptions>(),
-                    Look = user.Look,
-                    Username = user.Username
-                };
+                return user.MapResult();
             }
             catch (Exception ex)
             {
@@ -105,17 +97,36 @@ namespace NextHave.BL.Services.Users
             if (!userLogin!.Password!.VerifyPassword(user.Password!))
                 throw new DolphinException(Errors.InvalidPassword);
 
-            return new User
-            {
-                Id = user.Id,
-                IsOnline = user.Online,
-                LastOnline = user.LastOnline,
-                Motto = user.Motto,
-                Rank = user.Rank!.Value,
-                Gender = user.Gender!.Value.GetDescription<EnumsDescriptions>(),
-                Look = user.Look,
-                Username = user.Username
-            };
+            return user.MapResult();
+        }
+
+        async Task<User> IUsersService.Register(UserRegistrationWrite userRegistration, string? registrationIp)
+        {
+            userRegistration?.Validate();
+
+            await using var mysqlDbContext = await mysqlDbContextFactory.CreateDbContextAsync();
+
+            var hotelName = settingsService.GetSetting("hotel_name");
+            var defaultLook = settingsService.GetSetting("default_look");
+
+            if (await mysqlDbContext
+                        .Users
+                            .AsNoTracking()
+                            .AnyAsync(u => u.Username!.Equals(userRegistration!.Username, StringComparison.CurrentCultureIgnoreCase)))
+                throw new DolphinException(Errors.UsernameAlreadyTaked);
+
+            if (await mysqlDbContext
+                        .Users
+                            .AsNoTracking()
+                            .AnyAsync(u => u.Mail!.Equals(userRegistration!.Mail, StringComparison.CurrentCultureIgnoreCase)))
+                throw new DolphinException(Errors.MailAlreadyTaked);
+
+            var newUser = userRegistration!.MapRegistration(registrationIp, hotelName, defaultLook);
+
+            await mysqlDbContext.Users.AddAsync(newUser);
+            await mysqlDbContext.SaveChangesAsync();
+
+            return newUser.MapResult();
         }
 
         async Task<User?> IUsersService.GetFromToken(int userId)
@@ -124,17 +135,7 @@ namespace NextHave.BL.Services.Users
             var user = await mysqlDbContext
                                     .Users
                                         .FirstOrDefaultAsync(u => u.Id == userId) ?? throw new DolphinException(Errors.UserNotFound);
-            return new User
-            {
-                Id = user.Id,
-                IsOnline = user.Online,
-                LastOnline = user.LastOnline,
-                Motto = user.Motto,
-                Rank = user.Rank!.Value,
-                Gender = user.Gender!.Value.GetDescription<EnumsDescriptions>(),
-                Look = user.Look,
-                Username = user.Username
-            };
+            return user.MapResult();
         }
     }
 }

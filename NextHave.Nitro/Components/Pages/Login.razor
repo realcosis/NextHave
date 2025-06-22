@@ -8,6 +8,7 @@
 @using Microsoft.Extensions.DependencyInjection
 @using NextHave.BL.Models.Users
 @using NextHave.BL.Services.Users
+@using NextHave.BL.Extensions
 @using Microsoft.AspNetCore.Authentication;
 @using System.Security.Claims
 @using System.Text
@@ -17,6 +18,7 @@
 @inject IJSRuntime jsRuntime
 @inject IServiceScopeFactory serviceScopeFactory
 @inject IToastService toastService
+@inject IHttpContextAccessor httpContextAccessor
 @inject NextHaveAuthenticationStateProvider authenticationStateProvider
 
 <div class="absolute inset-0 bg-gradient-radial from-habbo-purple/10 via-transparent to-habbo-electric/5"></div>
@@ -157,13 +159,13 @@
 
                             </div>
 
-                            <EditForm Model="@model" OnValidSubmit="HandleLogin" class="space-y-5">
+                            <EditForm Model="@loginModel" OnValidSubmit="HandleLogin" class="space-y-5">
 
                                 <div class="space-y-2">
 
                                     <label class="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 font-system font-medium text-white/80">Username:</label>
 
-                                    <InputText @bind-value="model.Username" class="flex w-full border bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm glass-effect text-white placeholder-white/40 border-white/20 rounded-xl h-12 font-system" />
+                                    <InputText @bind-value="loginModel.Username" class="flex w-full border bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm glass-effect text-white placeholder-white/40 border-white/20 rounded-xl h-12 font-system" />
 
                                 </div>
 
@@ -171,7 +173,7 @@
 
                                     <label class="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 font-system font-medium text-white/80">Password:</label>
 
-                                    <InputText @bind-value="model.Password" type="password" class="flex w-full border bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm glass-effect text-white placeholder-white/40 border-white/20 rounded-xl h-12 font-system" />
+                                    <InputText @bind-value="loginModel.Password" type="password" class="flex w-full border bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm glass-effect text-white placeholder-white/40 border-white/20 rounded-xl h-12 font-system" />
 
                                 </div>
 
@@ -215,6 +217,54 @@
 
                             </div>
 
+                            <EditForm Model="@registrationModel" OnValidSubmit="HandleRegistration" class="space-y-5">
+
+                                <div class="space-y-2">
+
+                                    <label class="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 font-system font-medium text-white/80">Username:</label>
+
+                                    <InputText @bind-value="registrationModel.Username" class="flex w-full border bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm glass-effect text-white placeholder-white/40 border-white/20 rounded-xl h-12 font-system" />
+
+                                </div>
+
+                                <div class="space-y-2">
+
+                                    <label class="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 font-system font-medium text-white/80">Indirizzo Email:</label>
+
+                                    <InputText @bind-value="registrationModel.Mail" type="email" class="flex w-full border bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm glass-effect text-white placeholder-white/40 border-white/20 rounded-xl h-12 font-system" />
+
+                                </div>
+
+                                <div class="space-y-2">
+
+                                    <label class="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 font-system font-medium text-white/80">Password:</label>
+
+                                    <InputText @bind-value="registrationModel.Password" type="password" class="flex w-full border bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm glass-effect text-white placeholder-white/40 border-white/20 rounded-xl h-12 font-system" />
+
+                                </div>
+
+                                <div class="space-y-2">
+
+                                    <label class="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 font-system font-medium text-white/80">Conferma Password:</label>
+
+                                    <InputText @bind-value="registrationModel.ConfirmPassword" type="password" class="flex w-full border bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm glass-effect text-white placeholder-white/40 border-white/20 rounded-xl h-12 font-system" />
+
+                                </div>
+
+                                <button type="submit" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 w-full modern-button h-12 text-base font-medium shadow-glass">
+
+                                    🚀 Unisciti alla Community!
+
+                                </button>
+
+                                <p class="text-xs text-white/50 font-system text-center">
+
+                                    Registrandoti accetti i nostri termini di servizio
+
+                                </p>
+
+                            </EditForm>
+
                         </div>
                     }
 
@@ -226,10 +276,59 @@
 
     </div>
 
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-20 max-w-4xl mx-auto">
+
+        <div class="ios-card p-8 text-center group animate-smooth-float">
+
+            <div class="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-r from-habbo-yellow to-habbo-orange flex items-center justify-center shadow-glass">
+
+                <span class="material-icons text-white">emoji_events</span>
+
+            </div>
+
+            <h3 class="text-xl font-system font-semibold text-white mb-3">Eventi Daily</h3>
+
+            <p class="text-white/70 font-system leading-relaxed">Partecipa agli eventi giornalieri e vinci premi esclusivi!</p>
+
+        </div>
+
+        <div class="ios-card p-8 text-center group animate-smooth-float">
+
+            <div class="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-r from-habbo-pink to-habbo-purple flex items-center justify-center shadow-glass">
+                
+                <span class="material-icons text-white">auto_awesome</span>
+
+            </div>
+
+            <h3 class="text-xl font-system font-semibold text-white mb-3">Furni Rari</h3>
+
+            <p class="text-white/70 font-system leading-relaxed">Colleziona mobili ultra-rari e personalizza la tua stanza!</p>
+
+        </div>
+
+        <div class="ios-card p-8 text-center group animate-smooth-float">
+
+            <div class="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-r from-habbo-lime to-habbo-electric flex items-center justify-center shadow-glass">
+                
+                <span class="material-icons text-white">favorite</span>
+
+            </div>
+
+            <h3 class="text-xl font-system font-semibold text-white mb-3">Community</h3>
+
+            <p class="text-white/70 font-system leading-relaxed">Unisciti alla community più attiva del panorama Habbo!</p>
+
+        </div>
+
+    </div>
 </div>
 
+
 @code {
-    public UserLoginWrite model = new();
+    public UserLoginWrite loginModel = new();
+
+    public UserRegistrationWrite registrationModel = new();
 
     [CascadingParameter]
     public string? hotelName { get; set; }
@@ -249,7 +348,7 @@
             using var scope = serviceScopeFactory.CreateScope();
             var usersService = scope.ServiceProvider.GetRequiredService<IUsersService>();
 
-            var user = await usersService.Login(model);
+            var user = await usersService.Login(loginModel);
 
             if (user == default)
                 return;
@@ -284,4 +383,45 @@
         }
     }
 
+    public async Task HandleRegistration()
+    {
+        try
+        {
+            using var scope = serviceScopeFactory.CreateScope();
+            var usersService = scope.ServiceProvider.GetRequiredService<IUsersService>();
+
+            var user = await usersService.Register(registrationModel, httpContextAccessor.GetUserIp());
+
+            if (user == default)
+                return;
+
+            var claims = new[]
+            {
+                new Claim(NextHaveAuthenticationConstants.Username, user.Username!),
+                new Claim(NextHaveAuthenticationConstants.Id, user.Id.ToString())
+            };
+
+            var identity = new ClaimsIdentity(claims, "NextHave");
+            var principal = new ClaimsPrincipal(identity);
+
+            authenticationStateProvider.NotifyUserAuthentication(principal);
+            var token = authenticationStateProvider.GenerateJwtToken(user);
+            await jsRuntime.InvokeVoidAsync("localStorage.setItem", "sessiontoken", token);
+
+            toastService.ShowSuccess("Benvenuto su NextHave!");
+            navigation.NavigateTo("/");
+        }
+        catch (DolphinException ex)
+        {
+            RenderFragment message = builder =>
+            {
+                foreach (var (index, message) in ex.Messages.Index())
+                {
+                    builder.AddContent(index, message);
+                    builder.AddMarkupContent(index, "<br />");
+                }
+            };
+            toastService.ShowError(message);
+        }
+    }
 }

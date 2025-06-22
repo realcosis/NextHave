@@ -23,6 +23,8 @@ namespace NextHave.BL.Services.Users
 
         Task<User?> Login(UserLoginWrite userLogin);
 
+        Task<User> Register(UserRegistrationWrite userRegistration, string? registrationIp);
+
         Task<User?> GetFromToken(int userId);
     }
 }

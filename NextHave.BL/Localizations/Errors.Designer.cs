@@ -70,6 +70,24 @@ namespace NextHave.BL.Localizations {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Indirizzo mail già registrato..
+        /// </summary>
+        public static string MailAlreadyTaked {
+            get {
+                return ResourceManager.GetString("MailAlreadyTaked", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Username già registrato..
+        /// </summary>
+        public static string UsernameAlreadyTaked {
+            get {
+                return ResourceManager.GetString("UsernameAlreadyTaked", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Utente non trovato..
         /// </summary>
         public static string UserNotFound {

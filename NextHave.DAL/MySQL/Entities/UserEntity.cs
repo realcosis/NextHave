@@ -49,11 +49,11 @@ namespace NextHave.DAL.MySQL.Entities
 
         [Required]
         [MaxLength(512)]
-        public string? CurrentIp { get; set; }
+        public string? RegistrationIp { get; set; }
 
         [Required]
         [MaxLength(512)]
-        public string? LastIp { get; set; }
+        public string? CurrentIp { get; set; }
 
         public ICollection<UserTicketEntity> Tickets { get; set; } = [];
     }
