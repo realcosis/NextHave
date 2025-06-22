@@ -21,6 +21,8 @@ namespace NextHave.BL.Services.Users
 
         Task UpsertSlot(int userId, UserWardrobe wardrobe);
 
-        Task<bool> Login(UserLoginWrite userLogin);
+        Task<User?> Login(UserLoginWrite userLogin);
+
+        Task<User?> GetFromToken(int userId);
     }
 }

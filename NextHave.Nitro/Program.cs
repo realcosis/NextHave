@@ -1,17 +1,20 @@
 ﻿using Blazored.Toast;
 using Dolphin.Core.Configurations;
 using Dolphin.Core.Injection;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.EntityFrameworkCore;
 using NextHave.BL;
+using NextHave.BL.Models.Configurations;
 using NextHave.DAL.Mongo;
 using NextHave.DAL.MySQL;
+using NextHave.Nitro.Authentications;
 using NextHave.Nitro.Components;
 using NextHave.Nitro.Sockets;
 using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Host.ConfigureDolphinApplication("NextHave", "1");
+builder.Host.ConfigureDolphinApplication<NextHaveConfiguration>("NextHave", "1");
 
 builder.Services.AddBlazoredToast();
 builder.Services.AddAuthorization();
@@ -43,6 +46,9 @@ builder.Services.AddAuthentication("NextHaveAuth").AddCookie("NextHaveAuth", opt
     options.LogoutPath = "/logout";
     options.AccessDeniedPath = "/access-denied";
 });
+builder.Services.AddAuthorizationCore();
+builder.Services.AddScoped<NextHaveAuthenticationStateProvider>();
+builder.Services.AddScoped<AuthenticationStateProvider>(provider => provider.GetRequiredService<NextHaveAuthenticationStateProvider>());
 
 var app = builder.Build();
 

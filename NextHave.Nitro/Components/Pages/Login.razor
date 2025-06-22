@@ -11,12 +11,13 @@
 @using Microsoft.AspNetCore.Authentication;
 @using System.Security.Claims
 @using System.Text
+@using NextHave.Nitro.Authentications
 
 @inject NavigationManager navigation
-@inject AuthenticationStateProvider authProvider
+@inject IJSRuntime jsRuntime
 @inject IServiceScopeFactory serviceScopeFactory
 @inject IToastService toastService
-@inject IHttpContextAccessor contextAccessor
+@inject NextHaveAuthenticationStateProvider authenticationStateProvider
 
 <div class="absolute inset-0 bg-gradient-radial from-habbo-purple/10 via-transparent to-habbo-electric/5"></div>
 
@@ -175,9 +176,9 @@
                                 </div>
 
                                 <button type="submit" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 w-full modern-button h-12 text-base font-medium shadow-glass">
-                                    
+
                                     🚀 Entra nel Hotel!
-                                
+
                                 </button>
 
                                 <div class="text-center text-habbo-yellow font-system text-sm hover:underline transition-colors">
@@ -245,29 +246,29 @@
     {
         try
         {
-            if (contextAccessor.HttpContext != default)
+            using var scope = serviceScopeFactory.CreateScope();
+            var usersService = scope.ServiceProvider.GetRequiredService<IUsersService>();
+
+            var user = await usersService.Login(model);
+
+            if (user == default)
+                return;
+
+            var claims = new[]
             {
-                using var scope = serviceScopeFactory.CreateScope();
-                var usersService = scope.ServiceProvider.GetRequiredService<IUsersService>();
+                new Claim(NextHaveAuthenticationConstants.Username, user.Username!),
+                new Claim(NextHaveAuthenticationConstants.Id, user.Id.ToString())
+            };
 
-                var logged = await usersService.Login(model);
+            var identity = new ClaimsIdentity(claims, "NextHave");
+            var principal = new ClaimsPrincipal(identity);
 
-                if (!logged)
-                    return;
+            authenticationStateProvider.NotifyUserAuthentication(principal);
+            var token = authenticationStateProvider.GenerateJwtToken(user);
+            await jsRuntime.InvokeVoidAsync("localStorage.setItem", "sessiontoken", token);
 
-                var claims = new List<Claim>
-                {
-                    new Claim(ClaimTypes.Name, model.Username!)
-                };
-
-                var identity = new ClaimsIdentity(claims, "NextHave");
-                var principal = new ClaimsPrincipal(identity);
-
-                await contextAccessor.HttpContext.SignInAsync("NextHaveAuth", principal);
-
-                toastService.ShowSuccess("Benvenuto su NextHave!");
-                navigation.NavigateTo("/");
-            }
+            toastService.ShowSuccess("Benvenuto su NextHave!");
+            navigation.NavigateTo("/");
         }
         catch (DolphinException ex)
         {

@@ -4,10 +4,11 @@ using NextHave.DAL.Mongo;
 using NextHave.DAL.MySQL;
 using Dolphin.Core.API;
 using Dolphin.Core.Configurations;
+using NextHave.BL.Models.Configurations;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Host.ConfigureDolphinApplication("NextHave", "1");
+builder.Host.ConfigureDolphinApplication<NextHaveConfiguration>("NextHave", "1");
 
 builder.Services.AddDbContext<DbContext, MySQLDbContext>();
 builder.Services.AddDbContext<DbContext, MongoDbContext>();

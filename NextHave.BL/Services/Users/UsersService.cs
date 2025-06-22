@@ -93,7 +93,7 @@ namespace NextHave.BL.Services.Users
             throw new NotImplementedException();
         }
 
-        async Task<bool> IUsersService.Login(UserLoginWrite userLogin)
+        async Task<User?> IUsersService.Login(UserLoginWrite userLogin)
         {
             userLogin?.Validate();
 
@@ -101,12 +101,40 @@ namespace NextHave.BL.Services.Users
             var user = await mysqlDbContext
                                     .Users
                                         .FirstOrDefaultAsync(u => u.Username == userLogin!.Username || u.Mail == userLogin!.Username) ?? throw new DolphinException(Errors.UserNotFound);
-            var originalHash = Convert.FromBase64String(user.Password.Split(':')[1]);
 
             if (!userLogin!.Password!.VerifyPassword(user.Password!))
                 throw new DolphinException(Errors.InvalidPassword);
 
-            return true;
+            return new User
+            {
+                Id = user.Id,
+                IsOnline = user.Online,
+                LastOnline = user.LastOnline,
+                Motto = user.Motto,
+                Rank = user.Rank!.Value,
+                Gender = user.Gender!.Value.GetDescription<EnumsDescriptions>(),
+                Look = user.Look,
+                Username = user.Username
+            };
+        }
+
+        async Task<User?> IUsersService.GetFromToken(int userId)
+        {
+            await using var mysqlDbContext = await mysqlDbContextFactory.CreateDbContextAsync();
+            var user = await mysqlDbContext
+                                    .Users
+                                        .FirstOrDefaultAsync(u => u.Id == userId) ?? throw new DolphinException(Errors.UserNotFound);
+            return new User
+            {
+                Id = user.Id,
+                IsOnline = user.Online,
+                LastOnline = user.LastOnline,
+                Motto = user.Motto,
+                Rank = user.Rank!.Value,
+                Gender = user.Gender!.Value.GetDescription<EnumsDescriptions>(),
+                Look = user.Look,
+                Username = user.Username
+            };
         }
     }
 }

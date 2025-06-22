@@ -16,7 +16,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="RealCosis.Dolphin.Core.API" Version="2025.620.1436" />
+		<PackageReference Include="RealCosis.Dolphin.Core.API" Version="2025.622.514" />
 	</ItemGroup>
 
 </Project>

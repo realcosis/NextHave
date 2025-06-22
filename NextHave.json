@@ -17,5 +17,10 @@
   "Pool": {
     "MinSize": 20,
     "MaxSize": 150
+  },
+  "Jwt": {
+    "Key": "V5a$kM8zXqR0sNp1G9c*WlQ3B7rFdZtY",
+    "Issuer": "nexthave.it",
+    "Audience": "nexthave"
   }
 }
