@@ -9,9 +9,8 @@ namespace NextHave.BL.Mappers
 {
     public static class UsersMapper
     {
-        public static User? MapResult(this UserEntity userEntity)
-        {
-            return new User
+        public static User MapResult(this UserEntity userEntity)
+            => new()
             {
                 Id = userEntity.Id,
                 IsOnline = userEntity.Online,
@@ -22,7 +21,6 @@ namespace NextHave.BL.Mappers
                 Look = userEntity.Look,
                 Username = userEntity.Username
             };
-        }
 
         public static UserEntity MapRegistration(this UserRegistrationWrite userRegistration, string? registrationIp, string? hotelName, string? defaultLook)
             => new()

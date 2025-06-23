@@ -28,13 +28,12 @@ namespace NextHave.Nitro.Authentications
 
             if (currentUser == default)
             {
-                var tokenValue = new JwtSecurityTokenHandler().ReadJwtToken(token);
-                var userIdVal = tokenValue.Claims.FirstOrDefault(c => c.Type == NextHaveAuthenticationConstants.Id)?.Value;
-                if (!string.IsNullOrWhiteSpace(userIdVal) && int.TryParse(userIdVal, out var userId))
+                var userId = await GetUserIdFromToken();
+                if (userId.HasValue)
                 {
                     try
                     {
-                        var user = await usersService.GetFromToken(userId);
+                        var user = await usersService.GetFromToken(userId.Value);
                         if (user != default)
                         {
                             var claims = new List<Claim>()
@@ -63,6 +62,15 @@ namespace NextHave.Nitro.Authentications
         {
             NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(user)));
             currentUser = user;
+        }
+
+        public async Task<int?> GetUserIdFromToken()
+        {
+            var token = await jsRuntime.InvokeAsync<string>("localStorage.getItem", "sessiontoken");
+            var tokenValue = new JwtSecurityTokenHandler().ReadJwtToken(token);
+            var userIdVal = tokenValue.Claims.FirstOrDefault(c => c.Type == NextHaveAuthenticationConstants.Id)?.Value;
+
+            return !string.IsNullOrWhiteSpace(userIdVal) && int.TryParse(userIdVal, out var userId) ? userId : default;
         }
 
         public string GenerateJwtToken(User user)

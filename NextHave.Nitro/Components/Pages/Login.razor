@@ -2,6 +2,7 @@
 
 <PageTitle>@hotelName ~ Accedi in un mondo di divertimento!</PageTitle>
 
+@using NextHave.BL.Clients;
 @using Dolphin.Core.Exceptions
 @using Microsoft.AspNetCore.Authentication.Cookies
 @using Microsoft.AspNetCore.Components.Authorization
@@ -35,7 +36,7 @@
 
                     <div class="w-3 h-3 bg-habbo-lime rounded-full animate-subtle-glow"></div>
 
-                    <span class="text-white/90 font-system text-sm font-medium">Server Online • 1,337 players</span>
+                    <span class="text-white/90 font-system text-sm font-medium">@Sessions.ConnectedClients.Values.Count() Utenti Online</span>
 
                 </div>
 
@@ -57,69 +58,13 @@
 
                     d'Italia
 
-                    <br />
+                </p>
+
+                <p class="text-xl md:text-2xl font-system text-white/80 max-w-2xl font-light leading-relaxed">
 
                     <span class="text-habbo-pink">Entra e vivi l'avventura pixelata! 🎮</span>
 
                 </p>
-
-            </div>
-
-            <div class="flex flex-wrap justify-center lg:justify-start gap-4">
-
-                <button class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 modern-button text-lg px-8 py-4 font-medium shadow-glass-lg">
-
-                    <span style="font-size: 20px;" class="material-icons">play_arrow</span>
-
-                    Scopri di più
-
-                </button>
-
-                <button class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 text-lg px-8 py-4 glass-effect text-white hover:bg-white /10 font-medium border-white /20">
-
-                    <span style="font-size: 20px;" class="material-icons">groups</span>
-
-                    Community
-
-                </button>
-
-            </div>
-
-            <div class="flex justify-center lg:justify-start items-center space-x-8 mt-12">
-
-                <div class="text-center group">
-
-                    <div class="text-3xl font-system font-bold text-habbo-yellow">1,337+</div>
-
-                    <div class="text-white/60 font-system text-sm font-medium">Players Online</div>
-
-                </div>
-
-                <div class="w-px h-12 bg-white/20"></div>
-
-                <div class="text-center group">
-
-                    <div class="text-3xl font-system font-bold text-habbo-lime">24/7</div>
-
-                    <div class="text-white/60 font-system text-sm font-medium">Server Attivo</div>
-
-                </div>
-
-                <div class="w-px h-12 bg-white/20"></div>
-
-                <div class="text-center group">
-
-                    <div class="text-3xl font-system font-bold text-habbo-pink flex items-center justify-center">
-
-                        <span style="font-size: 20px;" class="material-icons">star_rate</span>
-
-                        5.0
-
-                    </div>
-
-                    <div class="text-white/60 font-system text-sm font-medium">Rating</div>
-
-                </div>
 
             </div>
 

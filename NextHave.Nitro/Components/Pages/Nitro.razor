@@ -1,31 +1,22 @@
-﻿@page "/game/nitro"
+﻿@layout NitroLayout
 
-@layout EmptyLayout
+@page "/game/nitro"
 
-@inject IJSRuntime JS
+<PageTitle>@hotelName ~ Hotel!</PageTitle>
 
+@using NextHave.BL.Services.Users
 @using System.Text
 @using NextHave.BL.Clients
+@using NextHave.Nitro.Authentications
 @using NextHave.Nitro.Components.Layout
 @using NextHave.BL.Parsers
 @using NextHave.BL.Utils
 @using System.Diagnostics
 
-<link rel="modulepreload" crossorigin href="/nitro/vendor-C03uLZeS.js" />
-<link rel="stylesheet" href="/nitro/index.css" />
-
-<PageTitle>Client</PageTitle>
-
 <noscript>You need to enable JavaScript to run this app.</noscript>
 <div id="root" class="w-100 h-100"></div>
 
 @code {
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            await JS.InvokeVoidAsync("loadNitro");
-            await JS.InvokeVoidAsync("waitForNitro");
-        }
-    }
+    [CascadingParameter]
+    public string? hotelName { get; set; }
 }

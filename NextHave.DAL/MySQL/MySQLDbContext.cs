@@ -1,8 +1,8 @@
 ﻿using Dolphin.Core.Configurations.Models;
-using NextHave.DAL.MySQL.Entities;
-using Microsoft.Extensions.Options;
-using Microsoft.EntityFrameworkCore;
 using Dolphin.Core.Database;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using NextHave.DAL.MySQL.Entities;
 
 namespace NextHave.DAL.MySQL
 {
@@ -16,6 +16,13 @@ namespace NextHave.DAL.MySQL
 
         public DbSet<NextHaveSettingEntity> NextHaveSettings { get; set; }
 
+        public DbSet<NavigatorPublicCategoryEntity> NavigatorPublicCategories { get; set; }
+
+        public DbSet<NavigatorUserCategoryEntity> NavigatorUserCategories { get; set; }
+
+        public DbSet<NavigatorPublicRoomEntity> NavigatorPublicRooms { get; set; }
+
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -28,8 +35,6 @@ namespace NextHave.DAL.MySQL
         protected override void OnConfiguring(DbContextOptionsBuilder builder)
         {
             base.OnConfiguring(builder);
-
-            builder.EnableSensitiveDataLogging();
         }
     }
 }

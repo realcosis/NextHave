@@ -1,6 +1,8 @@
-﻿using System.Reflection;
+﻿using AutoMapper;
 using Dolphin.Core.Injection;
 using Microsoft.Extensions.DependencyInjection;
+using System.Linq.Expressions;
+using System.Reflection;
 
 namespace NextHave.BL
 {
@@ -30,6 +32,21 @@ namespace NextHave.BL
                         serviceCollection.AddWithInterfaces(service, attributeData.Lifetime);
                 }
             }
+        }
+
+        public static IMappingExpression<E, R> MapProperties<E, R>(this IMappingExpression<E, R> mappingExpression, params (Expression<Func<R, object>> destinationMember, Expression<Func<E, object?>> sourceMember)[] properties)
+        {
+            foreach (var (dest, src) in properties)
+            {
+                mappingExpression.ForMember(dest, opt => opt.MapFrom(src));
+            }
+            return mappingExpression;
+        }
+
+        internal static R GetMap<E, R>(this E @object, params (Expression<Func<R, object>> destinationMember, Expression<Func<E, object?>> sourceMember)[] properties)
+        {
+            var config = new MapperConfiguration(cfg => cfg.CreateMap<E, R>().MapProperties(properties));
+            return config.CreateMapper().Map<R>(@object);
         }
     }
 }

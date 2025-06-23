@@ -6,16 +6,14 @@ using NextHave.BL.Models.Badges;
 using NextHave.BL.Models.Wardrobes;
 using Dolphin.Core.Injection;
 using Dolphin.Core.Exceptions;
-using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NextHave.BL.Localizations;
-using Dolphin.Core.Extensions;
 using NextHave.BL.Validations;
 using NextHave.BL.Extensions;
-using System.Text;
 using NextHave.BL.Mappers;
 using NextHave.BL.Services.Settings;
+using NextHave.DAL.MySQL.Entities;
 
 namespace NextHave.BL.Services.Users
 {
@@ -49,15 +47,12 @@ namespace NextHave.BL.Services.Users
                 await using var mysqlDbContext = await mysqlDbContextFactory.CreateDbContextAsync();
                 var userTicket = await mysqlDbContext
                                         .UserTickets
+                                            .Include(ut => ut.User)
                                             .FirstOrDefaultAsync(ut => ut.Ticket == authTicket && !ut.UsedAt.HasValue) ?? throw new DolphinException(Errors.UserTicketNotFound);
 
-                var user = await mysqlDbContext
-                                    .Users
-                                        .FirstOrDefaultAsync(u => u.Id == userTicket.UserId) ?? throw new DolphinException(Errors.UserNotFound);
+                var user = userTicket.User ?? throw new DolphinException(Errors.UserNotFound);
 
-                if (!Debugger.IsAttached)
-                    userTicket.UsedAt = date;
-
+                userTicket.UsedAt = date;
                 user.LastOnline = date;
 
                 mysqlDbContext.Users.Update(user);
@@ -136,6 +131,23 @@ namespace NextHave.BL.Services.Users
                                     .Users
                                         .FirstOrDefaultAsync(u => u.Id == userId) ?? throw new DolphinException(Errors.UserNotFound);
             return user.MapResult();
+        }
+
+        async Task<string?> IUsersService.GetAndSetAuthToken(int userId)
+        {
+            await using var mysqlDbContext = await mysqlDbContextFactory.CreateDbContextAsync();
+
+            var newticket = Guid.NewGuid().ToString("N");
+            var newUserTicket = new UserTicketEntity
+            {
+                UserId = userId,
+                Ticket = newticket
+            };
+
+            await mysqlDbContext.UserTickets.AddAsync(newUserTicket);
+            await mysqlDbContext.SaveChangesAsync();
+
+            return newUserTicket.Ticket;
         }
     }
 }

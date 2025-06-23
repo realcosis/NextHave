@@ -15,7 +15,7 @@
         var user = authState.User;
 
         if (user.Identity is { IsAuthenticated: true })
-            navigation.NavigateTo("/home");
+            navigation.NavigateTo("/game/nitro");
         else
             navigation.NavigateTo("/login");
     }

@@ -15,8 +15,9 @@ namespace NextHave.BL.Messages.Input.Handlers
     {
         public async Task OnSSOTicket(SSOTicketMessage message, Client client)
         {
-            using var scope = serviceScopeFactory.CreateScope();
-            var usersService = scope.ServiceProvider.GetRequiredService<IUsersService>();
+            using var scope = serviceScopeFactory.CreateAsyncScope();
+            var serviceProvider = scope.ServiceProvider;
+            var usersService = serviceProvider.GetRequiredService<IUsersService>();
             var user = await usersService.LoadHabbo(message.SSO!, message.ElapsedMilliseconds);
 
             if (user == default)
@@ -32,13 +33,12 @@ namespace NextHave.BL.Messages.Input.Handlers
             if (client.User == default)
                 return;
 
-            using var scope = serviceScopeFactory.CreateScope();
-
             await SendInfoRetrieveResponse(client, client.User!);
         }
 
         public async Task StartAsync()
         {
+
             packetsService.Subscribe<SSOTicketMessage>(this, OnSSOTicket);
 
             packetsService.Subscribe<InfoRetrieveMessage>(this, OnInfoRetrieve);

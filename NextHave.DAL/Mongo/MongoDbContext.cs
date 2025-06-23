@@ -10,6 +10,8 @@ namespace NextHave.DAL.Mongo
     {
         public DbSet<CatalogPageEntity> CatalogPages { get; set; }
 
+        public DbSet<RoomEntity> Rooms { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
