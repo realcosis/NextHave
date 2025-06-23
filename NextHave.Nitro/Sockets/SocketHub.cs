@@ -32,8 +32,9 @@ namespace NextHave.Nitro.Sockets
             {
                 var scope = serviceScopeFactory.CreateScope();
                 var gameParser = scope.ServiceProvider.GetRequiredService<IPacketParser>();
-                gameParser.HandlePacketData(buffer, buffer.Length, Context.ConnectionId);
-                gameParser.OnNewPacket += client.Handler!.Handle;
+                using var message = gameParser.ManagePacket(buffer, buffer.Length, Context.ConnectionId);
+                if (message != default)
+                    await client.Handler!.Handle(message, serviceScopeFactory, message.Header);
             }
             await Task.CompletedTask;
         }

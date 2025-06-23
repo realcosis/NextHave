@@ -12,26 +12,30 @@ using System.Collections.Concurrent;
 namespace NextHave.BL.Services.Navigators
 {
     [Service(ServiceLifetime.Singleton)]
-    class NavigatorService(ILogger<INavigatorsService> logger, IServiceProvider serviceProvider, IRoomsService roomsService) : INavigatorsService, IStartableService
+    class NavigatorService(ILogger<INavigatorsService> logger, IServiceScopeFactory serviceScopeFactory, IRoomsService roomsService) : INavigatorsService, IStartableService
     {
+        INavigatorsService Instance => this;
+
         ConcurrentDictionary<string, IFilter?> INavigatorsService.Filters { get; } = [];
 
         ConcurrentDictionary<int, NavigatorPublicCategory> INavigatorsService.PublicCategories { get; } = [];
 
         async Task IStartableService.StartAsync()
         {
-            var mysqlDbContext = serviceProvider.GetRequiredService<MySQLDbContext>();
-            ((INavigatorsService)this).PublicCategories.Clear();
+
+            using var scope = serviceScopeFactory.CreateAsyncScope();
+            var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
+            Instance.PublicCategories.Clear();
 
             try
             {
                 var categories = await mysqlDbContext.NavigatorPublicCategories.AsNoTracking().ToListAsync();
-                categories.ForEach(category => ((INavigatorsService)this).PublicCategories.TryAdd(category.Id, category.Map()));
+                categories.ForEach(category => Instance.PublicCategories.TryAdd(category.Id, category.Map()));
 
                 var publicRooms = await mysqlDbContext.NavigatorPublicRooms.AsNoTracking().ToListAsync();
                 foreach (var publicRoom in publicRooms)
                 {
-                    var category = ((INavigatorsService)this).PublicCategories.FirstOrDefault(pc => pc.Key == publicRoom.CategoryId).Value;
+                    var category = Instance.PublicCategories.FirstOrDefault(pc => pc.Key == publicRoom.CategoryId).Value;
                     if (category != default)
                     {
                         var room = await roomsService.GetRoom(publicRoom.RoomId);
@@ -40,12 +44,12 @@ namespace NextHave.BL.Services.Navigators
                     }
                 }
 
-                var filters = serviceProvider.GetRequiredService<IEnumerable<IFilter>>();
+                var filters = scope.ServiceProvider.GetRequiredService<IEnumerable<IFilter>>();
                 foreach (var filter in filters)
-                    ((INavigatorsService)this).Filters.TryAdd(filter.Name, filters.FirstOrDefault(f => f.Name == filter.Name));
+                    Instance.Filters.TryAdd(filter.Name, filters.FirstOrDefault(f => f.Name == filter.Name));
                 
-                logger.LogInformation("NavigatorManager has been loaded with {count} public categories definitions", ((INavigatorsService)this).PublicCategories.Count);
-                logger.LogInformation("NavigatorManager has been loaded with {count} filters definitions", ((INavigatorsService)this).Filters.Count);
+                logger.LogInformation("NavigatorManager has been loaded with {count} public categories definitions", Instance.PublicCategories.Count);
+                logger.LogInformation("NavigatorManager has been loaded with {count} filters definitions", Instance.Filters.Count);
             }
             catch (Exception ex)
             {

@@ -1,17 +1,26 @@
-﻿@layout NitroLayout
+﻿@page "/game/nitro"
 
-@page "/game/nitro"
+@layout NitroLayout
 
-<PageTitle>@hotelName ~ Hotel!</PageTitle>
-
-@using NextHave.BL.Services.Users
 @using System.Text
 @using NextHave.BL.Clients
-@using NextHave.Nitro.Authentications
+@using NextHave.BL.Services.Users
 @using NextHave.Nitro.Components.Layout
 @using NextHave.BL.Parsers
 @using NextHave.BL.Utils
+@using NextHave.Nitro.Authentications
 @using System.Diagnostics
+
+@inject NavigationManager navigation
+@inject IJSRuntime jsRuntime
+@inject IUsersService usersService
+@inject NextHaveAuthenticationStateProvider authenticationStateProvider
+
+<script src="/nitro/loader.js"></script>
+<link rel="modulepreload" crossorigin href="/nitro/vendor-C03uLZeS.js" />
+<link rel="stylesheet" href="/nitro/index.css" />
+
+<PageTitle>@hotelName ~ Hotel</PageTitle>
 
 <noscript>You need to enable JavaScript to run this app.</noscript>
 <div id="root" class="w-100 h-100"></div>
@@ -19,4 +28,21 @@
 @code {
     [CascadingParameter]
     public string? hotelName { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var userId = await authenticationStateProvider.GetUserIdFromToken();
+            if (!userId.HasValue)
+            {
+                navigation.NavigateTo("/login");
+                return;
+            }
+            var token = await usersService.GetAndSetAuthToken(userId.Value);
+            await jsRuntime.InvokeVoidAsync("localStorage.setItem", "nitro.sso_ticket", token);
+            await jsRuntime.InvokeVoidAsync("loadNitro");
+            await jsRuntime.InvokeVoidAsync("waitForNitro");
+        }
+    }
 }

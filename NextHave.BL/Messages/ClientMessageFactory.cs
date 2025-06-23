@@ -2,7 +2,7 @@
 {
     public static class ClientMessageFactory
     {
-        public static ClientMessage GetClientMessage(byte[] body, int position, string sessionId)
-            => new(body, position, sessionId);
+        public static ClientMessage GetClientMessage(byte[] body, int position, string sessionId, short header)
+            => new(body, position, sessionId, header);
     }
 }

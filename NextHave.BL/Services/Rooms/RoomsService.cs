@@ -14,7 +14,7 @@ using System.Collections.Concurrent;
 namespace NextHave.BL.Services.Rooms
 {
     [Service(ServiceLifetime.Singleton)]
-    class RoomsService(IServiceProvider serviceProvider, ILogger<IRoomsService> logger) : IRoomsService, IStartableService
+    class RoomsService(IServiceScopeFactory serviceScopeFactory, ILogger<IRoomsService> logger) : IRoomsService, IStartableService
     {
         IRoomsService Instance => this;
 
@@ -24,7 +24,8 @@ namespace NextHave.BL.Services.Rooms
 
         async Task<Room?> IRoomsService.GetRoom(int roomId)
         {
-            var mongoDbContext = serviceProvider.GetRequiredService<MongoDbContext>();
+            using var scope = serviceScopeFactory.CreateAsyncScope();
+            var mongoDbContext = scope.ServiceProvider.GetRequiredService<MongoDbContext>();
             var dbRoom = await mongoDbContext.Rooms.AsNoTracking().FirstOrDefaultAsync(g => g.EntityId == roomId);
             if (dbRoom != default)
             {
@@ -58,7 +59,8 @@ namespace NextHave.BL.Services.Rooms
 
         async Task IStartableService.StartAsync()
         {
-            var mysqlDbContext = serviceProvider.GetRequiredService<MySQLDbContext>();
+            using var scope = serviceScopeFactory.CreateAsyncScope();
+            var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
             Instance.NavigatorCategories.Clear();
 
             try

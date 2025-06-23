@@ -17,7 +17,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Host.ConfigureDolphinApplication<NextHaveConfiguration>("NextHave", "1");
 
 builder.Services.AddBlazoredToast();
-builder.Services.AddAuthorization();
 builder.Services.AddHttpContextAccessor();
 builder.Services.RegisterDolphinApplication();
 builder.Services.AddSignalR().AddMessagePackProtocol();
@@ -37,17 +36,6 @@ builder.Services.AddCors(options =>
               .AllowCredentials();
     });
 });
-builder.Services.AddAuthentication("NextHaveAuth").AddCookie("NextHaveAuth", options =>
-{
-    options.Cookie.Name = "NextHave.Auth";
-    options.Cookie.HttpOnly = true;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-    options.Cookie.SameSite = SameSiteMode.Lax;
-    options.LoginPath = "/login";
-    options.LogoutPath = "/logout";
-    options.AccessDeniedPath = "/access-denied";
-});
-builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<NextHaveAuthenticationStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(provider => provider.GetRequiredService<NextHaveAuthenticationStateProvider>());
 

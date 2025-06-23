@@ -5,15 +5,9 @@ using NextHave.BL.Utils;
 
 namespace NextHave.BL.Parsers
 {
-    [Service(ServiceLifetime.Singleton)]
+    [Service(ServiceLifetime.Scoped)]
     public class GameParser : IPacketParser
     {
-        readonly IServiceScopeFactory _serviceScopeFactory;
-
-        public delegate void HandlePacket(ClientMessage message, short header);
-
-        public event Func<ClientMessage, IServiceScopeFactory, short, Task>? OnNewPacket;
-
         static readonly int INT_SIZE = 4;
 
         int currentPacketLength;
@@ -22,9 +16,8 @@ namespace NextHave.BL.Parsers
 
         readonly byte[] bufferedData;
 
-        public GameParser(IServiceScopeFactory serviceScopeFactory)
+        public GameParser()
         {
-            _serviceScopeFactory = serviceScopeFactory;
             ResetState();
             bufferedData = new byte[4096];
         }
@@ -41,7 +34,23 @@ namespace NextHave.BL.Parsers
             }
         }
 
-        private void ProcessData(byte[] data, int bytes, string sessionId)
+        public ClientMessage? ManagePacket(byte[] data, int bytes, string sessionId)
+        {
+            var clientMessage = default(ClientMessage?);
+
+            try
+            {
+                clientMessage = ProcessData(data, bytes, sessionId);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
+
+            return clientMessage;
+        }
+
+        private ClientMessage? ProcessData(byte[] data, int bytes, string sessionId)
         {
             int position = 0;
             while (position < bytes)
@@ -52,17 +61,19 @@ namespace NextHave.BL.Parsers
                 if (!IsValidPacketLength(currentPacketLength))
                 {
                     ResetState();
-                    return;
+                    return default;
                 }
 
                 if (EnoughDataReceived(bytes - position))
-                    ProcessCompletePacket(data, ref position, sessionId);
+                    return ProcessCompletePacket(data, ref position, sessionId);
                 else
                 {
                     StoreIncompleteData(data, bytes, position);
-                    break;
+                    return default;
                 }
             }
+
+            return default;
         }
 
         private bool EnoughDataReceived(int remainingBytes)
@@ -71,7 +82,7 @@ namespace NextHave.BL.Parsers
         private static bool IsValidPacketLength(int length)
             => length is >= 2 and <= 417792;
 
-        private void ProcessCompletePacket(byte[] data, ref int position, string sessionId)
+        private ClientMessage? ProcessCompletePacket(byte[] data, ref int position, string sessionId)
         {
             if (bufferPos > 0)
             {
@@ -83,12 +94,13 @@ namespace NextHave.BL.Parsers
             var packetStart = bufferPos > 0 ? 0 : position;
             var header = packetData.ToInt16(ref packetStart);
 
-            using var message = ClientMessageFactory.GetClientMessage(packetData, packetStart, sessionId);
-            OnNewPacket?.Invoke(message, _serviceScopeFactory, header);
+            var message = ClientMessageFactory.GetClientMessage(packetData, packetStart, sessionId, header);
 
             position += currentPacketLength;
 
             ResetState();
+
+            return message;
         }
 
         private void StoreIncompleteData(byte[] data, int bytes, int position)
@@ -111,7 +123,6 @@ namespace NextHave.BL.Parsers
 
         public void Dispose()
         {
-            OnNewPacket = default;
             GC.SuppressFinalize(this);
         }
     }

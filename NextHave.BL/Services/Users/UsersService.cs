@@ -18,7 +18,7 @@ using NextHave.DAL.MySQL.Entities;
 namespace NextHave.BL.Services.Users
 {
     [Service(ServiceLifetime.Scoped)]
-    class UsersService(IDbContextFactory<MySQLDbContext> mysqlDbContextFactory, ILogger<IUsersService> logger, ISettingsService settingsService) : IUsersService
+    class UsersService(IServiceScopeFactory serviceScopeFactory, ILogger<IUsersService> logger, ISettingsService settingsService) : IUsersService
     {
         ConcurrentDictionary<int, User> IUsersService.Users => throw new NotImplementedException();
 
@@ -44,7 +44,8 @@ namespace NextHave.BL.Services.Users
             try
             {
                 var date = DateTime.Now.AddMilliseconds(time);
-                await using var mysqlDbContext = await mysqlDbContextFactory.CreateDbContextAsync();
+                using var scope = serviceScopeFactory.CreateAsyncScope();
+                var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
                 var userTicket = await mysqlDbContext
                                         .UserTickets
                                             .Include(ut => ut.User)
@@ -84,7 +85,8 @@ namespace NextHave.BL.Services.Users
         {
             userLogin?.Validate();
 
-            await using var mysqlDbContext = await mysqlDbContextFactory.CreateDbContextAsync();
+            using var scope = serviceScopeFactory.CreateAsyncScope();
+            var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
             var user = await mysqlDbContext
                                     .Users
                                         .FirstOrDefaultAsync(u => u.Username == userLogin!.Username || u.Mail == userLogin!.Username) ?? throw new DolphinException(Errors.UserNotFound);
@@ -99,7 +101,8 @@ namespace NextHave.BL.Services.Users
         {
             userRegistration?.Validate();
 
-            await using var mysqlDbContext = await mysqlDbContextFactory.CreateDbContextAsync();
+            using var scope = serviceScopeFactory.CreateAsyncScope();
+            var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
 
             var hotelName = settingsService.GetSetting("hotel_name");
             var defaultLook = settingsService.GetSetting("default_look");
@@ -126,7 +129,8 @@ namespace NextHave.BL.Services.Users
 
         async Task<User?> IUsersService.GetFromToken(int userId)
         {
-            await using var mysqlDbContext = await mysqlDbContextFactory.CreateDbContextAsync();
+            using var scope = serviceScopeFactory.CreateAsyncScope();
+            var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
             var user = await mysqlDbContext
                                     .Users
                                         .FirstOrDefaultAsync(u => u.Id == userId) ?? throw new DolphinException(Errors.UserNotFound);
@@ -135,7 +139,8 @@ namespace NextHave.BL.Services.Users
 
         async Task<string?> IUsersService.GetAndSetAuthToken(int userId)
         {
-            await using var mysqlDbContext = await mysqlDbContextFactory.CreateDbContextAsync();
+            using var scope = serviceScopeFactory.CreateAsyncScope();
+            var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
 
             var newticket = Guid.NewGuid().ToString("N");
             var newUserTicket = new UserTicketEntity

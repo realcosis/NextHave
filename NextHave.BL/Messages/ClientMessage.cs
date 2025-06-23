@@ -1,9 +1,10 @@
 using NextHave.BL.Utils;
+using System.Diagnostics;
 using System.Text;
 
 namespace NextHave.BL.Messages
 {
-    public class ClientMessage(byte[] body, int position, string sessionId) : IDisposable
+    public class ClientMessage(byte[] body, int position, string sessionId, short header) : IDisposable
     {
         private readonly static Encoding Encoding = Encoding.UTF8;
 
@@ -12,6 +13,9 @@ namespace NextHave.BL.Messages
 
         public string SessionId
             => sessionId;
+
+        public short Header
+            => header;
 
         public int Position
             => position;
