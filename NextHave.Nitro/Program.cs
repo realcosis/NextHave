@@ -22,6 +22,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.RegisterDolphinApplication();
 builder.Services.AddSignalR().AddMessagePackProtocol();
 builder.Services.AddDbContextFactory<MySQLDbContext>();
+builder.Services.AddDbContextFactory<MongoDbContext>();
 builder.Services.AddDbContext<DbContext, MySQLDbContext>();
 builder.Services.AddDbContext<DbContext, MongoDbContext>();
 builder.Services.AddNextHaveServices(Assembly.GetExecutingAssembly());

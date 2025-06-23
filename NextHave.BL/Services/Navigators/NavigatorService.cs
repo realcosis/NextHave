@@ -12,8 +12,7 @@ using System.Collections.Concurrent;
 namespace NextHave.BL.Services.Navigators
 {
     [Service(ServiceLifetime.Singleton)]
-    class NavigatorService(MySQLDbContext dbContext, ILogger<INavigatorsService> logger,
-                           IServiceProvider serviceProvider, IRoomsService roomsService) : INavigatorsService, IStartableService
+    class NavigatorService(ILogger<INavigatorsService> logger, IServiceProvider serviceProvider, IRoomsService roomsService) : INavigatorsService, IStartableService
     {
         ConcurrentDictionary<string, IFilter?> INavigatorsService.Filters { get; } = [];
 
@@ -21,14 +20,15 @@ namespace NextHave.BL.Services.Navigators
 
         async Task IStartableService.StartAsync()
         {
+            var mysqlDbContext = serviceProvider.GetRequiredService<MySQLDbContext>();
             ((INavigatorsService)this).PublicCategories.Clear();
 
             try
             {
-                var categories = await dbContext.NavigatorPublicCategories.AsNoTracking().ToListAsync();
+                var categories = await mysqlDbContext.NavigatorPublicCategories.AsNoTracking().ToListAsync();
                 categories.ForEach(category => ((INavigatorsService)this).PublicCategories.TryAdd(category.Id, category.Map()));
 
-                var publicRooms = await dbContext.NavigatorPublicRooms.AsNoTracking().ToListAsync();
+                var publicRooms = await mysqlDbContext.NavigatorPublicRooms.AsNoTracking().ToListAsync();
                 foreach (var publicRoom in publicRooms)
                 {
                     var category = ((INavigatorsService)this).PublicCategories.FirstOrDefault(pc => pc.Key == publicRoom.CategoryId).Value;

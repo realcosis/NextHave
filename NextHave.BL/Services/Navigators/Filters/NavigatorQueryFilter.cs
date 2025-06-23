@@ -14,7 +14,7 @@ using NextHave.DAL.MySQL;
 namespace Dolphin.HabboHotel.Navigators.Filters
 {
     [Service(ServiceLifetime.Singleton)]
-    class NavigatorQueryFilter(MongoDbContext mongoDbContext, IDbContextFactory<MySQLDbContext> mysqlDbContextFactory) : IFilter
+    class NavigatorQueryFilter(IServiceProvider serviceProvider, IDbContextFactory<MySQLDbContext> mysqlDbContextFactory) : IFilter
     {
         string IFilter.Name => "query";
 
@@ -31,6 +31,7 @@ namespace Dolphin.HabboHotel.Navigators.Filters
             if (string.IsNullOrWhiteSpace(query))
                 return [];
 
+            var mongoDbContext = serviceProvider.GetRequiredService<MongoDbContext>();
             var resultLists = new List<SearchResultList>();
 
             if (query.Contains(':'))

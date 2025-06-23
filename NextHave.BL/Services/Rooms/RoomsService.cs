@@ -1,5 +1,6 @@
 ﻿using Dolphin.Core.Injection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NextHave.BL.Mappers;
 using NextHave.BL.Models;
@@ -12,7 +13,8 @@ using System.Collections.Concurrent;
 
 namespace NextHave.BL.Services.Rooms
 {
-    internal class RoomsService(MongoDbContext mongoDbContext, MySQLDbContext mysqlDbContext, ILogger<IRoomsService> logger) : IRoomsService, IStartableService
+    [Service(ServiceLifetime.Singleton)]
+    class RoomsService(IServiceProvider serviceProvider, ILogger<IRoomsService> logger) : IRoomsService, IStartableService
     {
         IRoomsService Instance => this;
 
@@ -22,6 +24,7 @@ namespace NextHave.BL.Services.Rooms
 
         async Task<Room?> IRoomsService.GetRoom(int roomId)
         {
+            var mongoDbContext = serviceProvider.GetRequiredService<MongoDbContext>();
             var dbRoom = await mongoDbContext.Rooms.AsNoTracking().FirstOrDefaultAsync(g => g.EntityId == roomId);
             if (dbRoom != default)
             {
@@ -55,6 +58,7 @@ namespace NextHave.BL.Services.Rooms
 
         async Task IStartableService.StartAsync()
         {
+            var mysqlDbContext = serviceProvider.GetRequiredService<MySQLDbContext>();
             Instance.NavigatorCategories.Clear();
 
             try
