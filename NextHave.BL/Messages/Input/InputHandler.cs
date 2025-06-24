@@ -8,12 +8,13 @@ namespace NextHave.BL.Messages.Input
 {
     public class InputHandler
     {
-        readonly Dictionary<short, IParser> Parsers = [];
-
         public Client? Client { get; set; }
 
         public InputHandler()
-            => RegisterParsers();
+        {
+            if (!AbstractParser<IInput>.Registered)
+                AbstractParser<IInput>.RegisterDefaultParsers();
+        }
 
         public async Task Handle(ClientMessage message, IServiceScopeFactory serviceScopeFactory, short header)
         {
@@ -23,30 +24,8 @@ namespace NextHave.BL.Messages.Input
             using var scope = serviceScopeFactory.CreateScope();
             var packetsService = scope.ServiceProvider.GetRequiredService<IPacketsService>();
             var logger = scope.ServiceProvider.GetRequiredService<ILogger<InputHandler>>();
-            if (TryGetParser(header, out var parser))
+            if (AbstractParser<IInput>.TryGetParser(header, out var parser))
                 await parser!.HandleAsync(Client!, message, packetsService);
         }
-
-        #region private methods
-
-        void RegisterParsers()
-        {
-            Parsers.Add(InputCode.SSOTicketMessageEvent, new SSOTicketMessageParser());
-
-            Parsers.Add(InputCode.InfoRetrieveMessageEvent, new InfoRetrieveParser());
-        }
-
-        bool TryGetParser(short header, out IParser? parser)
-        {
-            if (Parsers.TryGetValue(header, out var p))
-            {
-                parser = p;
-                return true;
-            }
-            parser = default;
-            return false;
-        }
-
-        #endregion
     }
 }
