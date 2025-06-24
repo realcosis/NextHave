@@ -26,9 +26,7 @@ namespace NextHave.DAL.MySQL
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
-
-            builder.Entity<UserTicketEntity>().HasKey(e => new { e.UserId, e.Ticket });
-
+            
             builder.Entity<NextHaveSettingEntity>().HasKey(e => new { e.Key, e.Type });
         }
 

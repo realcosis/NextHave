@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using NextHave.BL.Clients;
-using NextHave.BL.Parsers;
+using NextHave.BL.PacketParsers;
 
 namespace NextHave.Nitro.Sockets
 {
@@ -30,9 +30,9 @@ namespace NextHave.Nitro.Sockets
             var buffer = input.ToArray();
             if (Sessions.ConnectedClients.TryGetValue(Context.ConnectionId, out var client))
             {
-                var scope = serviceScopeFactory.CreateScope();
-                var gameParser = scope.ServiceProvider.GetRequiredService<IPacketParser>();
-                using var message = gameParser.ManagePacket(buffer, buffer.Length, Context.ConnectionId);
+                using var scope = serviceScopeFactory.CreateAsyncScope();
+                var gamePacketParser = scope.ServiceProvider.GetRequiredService<IPacketParser>();
+                using var message = gamePacketParser.HandlePacket(buffer, buffer.Length, Context.ConnectionId);
                 if (message != default)
                     await client.Handler!.Handle(message, serviceScopeFactory, message.Header);
             }

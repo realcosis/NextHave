@@ -17,33 +17,6 @@ namespace NextHave.BL.Messages.Parsers
 
         abstract public IInput Parse(ClientMessage packet);
 
-        public static bool TryGetParser(short header, out IParser? parser)
-        {
-            if (parsers.TryGetValue(header, out var p))
-            {
-                parser = p;
-                return true;
-            }
-            parser = default;
-            return false;
-        }
-
-        public static void UpsertParser(short header, IParser parser)
-        {
-            if (parsers.ContainsKey(header))
-                parsers[header] = parser;
-            else
-                parsers.TryAdd(header, parser);
-        }
-
-        public static bool Registered
-            => !parsers.IsEmpty;
-
-        public static void RegisterDefaultParsers()
-        {
-            parsers.TryAdd(InputCode.SSOTicketMessageEvent, new SSOTicketMessageParser());
-
-            parsers.TryAdd(InputCode.InfoRetrieveMessageEvent, new InfoRetrieveParser());
-        }
+        
     }
 }

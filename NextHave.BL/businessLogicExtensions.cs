@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Dolphin.Core.Injection;
 using Microsoft.Extensions.DependencyInjection;
+using NextHave.BL.PacketParsers;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -26,6 +27,8 @@ namespace NextHave.BL
                 var attributeData = service.GetCustomAttribute<Service>();
                 if (attributeData != default)
                 {
+                    if (attributeData.Keyed && attributeData.Key == nameof(GamePacketParser))
+                        Console.WriteLine("non funziono");
                     if (attributeData.Keyed)
                         serviceCollection.AddKeyedWithInterfaces(service, attributeData.Lifetime, attributeData.Key);
                     else

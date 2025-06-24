@@ -14,10 +14,11 @@ using NextHave.BL.Extensions;
 using NextHave.BL.Mappers;
 using NextHave.BL.Services.Settings;
 using NextHave.DAL.MySQL.Entities;
+using System.Numerics;
 
 namespace NextHave.BL.Services.Users
 {
-    [Service(ServiceLifetime.Scoped)]
+    [Service(ServiceLifetime.Singleton)]
     class UsersService(IServiceScopeFactory serviceScopeFactory, ILogger<IUsersService> logger, ISettingsService settingsService) : IUsersService
     {
         ConcurrentDictionary<int, User> IUsersService.Users => throw new NotImplementedException();
@@ -49,11 +50,10 @@ namespace NextHave.BL.Services.Users
                 var userTicket = await mysqlDbContext
                                         .UserTickets
                                             .Include(ut => ut.User)
-                                            .FirstOrDefaultAsync(ut => ut.Ticket == authTicket && !ut.UsedAt.HasValue) ?? throw new DolphinException(Errors.UserTicketNotFound);
+                                            .FirstOrDefaultAsync(ut => ut.Ticket == authTicket) ?? throw new DolphinException(Errors.UserTicketNotFound);
 
                 var user = userTicket.User ?? throw new DolphinException(Errors.UserNotFound);
 
-                userTicket.UsedAt = date;
                 user.LastOnline = date;
 
                 mysqlDbContext.Users.Update(user);
@@ -143,16 +143,29 @@ namespace NextHave.BL.Services.Users
             var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
 
             var newticket = Guid.NewGuid().ToString("N");
-            var newUserTicket = new UserTicketEntity
-            {
-                UserId = userId,
-                Ticket = newticket
-            };
 
-            await mysqlDbContext.UserTickets.AddAsync(newUserTicket);
+            var ticket = await mysqlDbContext
+                                        .UserTickets
+                                            .FirstOrDefaultAsync(ut => ut.UserId == userId);
+
+            if (ticket == default)
+            {
+                ticket = new UserTicketEntity()
+                {
+                    UserId = userId,
+                    Ticket = newticket
+                };
+                await mysqlDbContext.UserTickets.AddAsync(ticket);
+            }
+            else
+            {
+                ticket.Ticket = newticket;
+                mysqlDbContext.UserTickets.Update(ticket);
+            }
+
             await mysqlDbContext.SaveChangesAsync();
 
-            return newUserTicket.Ticket;
+            return ticket.Ticket;
         }
     }
 }

@@ -1,13 +1,17 @@
-﻿using Dolphin.Core.Injection;
+﻿using DnsClient.Internal;
+using Dolphin.Core.Injection;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using NextHave.BL.Messages;
 using NextHave.BL.Utils;
 
-namespace NextHave.BL.Parsers
+namespace NextHave.BL.PacketParsers
 {
     [Service(ServiceLifetime.Scoped)]
-    public class GameParser : IPacketParser
+    class GamePacketParser : IPacketParser
     {
+        readonly ILogger<GamePacketParser> _logger;
+
         static readonly int INT_SIZE = 4;
 
         int currentPacketLength;
@@ -16,25 +20,14 @@ namespace NextHave.BL.Parsers
 
         readonly byte[] bufferedData;
 
-        public GameParser()
+        public GamePacketParser(ILogger<GamePacketParser> logger)
         {
             ResetState();
+            _logger = logger;
             bufferedData = new byte[4096];
         }
 
-        public void HandlePacketData(byte[] data, int bytes, string sessionId)
-        {
-            try
-            {
-                ProcessData(data, bytes, sessionId);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.ToString());
-            }
-        }
-
-        public ClientMessage? ManagePacket(byte[] data, int bytes, string sessionId)
+        public ClientMessage? HandlePacket(byte[] data, int bytes, string sessionId)
         {
             var clientMessage = default(ClientMessage?);
 
@@ -44,7 +37,7 @@ namespace NextHave.BL.Parsers
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
+                _logger.LogError("Error processing packet data for session {sessionId}: {ex}", sessionId, ex);
             }
 
             return clientMessage;
@@ -52,7 +45,8 @@ namespace NextHave.BL.Parsers
 
         private ClientMessage? ProcessData(byte[] data, int bytes, string sessionId)
         {
-            int position = 0;
+            var position = 0;
+
             while (position < bytes)
             {
                 if (currentPacketLength == -1 && bytes >= INT_SIZE)

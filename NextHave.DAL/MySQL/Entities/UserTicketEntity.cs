@@ -5,17 +5,17 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace NextHave.DAL.MySQL.Entities
 {
     [Table(Tables.UserTickets)]
-    [Index(nameof(UserId), nameof(Ticket), IsUnique = true)]
+    [Index(nameof(Ticket), IsUnique = true)]
+    [Index(nameof(UserId), IsUnique = true)]
     public class UserTicketEntity
     {
-        [Required]
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public int? UserId { get; set; }
 
         [Required]
         [MaxLength(512)]
         public string? Ticket { get; set; }
-
-        public DateTime? UsedAt { get; set; }
 
         [ForeignKey(nameof(UserId))]
         public UserEntity? User { get; set; }

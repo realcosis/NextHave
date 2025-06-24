@@ -1,13 +1,12 @@
 ﻿using Dolphin.Core.Injection;
 using NextHave.BL.Models.Navigators;
-using NextHave.BL.Enums;
 using Microsoft.Extensions.DependencyInjection;
 using NextHave.BL.Models.Users;
 
 namespace Dolphin.HabboHotel.Navigators.Filters
 {
     [Service(ServiceLifetime.Singleton)]
-    public class NavigatorMyWorldFilter : IFilter
+    class NavigatorMyWorldFilter : IFilter
     {
         string IFilter.Name => "myworld_view";
 
