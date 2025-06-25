@@ -13,14 +13,6 @@ namespace NextHave.BL.Services.Users
 
         Task<User?> LoadHabbo(string authTicket, int time);
 
-        Task GiveBadge(int userId, UserBadge badge);
-
-        Task<bool> HasBadge(int userId, string badgeCode);
-
-        Task RemoveBadge(int userId, UserBadge badge);
-
-        Task UpsertSlot(int userId, UserWardrobe wardrobe);
-
         Task<User?> Login(UserLoginWrite userLogin);
 
         Task<User> Register(UserRegistrationWrite userRegistration, string? registrationIp);

@@ -1,12 +1,14 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using Dolphin.Core.Events;
+using Microsoft.AspNetCore.SignalR;
 using NextHave.BL.Clients;
+using NextHave.BL.Events.Users;
 using NextHave.BL.PacketParsers;
 
 namespace NextHave.Nitro.Sockets
 {
-    public class SocketHub(IServiceScopeFactory serviceScopeFactory) : Hub
+    public class SocketHub(IServiceScopeFactory serviceScopeFactory, IEventsService eventsService) : Hub
     {
-        public override Task OnConnectedAsync()
+        public override async Task OnConnectedAsync()
         {
             if (!Sessions.ConnectedClients.TryGetValue(Context.ConnectionId, out var client))
             {
@@ -14,15 +16,22 @@ namespace NextHave.Nitro.Sockets
                 client.Init(Context.ConnectionId, Clients.Client(Context.ConnectionId));
             }
             Sessions.ConnectedClients.TryAdd(Context.ConnectionId, client);
-            return base.OnConnectedAsync();
+
+            await base.OnConnectedAsync();
         }
 
-        public override Task OnDisconnectedAsync(Exception? exception)
+        public override async Task OnDisconnectedAsync(Exception? exception)
         {
-            if (Sessions.ConnectedClients.TryGetValue(Context.ConnectionId, out var _))
+            if (Sessions.ConnectedClients.TryGetValue(Context.ConnectionId, out var client))
+            {
+                await eventsService.DispatchAsync<UserDisconnected>(new()
+                {
+                    UserId = client.User!.Id
+                });
                 Sessions.ConnectedClients.TryRemove(Context.ConnectionId, out _);
+            }
 
-            return base.OnDisconnectedAsync(exception);
+            await base.OnDisconnectedAsync(exception);
         }
 
         public async Task ReceiveBinary(List<byte> input)
@@ -36,7 +45,6 @@ namespace NextHave.Nitro.Sockets
                 if (message != default)
                     await client.Handler!.Handle(message, serviceScopeFactory, message.Header);
             }
-            await Task.CompletedTask;
         }
     }
 }

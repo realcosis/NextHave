@@ -1,6 +1,9 @@
-﻿using Dolphin.Core.Injection;
+﻿using Dolphin.Core.Events;
+using Dolphin.Core.Injection;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using NextHave.BL.Clients;
+using NextHave.BL.Events.Users;
 using NextHave.BL.Messages.Input.Handshake;
 using NextHave.BL.Messages.Output;
 using NextHave.BL.Models.Users;
@@ -23,9 +26,14 @@ namespace NextHave.BL.Messages.Input.Handlers
             if (user == default)
                 return;
 
+            var eventsService = serviceProvider.GetRequiredService<IEventsService>();
             user.Client = client;
             client.User = user;
             await SendSSOTicketResponse(client, user);
+            await eventsService.DispatchAsync<UserConnected>(new()
+            {
+                UserId = user.Id
+            });
         }
 
         public async Task OnInfoRetrieve(InfoRetrieveMessage message, Client client)

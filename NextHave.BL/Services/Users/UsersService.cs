@@ -2,42 +2,38 @@
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Concurrent;
 using NextHave.BL.Models.Users;
-using NextHave.BL.Models.Badges;
-using NextHave.BL.Models.Wardrobes;
 using Dolphin.Core.Injection;
 using Dolphin.Core.Exceptions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NextHave.BL.Localizations;
-using NextHave.BL.Validations;
+using Dolphin.Core.Validations;
 using NextHave.BL.Extensions;
 using NextHave.BL.Mappers;
 using NextHave.BL.Services.Settings;
 using NextHave.DAL.MySQL.Entities;
-using System.Numerics;
+using Dolphin.Core.Events;
 
 namespace NextHave.BL.Services.Users
 {
     [Service(ServiceLifetime.Singleton)]
-    class UsersService(IServiceScopeFactory serviceScopeFactory, ILogger<IUsersService> logger, ISettingsService settingsService) : IUsersService
+    class UsersService(IServiceScopeFactory serviceScopeFactory, ILogger<IUsersService> logger, ISettingsService settingsService, IEventsService eventsService) : IUsersService
     {
-        ConcurrentDictionary<int, User> IUsersService.Users => throw new NotImplementedException();
+        IUsersService Instance => this;
 
-        Task IUsersService.GiveBadge(int userId, UserBadge badge)
+        ConcurrentDictionary<int, User> IUsersService.Users { get; } = [];
+
+        async Task<User?> IUsersService.GetHabbo(int userId)
         {
-            throw new NotImplementedException();
-        }
+            using var scope = serviceScopeFactory.CreateAsyncScope();
+            var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
+            
+            var user = await mysqlDbContext
+                                .Users
+                                    .Where(u => u.Id == userId)
+                                    .FirstOrDefaultAsync() ?? throw new DolphinException(Errors.UserNotFound);
 
-        Task<bool> IUsersService.HasBadge(int userId, string badgeCode)
-        {
-            throw new NotImplementedException();
-        }
-
-        #region Init
-
-        Task<User?> IUsersService.GetHabbo(int userId)
-        {
-            throw new NotImplementedException();
+            return user.MapResult();
         }
 
         async Task<User?> IUsersService.LoadHabbo(string authTicket, int time)
@@ -45,8 +41,10 @@ namespace NextHave.BL.Services.Users
             try
             {
                 var date = DateTime.Now.AddMilliseconds(time);
+
                 using var scope = serviceScopeFactory.CreateAsyncScope();
                 var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
+
                 var userTicket = await mysqlDbContext
                                         .UserTickets
                                             .Include(ut => ut.User)
@@ -67,18 +65,6 @@ namespace NextHave.BL.Services.Users
                 logger.LogError(ex, "Error loading Habbo with auth ticket: {AuthTicket}", authTicket);
                 return default;
             }
-        }
-
-        #endregion
-
-        Task IUsersService.RemoveBadge(int userId, UserBadge badge)
-        {
-            throw new NotImplementedException();
-        }
-
-        Task IUsersService.UpsertSlot(int userId, UserWardrobe wardrobe)
-        {
-            throw new NotImplementedException();
         }
 
         async Task<User?> IUsersService.Login(UserLoginWrite userLogin)
@@ -131,9 +117,11 @@ namespace NextHave.BL.Services.Users
         {
             using var scope = serviceScopeFactory.CreateAsyncScope();
             var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
+
             var user = await mysqlDbContext
                                     .Users
                                         .FirstOrDefaultAsync(u => u.Id == userId) ?? throw new DolphinException(Errors.UserNotFound);
+
             return user.MapResult();
         }
 

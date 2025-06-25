@@ -1,4 +1,4 @@
-﻿using NextHave.BL.Validations;
+﻿using Dolphin.Core.Validations;
 
 namespace NextHave.BL.Models.Users
 {
