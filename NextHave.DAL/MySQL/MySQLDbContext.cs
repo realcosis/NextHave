@@ -22,11 +22,14 @@ namespace NextHave.DAL.MySQL
 
         public DbSet<NavigatorPublicRoomEntity> NavigatorPublicRooms { get; set; }
 
+        public DbSet<RoomModelEntity> RoomModels { get; set; }
+
+        public DbSet<RoomModelCustomEntity> RoomModelCustoms { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
-            
+
             builder.Entity<NextHaveSettingEntity>().HasKey(e => new { e.Key, e.Type });
         }
 

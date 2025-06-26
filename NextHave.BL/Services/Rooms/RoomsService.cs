@@ -1,12 +1,15 @@
-﻿using Dolphin.Core.Injection;
+﻿using Dolphin.Core.Exceptions;
+using Dolphin.Core.Injection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using NextHave.BL.Localizations;
 using NextHave.BL.Mappers;
-using NextHave.BL.Models;
 using NextHave.BL.Models.Groups;
 using NextHave.BL.Models.Rooms;
 using NextHave.BL.Models.Rooms.Navigators;
+using NextHave.BL.Services.Rooms.Factories;
+using NextHave.BL.Services.Rooms.Instances;
 using NextHave.DAL.Mongo;
 using NextHave.DAL.MySQL;
 using System.Collections.Concurrent;
@@ -20,7 +23,10 @@ namespace NextHave.BL.Services.Rooms
 
         ConcurrentDictionary<int, NavigatorCategory> IRoomsService.NavigatorCategories { get; } = [];
 
-        List<Room> IRoomsService.ActiveRooms { get; } = [];
+        ConcurrentDictionary<int, IRoomInstance> IRoomsService.ActiveRooms { get; } = [];
+
+
+        readonly ConcurrentDictionary<string, RoomModel> RoomModels = [];
 
         async Task<Room?> IRoomsService.GetRoom(int roomId)
         {
@@ -39,22 +45,32 @@ namespace NextHave.BL.Services.Rooms
             return default;
         }
 
-        async Task<TryGetReference<Room>> IRoomsService.TryGetRoom(int roomId)
+        async Task<IRoomInstance?> IRoomsService.GetRoomInstance(int roomId)
         {
-            var room = Instance.ActiveRooms.FirstOrDefault(ar => ar.Id == roomId);
+            if (Instance.ActiveRooms.TryGetValue(roomId, out var roomInstance))
+                return roomInstance;
 
-            if (room == default)
+            using var scope = serviceScopeFactory.CreateAsyncScope();
+            var serviceProvider = scope.ServiceProvider;
+
+            var room = await Instance.GetRoom(roomId);
+            if (room != default)
             {
-                room = await Instance.GetRoom(roomId);
-                if (room != default)
-                    Instance.ActiveRooms.Add(room);
+                roomInstance = serviceProvider.GetRequiredService<RoomFactory>().GetRoomInstance(roomId, room);
+                await roomInstance.Init();
+                Instance.ActiveRooms.TryAdd(roomId, roomInstance);
+                return roomInstance;
             }
 
-            return new TryGetReference<Room>
-            {
-                Exists = room != default,
-                Reference = room
-            };
+            return default;
+        }
+
+        async Task<RoomModel?> IRoomsService.GetRoomModel(string modelName, int roomId)
+        {
+            if (modelName.Equals("custom", StringComparison.InvariantCultureIgnoreCase))
+                return await GetCustomModelData(roomId);
+
+            return await GetModelData(modelName);
         }
 
         async Task IStartableService.StartAsync()
@@ -75,5 +91,33 @@ namespace NextHave.BL.Services.Rooms
                 logger.LogWarning("Exception during starting of RoomsManager: {ex}", ex);
             }
         }
+
+        #region private methods
+
+        async Task<RoomModel?> GetModelData(string modelName)
+        {
+            using var scope = serviceScopeFactory.CreateAsyncScope();
+            var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
+
+            var roomModelntity = await mysqlDbContext
+                                        .RoomModels
+                                            .FirstOrDefaultAsync(rmc => rmc.Id == modelName) ?? throw new DolphinException(Errors.RoomModelNotFound);
+
+            return new RoomModel(roomModelntity.DoorX!.Value, roomModelntity.DoorY!.Value, roomModelntity.DoorZ!.Value, roomModelntity.DoorDir!.Value, roomModelntity.HeightMap!);
+        }
+
+        async Task<RoomModel> GetCustomModelData(int roomId)
+        {
+            using var scope = serviceScopeFactory.CreateAsyncScope();
+            var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
+
+            var roomModelCustomEntity = await mysqlDbContext
+                                                .RoomModelCustoms
+                                                    .FirstOrDefaultAsync(rmc => rmc.RoomId == roomId) ?? throw new DolphinException(Errors.RoomModelNotFound);
+
+            return new RoomModel(roomModelCustomEntity.DoorX!.Value, roomModelCustomEntity.DoorY!.Value, 0.0, roomModelCustomEntity.DoorDir!.Value, roomModelCustomEntity.ModelData!);
+        }
+
+        #endregion
     }
 }

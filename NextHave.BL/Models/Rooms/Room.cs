@@ -1,6 +1,6 @@
-﻿using NextHave.BL.Messages;
+﻿using NextHave.DAL.Enums;
+using NextHave.BL.Messages;
 using NextHave.BL.Models.Groups;
-using NextHave.DAL.Enums;
 
 namespace NextHave.BL.Models.Rooms
 {

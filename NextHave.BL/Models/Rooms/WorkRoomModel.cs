@@ -28,8 +28,6 @@ namespace NextHave.BL.Models.Rooms
 
         public int MapSizeY;
 
-        public bool ClubOnly;
-
         public WorkRoomModel(Room room, RoomModel baseModel)
         {
             _baseModel = baseModel;
@@ -41,7 +39,6 @@ namespace NextHave.BL.Models.Rooms
             Heightmap = _baseModel.Heightmap.ToLower();
             MapSizeX = _baseModel.HeightmapArray[0].Length;
             MapSizeY = _baseModel.HeightmapArray.Length;
-            ClubOnly = _baseModel.ClubOnly;
             Tiles = new ConcurrentDictionary<Point, TileStates>();
             FloorHeights = new ConcurrentDictionary<Point, short>();
 

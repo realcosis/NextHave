@@ -2,7 +2,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using NextHave.BL.Messages;
 using NextHave.BL.Messages.Input;
-using NextHave.BL.Messages.Parsers;
+using NextHave.BL.Messages.Parsers.Handshake;
+using NextHave.BL.Messages.Parsers.Rooms;
 using System.Collections.Concurrent;
 
 namespace NextHave.BL.Services.Parsers
@@ -42,6 +43,12 @@ namespace NextHave.BL.Services.Parsers
             parsers.TryAdd(InputCode.SSOTicketMessageEvent, new SSOTicketMessageParser());
 
             parsers.TryAdd(InputCode.InfoRetrieveMessageEvent, new InfoRetrieveParser());
+
+            parsers.TryAdd(InputCode.GetRoomEntryDataMessageEvent, new GetRoomEntryParser());
+
+            parsers.TryAdd(InputCode.GetFurnitureAliasesMessageEvent, new GetFurnitureAliasesParser());
+
+            parsers.TryAdd(InputCode.OpenFlatConnectionMessageEvent, new OpenFlatParser());
         }
     }
 }

@@ -1,7 +1,7 @@
-﻿using NextHave.BL.Models;
-using NextHave.BL.Models.Rooms;
-using NextHave.BL.Models.Rooms.Navigators;
+﻿using NextHave.BL.Models.Rooms;
 using System.Collections.Concurrent;
+using NextHave.BL.Models.Rooms.Navigators;
+using NextHave.BL.Services.Rooms.Instances;
 
 namespace NextHave.BL.Services.Rooms
 {
@@ -9,10 +9,12 @@ namespace NextHave.BL.Services.Rooms
     {
         ConcurrentDictionary<int, NavigatorCategory> NavigatorCategories { get; }
 
-        List<Room> ActiveRooms { get; }
+        ConcurrentDictionary<int, IRoomInstance> ActiveRooms { get; }
 
         Task<Room?> GetRoom(int roomId);
 
-        Task<TryGetReference<Room>> TryGetRoom(int roomId);
+        Task<RoomModel?> GetRoomModel(string modelName, int roomId);
+
+        Task<IRoomInstance?> GetRoomInstance(int roomId);
     }
 }

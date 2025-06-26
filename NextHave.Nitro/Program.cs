@@ -2,7 +2,7 @@
 using Dolphin.Core.Configurations;
 using Dolphin.Core.Injection;
 using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Hosting.StaticWebAssets;
 using NextHave.BL;
 using NextHave.BL.Models.Configurations;
 using NextHave.DAL.Mongo;
@@ -20,10 +20,8 @@ builder.Services.AddBlazoredToast();
 builder.Services.AddHttpContextAccessor();
 builder.Services.RegisterDolphinApplication();
 builder.Services.AddSignalR().AddMessagePackProtocol();
-builder.Services.AddDbContextFactory<MySQLDbContext>();
-builder.Services.AddDbContextFactory<MongoDbContext>();
-builder.Services.AddDbContext<DbContext, MySQLDbContext>();
-builder.Services.AddDbContext<DbContext, MongoDbContext>();
+builder.Services.AddDbContext<MySQLDbContext>();
+builder.Services.AddDbContext<MongoDbContext>();
 builder.Services.AddNextHaveServices(Assembly.GetExecutingAssembly());
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 builder.Services.AddCors(options =>
@@ -63,4 +61,5 @@ var services = app.Services.GetRequiredService<IEnumerable<IStartableService>>()
 foreach (var service in services)
     await service.StartAsync();
 
+StaticWebAssetsLoader.UseStaticWebAssets(app.Environment, app.Configuration);
 await app.RunAsync();

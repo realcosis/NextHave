@@ -1,5 +1,4 @@
 ﻿using Dolphin.Core.Injection;
-using Dolphin.HabboHotel.Navigators.Filters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -15,8 +14,6 @@ namespace NextHave.BL.Services.Navigators
     class NavigatorService(ILogger<INavigatorsService> logger, IServiceScopeFactory serviceScopeFactory, IRoomsService roomsService) : INavigatorsService, IStartableService
     {
         INavigatorsService Instance => this;
-
-        ConcurrentDictionary<string, IFilter?> INavigatorsService.Filters { get; } = [];
 
         ConcurrentDictionary<int, NavigatorPublicCategory> INavigatorsService.PublicCategories { get; } = [];
 
@@ -44,12 +41,7 @@ namespace NextHave.BL.Services.Navigators
                     }
                 }
 
-                var filters = scope.ServiceProvider.GetRequiredService<IEnumerable<IFilter>>();
-                foreach (var filter in filters)
-                    Instance.Filters.TryAdd(filter.Name, filters.FirstOrDefault(f => f.Name == filter.Name));
-                
                 logger.LogInformation("NavigatorManager has been loaded with {count} public categories definitions", Instance.PublicCategories.Count);
-                logger.LogInformation("NavigatorManager has been loaded with {count} filters definitions", Instance.Filters.Count);
             }
             catch (Exception ex)
             {

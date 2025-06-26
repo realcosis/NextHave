@@ -14,6 +14,7 @@ namespace NextHave.BL.Mappers
                                                (dest => dest.Category, src => src.Category!.CategoryId),
                                                (dest => dest.OwnerId!, src => src.Author!.AuthorId),
                                                (dest => dest.Owner!, src => src.Author!.Name),
+                                               (dest => dest.ModelName!, src => src.Model!.ModelId),
                                                (dest => dest.Group!, src => group),
                                                (dest => dest.State!, src => entity.AccessStatus));
 

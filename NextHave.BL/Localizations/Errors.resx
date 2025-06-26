@@ -123,6 +123,9 @@
   <data name="MailAlreadyTaked" xml:space="preserve">
     <value>Indirizzo mail già registrato.</value>
   </data>
+  <data name="RoomModelNotFound" xml:space="preserve">
+    <value>Modello stanza non trovato.</value>
+  </data>
   <data name="UsernameAlreadyTaked" xml:space="preserve">
     <value>Username già registrato.</value>
   </data>

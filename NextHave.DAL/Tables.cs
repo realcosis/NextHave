@@ -18,6 +18,10 @@
 
         public const string NavigatorUserCategories = "navigator_user_categories";
 
+        public const string RoomModelCustoms = "room_models_customs";
+
+        public const string RoomModels = "room_models";
+
         public const string Rooms = "rooms";
     }
 }

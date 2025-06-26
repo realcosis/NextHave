@@ -19,7 +19,8 @@ namespace NextHave.BL.Mappers
                 Rank = userEntity.Rank!.Value,
                 Gender = userEntity.Gender!.Value.GetDescription<EnumsDescriptions>(),
                 Look = userEntity.Look,
-                Username = userEntity.Username
+                Username = userEntity.Username,
+                HomeRoom = userEntity.HomeRoom
             };
 
         public static UserEntity MapRegistration(this UserRegistrationWrite userRegistration, string? registrationIp, string? hotelName, string? defaultLook)

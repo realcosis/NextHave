@@ -1,6 +1,6 @@
 ﻿using NextHave.BL.Messages.Input.Handshake;
 
-namespace NextHave.BL.Messages.Parsers
+namespace NextHave.BL.Messages.Parsers.Handshake
 {
     public class SSOTicketMessageParser : AbstractParser<SSOTicketMessage>
     {

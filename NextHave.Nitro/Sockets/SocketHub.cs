@@ -26,7 +26,7 @@ namespace NextHave.Nitro.Sockets
             {
                 await eventsService.DispatchAsync<UserDisconnected>(new()
                 {
-                    UserId = client.User!.Id
+                    UserId = client.User?.Id
                 });
                 Sessions.ConnectedClients.TryRemove(Context.ConnectionId, out _);
             }
