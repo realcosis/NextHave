@@ -22,23 +22,29 @@ namespace NextHave.BL.Services.Rooms.Components
         async Task IRoomComponent.Init(IRoomInstance roomInstance)
         {
             _roomInstance = roomInstance;
-            await roomInstance.EventsService.SubscribeAsync<AddUserToRoomEvent>(roomInstance, OnRequestGameMapEvent);
+            await roomInstance.EventsService.SubscribeAsync<AddUserToRoomEvent>(roomInstance, OnAddUserToRoomEvent);
         }
 
-        async Task OnRequestGameMapEvent(AddUserToRoomEvent @event)
+        async Task OnAddUserToRoomEvent(AddUserToRoomEvent @event)
         {
-            if (@event?.User == default || _roomInstance == default || _roomInstance.RoomModel == default)
+            if (@event?.User?.Client == default || _roomInstance == default || _roomInstance.RoomModel == default)
                 return;
 
             var roomUser = roomUserFactory.GetRoomUserInstance(@event.User.Id, @event.User.Username!, virtualId++, @event.User, _roomInstance);
             roomUser.SetPosition(new Point(_roomInstance.RoomModel.DoorX, _roomInstance.RoomModel.DoorY), _roomInstance.RoomModel.DoorZ);
 
-            users.TryAdd(roomUser.VirutalId, roomUser);
+            await using var usersMessageComposerToUser = ServerMessageFactory.GetServerMessage(OutputCode.UsersMessageComposer);
+            usersMessageComposerToUser.AddInt32(users.Count);
+            foreach (var user in users.Values)
+                user.Serialize(usersMessageComposerToUser);
+            await roomUser.Client!.Send(usersMessageComposerToUser.Bytes());
 
-            await using var usersMessageComposer = ServerMessageFactory.GetServerMessage(OutputCode.UsersMessageComposer);
-            usersMessageComposer.AddInt32(1);
-            roomUser.Serialize(usersMessageComposer);
-            await Send(usersMessageComposer);
+            await using var usersMessageComposerToRoom = ServerMessageFactory.GetServerMessage(OutputCode.UsersMessageComposer);
+            usersMessageComposerToRoom.AddInt32(1);
+            roomUser.Serialize(usersMessageComposerToRoom);
+            await Send(usersMessageComposerToRoom);
+
+            users.TryAdd(roomUser.VirutalId, roomUser);
         }
 
         async Task Send(ServerMessage message)
