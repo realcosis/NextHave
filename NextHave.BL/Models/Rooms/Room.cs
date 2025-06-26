@@ -56,6 +56,8 @@ namespace NextHave.BL.Models.Rooms
 
         public bool AllowRightsOverride { get; set; }
 
+        public bool AllowDiagonal { get; set; } = true;
+
         public int WallThickness { get; set; } = 0;
 
         public int FloorThickness { get; set; } = 0;

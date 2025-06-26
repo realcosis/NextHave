@@ -1,23 +1,37 @@
 ﻿namespace NextHave.BL.Models
 {
-    public class Point(int x, int y)
+    public class Point(int x, int y) : IEquatable<Point>
     {
         public int GetX
             => x;
-
+        
         public int GetY
             => y;
 
-        public static bool operator !=(Point left, Point right)
-            => left != right;
+        public static bool operator !=(Point? left, Point? right)
+            => !(left == right);
 
-        public static bool operator ==(Point left, Point right)
-            => left.Equals(right);
+        public static bool operator ==(Point? left, Point? right)
+        {
+            if (ReferenceEquals(left, right)) return true;
+            if (left is null || right is null) return false;
+            return left.Equals(right);
+        }
 
         public override int GetHashCode()
-            => x ^ y;
+            => HashCode.Combine(x, y);
 
         public override bool Equals(object? obj)
-            => obj is not null && obj is Point point && point.GetX == GetX && point.GetY == GetY;
+            => obj is Point point && Equals(point);
+
+        public bool Equals(Point? other)
+        {
+            if (other is null) return false;
+            if (ReferenceEquals(this, other)) return true;
+            return GetX == other.GetX && GetY == other.GetY;
+        }
+
+        public override string ToString()
+            => $"({GetX}, {GetY})";
     }
 }

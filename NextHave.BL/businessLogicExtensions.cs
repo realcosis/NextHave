@@ -2,8 +2,8 @@
 using Dolphin.Core.Injection;
 using Microsoft.Extensions.DependencyInjection;
 using NextHave.BL.PacketParsers;
-using NextHave.BL.Services.Rooms;
 using NextHave.BL.Services.Rooms.Components;
+using NextHave.BL.Services.Rooms.Factories;
 using NextHave.BL.Services.Rooms.Instances;
 using System.Linq.Expressions;
 using System.Reflection;

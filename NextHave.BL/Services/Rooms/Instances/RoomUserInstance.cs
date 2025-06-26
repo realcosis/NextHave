@@ -1,13 +1,17 @@
-﻿using NextHave.BL.Models;
-using NextHave.BL.Clients;
+﻿using NextHave.BL.Clients;
 using NextHave.BL.Messages;
+using NextHave.BL.Models;
 using NextHave.BL.Models.Users;
+using NextHave.BL.Utils;
+using System.Collections.Concurrent;
+using System.Text;
 
 namespace NextHave.BL.Services.Rooms.Instances
 {
     class RoomUserInstance : IRoomUserInstance
     {
-        IRoomUserInstance Instance => this;
+        IRoomUserInstance Instance
+            => this;
 
         int IRoomUserInstance.UserId { get; set; }
 
@@ -21,11 +25,27 @@ namespace NextHave.BL.Services.Rooms.Instances
 
         User? IRoomUserInstance.User { get; set; }
 
-        Point? Position { get; set; }
-
-        public double Z { get; set; }
+        ThreeDPoint? IRoomUserInstance.Position { get; set; }
 
         public int BodyDirection { get; set; }
+
+        public int HeadDirection { get; set; }
+
+        Point? IRoomUserInstance.GoalPoint { get; set; }
+
+        Point? IRoomUserInstance.TempPoint { get; set; }
+
+
+        readonly ConcurrentDictionary<string, string> Status = [];
+
+        void IRoomUserInstance.AddStatus(string key, string value)
+            => Status.AddOrUpdate(key, value, (_, oldValue) => value);
+
+        void IRoomUserInstance.RemoveStatus(string key)
+            => Status.TryRemove(key, out  _);
+
+        bool IRoomUserInstance.HasStatus(string key)
+            => Status.ContainsKey(key);
 
         void IRoomUserInstance.Serialize(ServerMessage message)
         {
@@ -34,9 +54,9 @@ namespace NextHave.BL.Services.Rooms.Instances
             message.AddString(Instance.User!.Motto ?? string.Empty);
             message.AddString(Instance.User!.Look!);
             message.AddInt32(Instance.VirutalId);
-            message.AddInt32(Position!.GetX);
-            message.AddInt32(Position!.GetY);
-            message.AddString(Z.ToString());
+            message.AddInt32(Instance.Position!.GetX);
+            message.AddInt32(Instance.Position!.GetY);
+            message.AddString(Instance.Position.GetZ.GetString());
             message.AddInt32(BodyDirection);
             message.AddInt32(1);
             message.AddString(Instance.User.Gender!.ToLower());
@@ -48,6 +68,32 @@ namespace NextHave.BL.Services.Rooms.Instances
             message.AddBoolean(false);
         }
 
+        void IRoomUserInstance.SerializeStatus(ServerMessage message)
+        {
+            var stringBuilder = new StringBuilder();
+            message.AddInt32(Instance.VirutalId);
+            message.AddInt32(Instance.Position!.GetX);
+            message.AddInt32(Instance.Position!.GetY);
+            message.AddString(Instance.Position!.GetZ.GetString());
+            message.AddInt32(HeadDirection);
+            message.AddInt32(BodyDirection);
+            stringBuilder.Append('/');
+            foreach (var state in Status)
+            {
+                stringBuilder.Append(state.Key);
+                if (!string.IsNullOrWhiteSpace(state.Value))
+                {
+                    stringBuilder.Append(' ');
+                    stringBuilder.Append(state.Value);
+                }
+                stringBuilder.Append('/');
+            }
+            if (Instance.HasStatus("sign"))
+                Instance.RemoveStatus("sign");
+            stringBuilder.Append('/');
+            message.AddString(stringBuilder.ToString());
+        }
+
         void IRoomUserInstance.SetData(int userId, string username, int virtualId, IRoomInstance roomInstance)
         {
             Instance.UserId = userId;
@@ -56,10 +102,13 @@ namespace NextHave.BL.Services.Rooms.Instances
             Instance.VirutalId = virtualId;
         }
 
-        void IRoomUserInstance.SetPosition(Point point, double z)
+        void IRoomUserInstance.SetRotation(int direction)
         {
-            Position = point;
-            Z = z;
+            BodyDirection = direction;
+            HeadDirection = direction;
         }
+
+        void IRoomUserInstance.SetPosition(ThreeDPoint point)
+            => Instance.Position = point;
     }
 }

@@ -24,6 +24,8 @@
 
         public const short UsersMessageComposer = 374;
 
+        public const short UserUpdateMessageComposer = 1640;
+
         public const short PrepareRoomMessageComposer = 758;
     }
 }

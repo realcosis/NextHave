@@ -1,6 +1,6 @@
-﻿using NextHave.BL.Clients;
+﻿using NextHave.BL.Models;
+using NextHave.BL.Clients;
 using NextHave.BL.Messages;
-using NextHave.BL.Models;
 using NextHave.BL.Models.Users;
 
 namespace NextHave.BL.Services.Rooms.Instances
@@ -10,6 +10,12 @@ namespace NextHave.BL.Services.Rooms.Instances
         public Client? Client { get; set; }
 
         public User? User { get; set; }
+
+        public Point? GoalPoint { get; set; }
+
+        public Point? TempPoint { get; set; }
+
+        public ThreeDPoint? Position { get; set; }
 
         public int UserId { get; set; }
 
@@ -23,6 +29,16 @@ namespace NextHave.BL.Services.Rooms.Instances
 
         public void Serialize(ServerMessage message);
 
-        public void SetPosition(Point point, double z);
+        public void SerializeStatus(ServerMessage message);
+
+        public void SetPosition(ThreeDPoint point);
+
+        public void SetRotation(int direction);
+
+        void AddStatus(string key, string value);
+
+        void RemoveStatus(string key);
+
+        bool HasStatus(string key);
     }
 }

@@ -7,7 +7,6 @@ using NextHave.BL.Events.Users;
 using NextHave.BL.Messages.Input.Handshake;
 using NextHave.BL.Messages.Input.Rooms;
 using NextHave.BL.Messages.Output;
-using NextHave.BL.Models.Rooms;
 using NextHave.BL.Models.Users;
 using NextHave.BL.Services.Packets;
 using NextHave.BL.Services.Rooms;
@@ -32,7 +31,30 @@ namespace NextHave.BL.Messages.Input.Handlers
 
             packetsService.Subscribe<GetFurnitureAliasesMessage>(this, OnGetFurnitureAliasesMessage);
 
+            packetsService.Subscribe<MoveAvatarMessage>(this, OnMoveAvatar);
+
             await Task.CompletedTask;
+        }
+
+        public async Task OnMoveAvatar(MoveAvatarMessage message, Client client)
+        {
+            if (client?.User == default)
+                return;
+
+            if (!client.User.CurrentRoomId.HasValue)
+                return;
+
+
+            if (client.User.CurrentRoomInstance == default)
+                return;
+
+            await client.User.CurrentRoomInstance.EventsService.DispatchAsync<MoveAvatarEvent>(new()
+            {
+                RoomId = client.User.CurrentRoomId!.Value,
+                NewX = message.NewX,
+                NewY = message.NewY,
+                UserId = client.User.Id
+            });
         }
 
         public async Task OnGetRoomEntryDataMessage(GetRoomEntryDataMessage message, Client client)

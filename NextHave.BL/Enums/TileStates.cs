@@ -2,9 +2,9 @@
 {
     public enum TileStates
     {
-        OPEN = 1,
-        BLOCKED,
-        SEAT,
-        POOL
+        Open = 1,
+        Blocked,
+        Seat,
+        Pool
     }
 }

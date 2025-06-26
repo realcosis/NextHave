@@ -11,6 +11,8 @@
 
         public const short GetFurnitureAliasesMessageEvent = 3898;
 
+        public const short MoveAvatarMessageEvent = 3320;
+
         public const short GetRoomEntryDataMessageEvent = 2300;
     }
 }

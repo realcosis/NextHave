@@ -48,6 +48,8 @@ namespace NextHave.BL.Services.Parsers
 
             parsers.TryAdd(InputCode.GetFurnitureAliasesMessageEvent, new GetFurnitureAliasesParser());
 
+            parsers.TryAdd(InputCode.MoveAvatarMessageEvent, new MoveAvatarParser());
+
             parsers.TryAdd(InputCode.OpenFlatConnectionMessageEvent, new OpenFlatParser());
         }
     }

@@ -2,6 +2,7 @@
 using NextHave.BL.Events.Rooms;
 using Microsoft.Extensions.DependencyInjection;
 using NextHave.BL.Services.Rooms.Instances;
+using NextHave.BL.Models.Rooms;
 
 namespace NextHave.BL.Services.Rooms.Components
 {
@@ -25,7 +26,9 @@ namespace NextHave.BL.Services.Rooms.Components
             if (roomModel != default)
             {
                 roomModel.RoomInstance = _roomInstance;
-                _roomInstance.RoomModel = roomModel;
+                _roomInstance.RoomModel = new WorkRoomModel(_roomInstance, roomModel);
+                _roomInstance.Pathfinder = new();
+                _roomInstance.Pathfinder.Initialize(_roomInstance.Room.AllowDiagonal, _roomInstance.RoomModel);
             }
         }
     }
