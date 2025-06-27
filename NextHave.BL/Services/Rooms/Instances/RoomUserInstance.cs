@@ -35,8 +35,13 @@ namespace NextHave.BL.Services.Rooms.Instances
 
         Point? IRoomUserInstance.GoalPoint { get; set; }
 
-        Point? IRoomUserInstance.TempPoint { get; set; }
+        ThreeDPoint? IRoomUserInstance.TempPoint { get; set; }
 
+        bool IRoomUserInstance.IsWalking { get; set; }
+
+        bool IRoomUserInstance.SetStep { get; set; }
+
+        ConcurrentQueue<ServerMessage> IRoomUserInstance.Messages { get; } = [];
 
         readonly ConcurrentDictionary<string, string> Status = [];
 

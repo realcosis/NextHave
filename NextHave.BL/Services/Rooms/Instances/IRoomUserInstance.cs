@@ -2,6 +2,7 @@
 using NextHave.BL.Clients;
 using NextHave.BL.Messages;
 using NextHave.BL.Models.Users;
+using System.Collections.Concurrent;
 
 namespace NextHave.BL.Services.Rooms.Instances
 {
@@ -15,7 +16,9 @@ namespace NextHave.BL.Services.Rooms.Instances
 
         public Point? GoalPoint { get; set; }
 
-        public Point? TempPoint { get; set; }
+        public ThreeDPoint? TempPoint { get; set; }
+
+        public ConcurrentQueue<ServerMessage> Messages { get; }
 
         public ThreeDPoint? Position { get; set; }
 
@@ -26,6 +29,9 @@ namespace NextHave.BL.Services.Rooms.Instances
         public IRoomInstance? RoomInstance { get; set; }
 
         public int VirutalId { get; set; }
+        public bool IsWalking { get; set; }
+
+        public bool SetStep { get; set; }
 
         public void SetData(int userId, string username, int virtualId, IRoomInstance roomInstance);
 

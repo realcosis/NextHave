@@ -3,6 +3,7 @@ using Dolphin.Core.Injection;
 using Microsoft.Extensions.DependencyInjection;
 using NextHave.BL.Clients;
 using NextHave.BL.Events.Rooms;
+using NextHave.BL.Events.Rooms.Movements;
 using NextHave.BL.Events.Users;
 using NextHave.BL.Messages.Input.Handshake;
 using NextHave.BL.Messages.Input.Rooms;

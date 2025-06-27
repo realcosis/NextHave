@@ -1,20 +1,19 @@
 ﻿using Dolphin.Core.Events;
 using Dolphin.Core.Injection;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+using NextHave.BL.Context;
+using NextHave.BL.Contexts;
 using NextHave.BL.Events.Rooms;
+using NextHave.BL.Events.Rooms.Movements;
 using NextHave.BL.Events.Users;
 using NextHave.BL.Messages;
 using NextHave.BL.Messages.Output;
 using NextHave.BL.Models;
-using NextHave.BL.Models.Rooms.Movements;
 using NextHave.BL.Services.Rooms.Factories;
 using NextHave.BL.Services.Rooms.Instances;
 using NextHave.BL.Utils;
 using System.Collections.Concurrent;
-using System.Net.Sockets;
-using System.Threading.Channels;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
+using System.Text;
 
 namespace NextHave.BL.Services.Rooms.Components
 {
@@ -25,34 +24,59 @@ namespace NextHave.BL.Services.Rooms.Components
 
         readonly ConcurrentDictionary<int, IRoomUserInstance> users = [];
 
-        readonly ConcurrentDictionary<int, UserMovementData> userMovements = [];
+        readonly ConcurrentDictionary<Point, TileReservationContext> tileReservations = [];
+
+        readonly ConcurrentDictionary<int, UserMovementContext> movementStates = [];
 
         int virtualId = 1;
-
-        readonly SemaphoreSlim sendLock = new(1, 1);
-
-        readonly ConcurrentQueue<ServerMessage> messages = [];
 
         async Task IRoomComponent.Init(IRoomInstance roomInstance)
         {
             _roomInstance = roomInstance;
 
+            await roomInstance.EventsService.SubscribeAsync<RoomTickEvent>(roomInstance, OnRoomTick);
+            await eventsService.SubscribeAsync<UserDisconnectedEvent>(roomInstance, OnUserDisconnect);
             await roomInstance.EventsService.SubscribeAsync<AddUserToRoomEvent>(roomInstance, OnAddUserToRoomEvent);
 
             await roomInstance.EventsService.SubscribeAsync<MoveAvatarEvent>(roomInstance, OnMoveAvatarEvent);
-
-            await roomInstance.EventsService.SubscribeAsync<RoomTickEvent>(roomInstance, OnRoomTick);
-
-            await roomInstance.EventsService.SubscribeAsync<RequestPathEvent>(roomInstance, OnRequestPathEvent);
-
-            await roomInstance.EventsService.SubscribeAsync<PathCalculatedEvent>(roomInstance, OnPathCalculatedEvent);
-
-            await eventsService.SubscribeAsync<UserDisconnectedEvent>(roomInstance, OnUserDisconnect);
+            await roomInstance.EventsService.SubscribeAsync<ProcessMovementEvent>(roomInstance, OnProcessMovement);
+            await roomInstance.EventsService.SubscribeAsync<ApplyMovementEvent>(roomInstance, OnApplyMovement);
+            await roomInstance.EventsService.SubscribeAsync<MovementCompleteEvent>(roomInstance, OnMovementComplete);
         }
 
-        void EnqueueUpdate(ServerMessage message)
-            => messages.Enqueue(message);
-        
+        async Task OnRoomTick(RoomTickEvent @event)
+        {
+            if (_roomInstance?.Room == default)
+                return;
+
+            var expiredTime = DateTime.UtcNow.AddSeconds(-2);
+            var expiredReservations = tileReservations.Where(r => !r.Value.IsConfirmed && r.Value.ReservationTime < expiredTime).Select(r => r.Key).ToList();
+
+            foreach (var tile in expiredReservations)
+                tileReservations.TryRemove(tile, out _);
+
+            var pendingMovements = movementStates.Where(m => m.Value.GoalPoint != null && !m.Value.IsProcessing).OrderBy(m => m.Value.RequestTime).ToList();
+
+            foreach (var movement in pendingMovements)
+                await _roomInstance.EventsService.DispatchAsync<ProcessMovementEvent>(new()
+                {
+                    RoomId = _roomInstance.Room.Id,
+                    VirtualId = movement.Key,
+                    RequestTime = movement.Value.RequestTime
+                });
+
+            var readyToMove = movementStates.Where(m => m.Value.HasPendingStep).Select(m => m.Key).ToList();
+
+            foreach (var userId in readyToMove)
+            {
+                await _roomInstance.EventsService.DispatchAsync<ApplyMovementEvent>(new()
+                {
+                    RoomId = _roomInstance.Room.Id,
+                    VirtualId = userId
+                });
+            }
+        }
+
         async Task OnUserDisconnect(UserDisconnectedEvent @event)
         {
             if (_roomInstance == default || _roomInstance.RoomModel == default)
@@ -71,203 +95,120 @@ namespace NextHave.BL.Services.Rooms.Components
             await Send(userRemoveMessageComposer);
         }
 
-        async Task OnRoomTick(RoomTickEvent @event)
+        async Task OnApplyMovement(ApplyMovementEvent @event)
         {
-            if (_roomInstance?.Room == default)
+            if (_roomInstance?.Room == default || _roomInstance?.RoomModel == default || _roomInstance?.Pathfinder == default || !users.TryGetValue(@event.VirtualId, out var user) || !movementStates.TryGetValue(@event.VirtualId, out var state) || state.NextPoint == default || !state.HasPendingStep)
                 return;
 
-            if (messages.TryDequeue(out var packet))
-                await Send(packet);
+            var oldPosition = user.Position!.ToPoint();
+            var newPosition = state.NextPoint;
 
-            //var updates = new List<IRoomUserInstance>();
+            if (tileReservations.TryGetValue(newPosition, out var reservation) && reservation.VirtualId == @event.VirtualId)
+                reservation.IsConfirmed = true;
 
-            //foreach (var userMovement in userMovements)
-            //{
-            //    var userId = userMovement.Key;
-            //    var movementData = userMovement.Value;
+            if (tileReservations.TryGetValue(oldPosition, out var oldReservation) && oldReservation.VirtualId == @event.VirtualId)
+                tileReservations.TryRemove(oldPosition, out _);
 
-            //    if (!movementData.IsMoving || movementData.Points.Count == 0)
-            //        continue;
+            user.SetPosition(new ThreeDPoint(newPosition.GetX, newPosition.GetY, 0.0)); // TODO: calcolare Z
 
-            //    var roomUser = users.Values.FirstOrDefault(u => u.UserId == userId);
-            //    if (roomUser == null)
-            //        continue;
+            _roomInstance.RoomModel.UpdateUser(oldPosition, newPosition, user);
 
-            //    if (movementData.NextPoint == default)
-            //    {
-            //        if (movementData.CurrentPathIndex < movementData.Points.Count)
-            //        {
-            //            movementData.NextPoint = movementData.Points[movementData.CurrentPathIndex];
-            //            movementData.CurrentPathIndex++;
+            state.HasPendingStep = false;
+            state.IsProcessing = false;
 
-            //            PrepareNextMove(roomUser, movementData.NextPoint);
-            //            updates.Add(roomUser);
-            //        }
-            //    }
-            //    else
-            //    {
-            //        var z = 0.0;
-            //        var oldPosition = new Point(roomUser.Position!.GetX, roomUser.Position!.GetY);
-            //        var newPosition = new ThreeDPoint(movementData.NextPoint.GetX, movementData.NextPoint.GetY, z);
+            await _roomInstance!.EventsService.DispatchAsync<MovementCompleteEvent>(new()
+            {
+                RoomId = _roomInstance.Room.Id,
+                VirtualId = @event.VirtualId,
+                Position = newPosition
+            });
+        }
 
-            //        _roomInstance.RoomModel.UpdateUser(oldPosition, movementData.NextPoint, roomUser);
+        async Task OnMovementComplete(MovementCompleteEvent @event)
+        {
+            if (!users.TryGetValue(@event.VirtualId, out var user) || !movementStates.TryGetValue(@event.VirtualId, out var state))
+                return;
 
-            //        roomUser.SetPosition(newPosition);
+            if (state.GoalPoint != null && @event.Position!.Equals(state.GoalPoint))
+            {
+                state.GoalPoint = null;
+                user.RemoveStatus("mv");
+                await SendUserUpdate(user);
+            }
+        }
 
-            //        if (movementData.CurrentPathIndex < movementData.Points.Count)
-            //        {
-            //            movementData.NextPoint = movementData.Points[movementData.CurrentPathIndex];
-            //            movementData.CurrentPathIndex++;
+        async Task OnProcessMovement(ProcessMovementEvent @event)
+        {
+            if (_roomInstance?.Pathfinder == null || _roomInstance?.RoomModel == null || _roomInstance?.Room == null || !users.TryGetValue(@event.VirtualId, out var roomUserInstance))
+                return;
 
-            //            PrepareNextMove(roomUser, movementData.NextPoint);
-            //            updates.Add(roomUser);
-            //        }
-            //        else
-            //        {
-            //            movementData.IsMoving = false;
-            //            roomUser.RemoveStatus("mv");
-            //            updates.Add(roomUser);
-            //            userMovements.TryRemove(userId, out _);
-            //        }
-            //    }
-            //}
+            if (!movementStates.TryGetValue(@event.VirtualId, out var state) || state.GoalPoint == default)
+                return;
 
-            //if (updates.Count > 0)
-            //{
-            //    await using var updateMessage = ServerMessageFactory.GetServerMessage(OutputCode.UserUpdateMessageComposer);
-            //    updateMessage.AddInt32(updates.Count);
-            //    foreach (var user in updates)
-            //    {
-            //        user.SerializeStatus(updateMessage);
-            //    }
-            //    await Send(updateMessage);
-            //}
+            state.IsProcessing = true;
+
+            var nextPoint = _roomInstance.Pathfinder.FindPath(roomUserInstance.Position!.GetX, roomUserInstance.Position!.GetY, state.GoalPoint.GetX, state.GoalPoint.GetY).FirstOrDefault();
+
+            if (nextPoint == default || nextPoint.Equals(roomUserInstance.Position))
+            {
+                state.GoalPoint = null;
+                state.IsProcessing = false;
+                roomUserInstance.RemoveStatus("mv");
+                await SendUserUpdate(roomUserInstance);
+                return;
+            }
+
+            if (CanMoveToTile(nextPoint, @event.VirtualId))
+            {
+                ReserveTile(nextPoint, @event.VirtualId);
+                state.NextPoint = nextPoint;
+                state.HasPendingStep = true;
+
+                PrepareMovement(roomUserInstance, nextPoint.ToThreeDPoint(0.0));
+                await SendUserUpdate(roomUserInstance);
+            }
+            else
+            {
+                var alternative = FindAlternativePath(roomUserInstance, nextPoint);
+                if (alternative != default)
+                {
+                    ReserveTile(alternative, @event.VirtualId);
+                    state.NextPoint = alternative;
+                    state.HasPendingStep = true;
+
+                    PrepareMovement(roomUserInstance, alternative.ToThreeDPoint(0.0));
+                    await SendUserUpdate(roomUserInstance);
+                }
+                else
+                    state.IsProcessing = false;
+            }
         }
 
         async Task OnMoveAvatarEvent(MoveAvatarEvent @event)
         {
-            if (_roomInstance?.Room == default || _roomInstance?.Pathfinder == default || _roomInstance?.RoomModel == default)
+            if (_roomInstance?.Room == default)
                 return;
 
             var roomUserInstance = users.FirstOrDefault(u => u.Value.UserId == @event.UserId).Value;
             if (roomUserInstance == default)
                 return;
 
-            roomUserInstance.GoalPoint = new Point(@event.NewX!.Value, @event.NewY!.Value);
-
-            await _roomInstance.EventsService.DispatchAsync<RequestPathEvent>(new()
+            var state = movementStates.AddOrUpdate(roomUserInstance.VirutalId, new UserMovementContext
             {
-                RoomId = _roomInstance.Room.Id,
-                RoomUserInstance = roomUserInstance,
-                NewX = @event.NewX,
-                NewY = @event.NewY
+                GoalPoint = new Point(@event.NewX!.Value, @event.NewY!.Value),
+                RequestTime = DateTime.UtcNow,
+                IsProcessing = false,
+                HasPendingStep = false
+            }, (key, existing) =>
+            {
+                existing.GoalPoint = new Point(@event.NewX!.Value, @event.NewY!.Value);
+                existing.RequestTime = DateTime.UtcNow;
+                existing.IsProcessing = false;
+                return existing;
             });
+
+            await Task.CompletedTask;
         }
-
-        async Task OnRequestPathEvent(RequestPathEvent @event)
-        {
-            if (@event.RoomUserInstance == default || _roomInstance?.Room == default || _roomInstance?.Pathfinder == default || _roomInstance?.RoomModel == default)
-                return;
-
-            var points = _roomInstance.Pathfinder.FindPath(@event.RoomUserInstance.Position!.GetX, @event.RoomUserInstance.Position!.GetY, @event.NewX!.Value, @event.NewY!.Value, _roomInstance.Room.AllowDiagonal);
-
-            await _roomInstance.EventsService.DispatchAsync<PathCalculatedEvent>(new()
-            {
-                Point = points.FirstOrDefault(),
-                RoomId = @event.RoomId,
-                RoomUserInstance = @event.RoomUserInstance
-            });
-        }
-
-        async Task OnPathCalculatedEvent(PathCalculatedEvent @event)
-        {
-            if (_roomInstance?.Room == default || _roomInstance?.RoomModel == default || @event.RoomUserInstance == default || @event.RoomUserInstance.GoalPoint == default)
-                return;
-
-            @event.RoomUserInstance.RemoveStatus("mv");
-            if (@event.Point == default)
-            {
-                await SendUserUpdate(@event.RoomUserInstance);
-                return;
-            }
-
-            var z = 0.0;
-            var prev = @event.RoomUserInstance.Position!;
-
-            var mvStatus = $"{@event.Point.GetX},{@event.Point.GetY},{z.GetString()}";
-            @event.RoomUserInstance.AddStatus("mv", mvStatus);
-
-            var rotation = RotationCalculatorUtility.Calculate(prev.GetX, prev.GetY, @event.Point.GetX, @event.Point.GetY);
-
-            _roomInstance.RoomModel.UpdateUser(prev, @event.Point, @event.RoomUserInstance);
-            @event.RoomUserInstance.SetPosition(@event.Point.ToThreeDPoint(z));
-            @event.RoomUserInstance.SetRotation(rotation);
-
-            await SendUserUpdate(@event.RoomUserInstance);
-
-            await _roomInstance.EventsService.DispatchAsync<RequestPathEvent>(new()
-            {
-                RoomId = _roomInstance.Room.Id,
-                RoomUserInstance = @event.RoomUserInstance,
-                NewX = @event.RoomUserInstance.GoalPoint.GetX,
-                NewY = @event.RoomUserInstance.GoalPoint.GetY
-            });
-        }
-
-        //async Task OnMoveAvatarEvent(MoveAvatarEvent @event)
-        //{
-        //    if (_roomInstance?.Room == default || _roomInstance?.Pathfinder == default || _roomInstance?.RoomModel == default)
-        //        return;
-
-        //    var roomUserInstance = users.FirstOrDefault(u => u.Value.UserId == @event.UserId).Value;
-        //    if (roomUserInstance == default)
-        //        return;
-
-        //    var z = 0.0;
-        //    if (roomUserInstance.GoalPoint != default && !roomUserInstance.GoalPoint.Equals(new Point(@event.NewX!.Value, @event.NewY!.Value)))
-        //    {
-        //        roomUserInstance.SetPosition(roomUserInstance.TempPoint!.ToThreeDPoint(z));
-        //        userMovements.TryRemove(@event.UserId!.Value, out _);
-        //        roomUserInstance.RemoveStatus("mv");
-        //    }
-
-        //    if (userMovements.TryGetValue(@event.UserId!.Value, out var currentMovement) && currentMovement.IsMoving)
-        //    {
-        //        var currentPosition = default(Point?);
-        //        if (currentMovement.CurrentPathIndex > 0 && currentMovement.CurrentPathIndex <= currentMovement.Points.Count)
-        //            currentPosition = currentMovement.Points[currentMovement.CurrentPathIndex - 1];
-        //        else
-        //            currentPosition = new Point(roomUserInstance.Position!.GetX, roomUserInstance.Position!.GetY);
-
-        //        var newPos = new ThreeDPoint(currentPosition.GetX, currentPosition.GetY, z);
-
-        //        _roomInstance.RoomModel.UpdateUser(roomUserInstance.Position!, newPos, roomUserInstance);
-
-        //        roomUserInstance.SetPosition(newPos);
-        //        userMovements.TryRemove(@event.UserId!.Value, out _);
-        //        roomUserInstance.RemoveStatus("mv");
-        //        await using var stopMessage = ServerMessageFactory.GetServerMessage(OutputCode.UserUpdateMessageComposer);
-        //        stopMessage.AddInt32(1);
-        //        roomUserInstance.SerializeStatus(stopMessage);
-        //        await Send(stopMessage);
-        //    }
-
-        //    var points = _roomInstance.Pathfinder.FindPath(roomUserInstance.Position!.GetX, roomUserInstance.Position!.GetY, @event.NewX!.Value, @event.NewY!.Value, _roomInstance.Room.AllowDiagonal);
-
-        //    if (points.Count == 0)
-        //        return;
-
-        //    var movementData = new UserMovementData
-        //    {
-        //        Points = points,
-        //        CurrentPathIndex = 0,
-        //        IsMoving = true,
-        //        NextPoint = null
-        //    };
-        //    roomUserInstance.GoalPoint = new Point(@event.NewX.Value, @event.NewY.Value);
-
-        //    userMovements[@event.UserId!.Value] = movementData;
-        //}
 
         async Task OnAddUserToRoomEvent(AddUserToRoomEvent @event)
         {
@@ -277,6 +218,7 @@ namespace NextHave.BL.Services.Rooms.Components
             @event.User.CurrentRoomInstance = _roomInstance;
 
             var roomUser = roomUserFactory.GetRoomUserInstance(@event.User.Id, @event.User.Username!, virtualId++, @event.User, _roomInstance);
+
             roomUser.SetPosition(new ThreeDPoint(_roomInstance.RoomModel.DoorX, _roomInstance.RoomModel.DoorY, _roomInstance.RoomModel.DoorZ));
             roomUser.SetRotation(_roomInstance.RoomModel.DoorOrientation);
 
@@ -296,25 +238,64 @@ namespace NextHave.BL.Services.Rooms.Components
             await Send(usersMessageComposerToRoom);
         }
 
+        async Task SendUserUpdate(IRoomUserInstance user)
+        {
+            await using var updateMessage = ServerMessageFactory.GetServerMessage(OutputCode.UserUpdateMessageComposer);
+            updateMessage.AddInt32(1);
+            user.SerializeStatus(updateMessage);
+            await Send(updateMessage);
+        }
+
         async Task Send(ServerMessage message)
         {
             var buffer = message.Bytes();
 
-            foreach (var client in users.Values.Select(u => u.Client).Where(c => c != null))
+            foreach (var client in users.Values.Select(u => u.Client).Where(c => c != default))
                 await client!.Send(buffer);
         }
 
-        #region private
-
-        private async Task SendUserUpdate(IRoomUserInstance roomUserInstance)
+        Point? FindAlternativePath(IRoomUserInstance roomUserInstance, Point point)
         {
-            var userUpdateMessageComposer = ServerMessageFactory.GetServerMessage(OutputCode.UserUpdateMessageComposer);
-            userUpdateMessageComposer.AddInt32(1);
-            roomUserInstance.SerializeStatus(userUpdateMessageComposer);
-            //await Send(userUpdateMessageComposer);
-            EnqueueUpdate(userUpdateMessageComposer);
+            if (_roomInstance?.Pathfinder == default || _roomInstance?.RoomModel == default || _roomInstance?.Room == default || !movementStates.TryGetValue(roomUserInstance.UserId, out var state) || state.GoalPoint == default)
+                return default;
+
+            var pathFromAlternative = _roomInstance.Pathfinder.FindPath(roomUserInstance.Position!.GetX, roomUserInstance.Position.GetY, state.GoalPoint.GetX, state.GoalPoint.GetY).FirstOrDefault();
+            if (pathFromAlternative != default)
+                return pathFromAlternative;
+
+            return default;
         }
 
-        #endregion
+        static void PrepareMovement(IRoomUserInstance roomUserInstance, ThreeDPoint nextPoint)
+        {
+            roomUserInstance.RemoveStatus("mv");
+            roomUserInstance.RemoveStatus("lay");
+            roomUserInstance.RemoveStatus("sit");
+            roomUserInstance.AddStatus("mv", $"{nextPoint.GetX},{nextPoint.GetY},{nextPoint.GetZ.GetString()}");
+            var rotation = RotationCalculatorUtility.Calculate(roomUserInstance.Position!.GetX, roomUserInstance.Position!.GetY, nextPoint.GetX, nextPoint.GetY);
+            roomUserInstance.SetRotation(rotation);
+        }
+
+        bool CanMoveToTile(Point tile, int virtualId)
+        {
+            if (!tileReservations.TryGetValue(tile, out var reservation))
+                return true;
+
+            return reservation.VirtualId == virtualId || (!reservation.IsConfirmed && reservation.ReservationTime < DateTime.UtcNow.AddSeconds(-1));
+        }
+
+        void ReserveTile(Point tile, int virtualId)
+            => tileReservations.AddOrUpdate(tile, new TileReservationContext
+            {
+                VirtualId = virtualId,
+                ReservationTime = DateTime.UtcNow,
+                IsConfirmed = false
+            }, (key, existing) =>
+            {
+                existing.VirtualId = virtualId;
+                existing.ReservationTime = DateTime.UtcNow;
+                existing.IsConfirmed = false;
+                return existing;
+            });
     }
 }
