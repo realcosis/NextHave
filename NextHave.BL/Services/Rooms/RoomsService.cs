@@ -25,7 +25,6 @@ namespace NextHave.BL.Services.Rooms
 
         ConcurrentDictionary<int, IRoomInstance> IRoomsService.ActiveRooms { get; } = [];
 
-
         readonly ConcurrentDictionary<string, RoomModel> RoomModels = [];
 
         async Task<Room?> IRoomsService.GetRoom(int roomId)
@@ -83,6 +82,22 @@ namespace NextHave.BL.Services.Rooms
             {
                 var categories = await mysqlDbContext.NavigatorUserCategories.AsNoTracking().ToListAsync();
                 categories.ForEach(category => Instance.NavigatorCategories.TryAdd(category.Id, category.Map()));
+
+                var cancellationSource = new CancellationTokenSource();
+                _ = Task.Run(async () =>
+                {
+                    using var loopTimer = new PeriodicTimer(TimeSpan.FromMilliseconds(25));
+
+                    while (await loopTimer.WaitForNextTickAsync(cancellationSource.Token))
+                    {
+                        using var roomTimer = new PeriodicTimer(TimeSpan.FromMilliseconds(500));
+
+                        while (await roomTimer.WaitForNextTickAsync(cancellationSource.Token))
+                        {
+                            await Parallel.ForEachAsync(Instance.ActiveRooms.Values, cancellationSource.Token, async (room, ct) => await room.OnRoomTick());
+                        }
+                    }
+                }, cancellationSource.Token);
 
                 logger.LogInformation("RoomsManager has been loaded with {count} navigator categories definitions", Instance.NavigatorCategories.Count);
             }

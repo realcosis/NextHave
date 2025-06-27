@@ -2,7 +2,7 @@
 
 namespace NextHave.BL.Events.Users
 {
-    public class UserConnected : DolphinEvent
+    public class UserConnectedEvent : DolphinEvent
     {
         public int? UserId { get; set; }
     }

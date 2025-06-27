@@ -1,9 +1,9 @@
-﻿using NextHave.BL.Enums;
-using NextHave.BL.Messages;
-using NextHave.BL.Services.Rooms.Instances;
+﻿using System.Text;
+using NextHave.BL.Enums;
 using NextHave.BL.Utils;
+using NextHave.BL.Messages;
 using System.Collections.Concurrent;
-using System.Text;
+using NextHave.BL.Services.Rooms.Instances;
 
 namespace NextHave.BL.Models.Rooms
 {
@@ -116,18 +116,30 @@ namespace NextHave.BL.Models.Rooms
             }
         }
 
-        public void AddUser(Point point, IRoomUserInstance roomUser)
+        public void AddUser(Point point, IRoomUserInstance roomUserInstance)
         {
             if (RoomUsers.TryGetValue(point, out var users))
-                users.Add(roomUser);
+                users.Add(roomUserInstance);
             else
-                RoomUsers.TryAdd(point, [roomUser]);
+                RoomUsers.TryAdd(point, [roomUserInstance]);
+        }
+
+        public void RemoveUser(Point point, IRoomUserInstance roomUserInstance)
+        {
+            if (RoomUsers.TryGetValue(point, out var users))
+                users.Remove(roomUserInstance);
         }
 
         public void SetWalkable(int x, int y, bool walkable)
         {
             if (ValidTile(x, y))
-                Walkables.AddOrUpdate(new Point(x, y), walkable, (_, value) => value == walkable);
+                Walkables.AddOrUpdate(new Point(x, y), walkable, (_, value) => walkable);
+        }
+
+        public void UpdateUser(Point oldCoord, Point newCoord, IRoomUserInstance roomUserInstance)
+        {
+            RemoveUser(oldCoord, roomUserInstance);
+            AddUser(newCoord, roomUserInstance);
         }
 
         public bool CanWalk(int x, int y, double z = 0.0, bool @override = false)

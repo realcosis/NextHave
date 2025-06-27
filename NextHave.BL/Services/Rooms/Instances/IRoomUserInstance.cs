@@ -9,6 +9,8 @@ namespace NextHave.BL.Services.Rooms.Instances
     {
         public Client? Client { get; set; }
 
+        public Timer? Timer { get; set; }
+
         public User? User { get; set; }
 
         public Point? GoalPoint { get; set; }

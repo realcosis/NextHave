@@ -4,7 +4,6 @@ using NextHave.BL.Services.Rooms.Components;
 using NextHave.BL.Services.Rooms.Factories;
 using NextHave.BL.Services.Rooms.Pathfinders;
 using System.Diagnostics;
-using Timer = System.Timers.Timer;
 
 namespace NextHave.BL.Services.Rooms.Instances
 {
@@ -47,26 +46,20 @@ namespace NextHave.BL.Services.Rooms.Instances
             }
         }
 
-        Timer? _tickTimer;
-
         public async Task Init()
         {
-            _tickTimer = new(500);
-            _tickTimer.Elapsed += (s, e) => OnRoomTick();
-            _tickTimer.Start();
-
             foreach (var roomComponent in roomComponents)
                 await roomComponent.Init(this);
         }
 
-        async void OnRoomTick()
+        public async Task OnRoomTick()
         {
             if (Room == default)
                 return;
 
             await EventsService.DispatchAsync<RoomTickEvent>(new()
             {
-                RoomId = Room.Id
+                RoomId = Room!.Id
             });
         }
     }

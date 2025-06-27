@@ -19,6 +19,8 @@ namespace NextHave.BL.Services.Rooms.Instances
 
         IRoomInstance? IRoomUserInstance.RoomInstance { get; set; }
 
+        Timer? IRoomUserInstance.Timer { get; set; }
+
         int IRoomUserInstance.VirutalId { get; set; }
 
         Client? IRoomUserInstance.Client { get; set; }

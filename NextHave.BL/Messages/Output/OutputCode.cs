@@ -26,6 +26,8 @@
 
         public const short UserUpdateMessageComposer = 1640;
 
+        public const short UserRemoveMessageComposer = 2661;
+
         public const short PrepareRoomMessageComposer = 758;
     }
 }

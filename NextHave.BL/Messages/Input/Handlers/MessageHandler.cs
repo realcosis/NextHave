@@ -167,7 +167,7 @@ namespace NextHave.BL.Messages.Input.Handlers
             user.Client = client;
             client.User = user;
             await SendSSOTicketResponse(client, user);
-            await eventsService.DispatchAsync<UserConnected>(new()
+            await eventsService.DispatchAsync<UserConnectedEvent>(new()
             {
                 UserId = user.Id
             });

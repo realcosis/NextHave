@@ -13,6 +13,8 @@ namespace NextHave.BL.Services.Rooms.Instances
 
         public RoomEventsService EventsService { get; }
 
+        Task OnRoomTick();
+
         Task Init();
     }
 }
