@@ -54,6 +54,14 @@ namespace NextHave.BL.Services.Rooms.Instances
         bool IRoomUserInstance.HasStatus(string key)
             => Status.ContainsKey(key);
 
+        string IRoomUserInstance.GetStatus(string key)
+        {
+            if (Instance.HasStatus(key))
+                return Status[key];
+            else
+                return string.Empty;
+        }
+
         void IRoomUserInstance.Serialize(ServerMessage message)
         {
             message.AddInt32(Instance.UserId);

@@ -3,7 +3,6 @@ using NextHave.BL.Models.Rooms;
 using NextHave.BL.Services.Rooms.Components;
 using NextHave.BL.Services.Rooms.Factories;
 using NextHave.BL.Services.Rooms.Pathfinders;
-using System.Diagnostics;
 
 namespace NextHave.BL.Services.Rooms.Instances
 {

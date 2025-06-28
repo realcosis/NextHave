@@ -47,6 +47,8 @@ namespace NextHave.BL.Services.Rooms.Instances
 
         void RemoveStatus(string key);
 
+        string GetStatus(string key);
+
         bool HasStatus(string key);
     }
 }

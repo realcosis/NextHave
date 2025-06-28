@@ -41,7 +41,6 @@ namespace NextHave.BL.Services.Rooms.Components
             await roomInstance.EventsService.SubscribeAsync<MoveAvatarEvent>(roomInstance, OnMoveAvatarEvent);
             await roomInstance.EventsService.SubscribeAsync<ProcessMovementEvent>(roomInstance, OnProcessMovement);
             await roomInstance.EventsService.SubscribeAsync<ApplyMovementEvent>(roomInstance, OnApplyMovement);
-            await roomInstance.EventsService.SubscribeAsync<MovementCompleteEvent>(roomInstance, OnMovementComplete);
         }
 
         async Task OnRoomTick(RoomTickEvent @event)
@@ -97,10 +96,10 @@ namespace NextHave.BL.Services.Rooms.Components
 
         async Task OnApplyMovement(ApplyMovementEvent @event)
         {
-            if (_roomInstance?.Room == default || _roomInstance?.RoomModel == default || _roomInstance?.Pathfinder == default || !users.TryGetValue(@event.VirtualId, out var user) || !movementStates.TryGetValue(@event.VirtualId, out var state) || state.NextPoint == default || !state.HasPendingStep)
+            if (_roomInstance?.Room == default || _roomInstance?.RoomModel == default || _roomInstance?.Pathfinder == default || !users.TryGetValue(@event.VirtualId, out var roomUserInstance) || !movementStates.TryGetValue(@event.VirtualId, out var state) || state.NextPoint == default || !state.HasPendingStep)
                 return;
 
-            var oldPosition = user.Position!.ToPoint();
+            var oldPosition = roomUserInstance.Position!.ToPoint();
             var newPosition = state.NextPoint;
 
             if (tileReservations.TryGetValue(newPosition, out var reservation) && reservation.VirtualId == @event.VirtualId)
@@ -109,9 +108,8 @@ namespace NextHave.BL.Services.Rooms.Components
             if (tileReservations.TryGetValue(oldPosition, out var oldReservation) && oldReservation.VirtualId == @event.VirtualId)
                 tileReservations.TryRemove(oldPosition, out _);
 
-            user.SetPosition(new ThreeDPoint(newPosition.GetX, newPosition.GetY, 0.0)); // TODO: calcolare Z
-
-            _roomInstance.RoomModel.UpdateUser(oldPosition, newPosition, user);
+            roomUserInstance.SetPosition(new ThreeDPoint(newPosition.GetX, newPosition.GetY, 0.0)); // TODO: calcolare Z
+            _roomInstance.RoomModel.UpdateUser(oldPosition, newPosition, roomUserInstance);
 
             state.HasPendingStep = false;
             state.IsProcessing = false;
@@ -124,19 +122,6 @@ namespace NextHave.BL.Services.Rooms.Components
             });
         }
 
-        async Task OnMovementComplete(MovementCompleteEvent @event)
-        {
-            if (!users.TryGetValue(@event.VirtualId, out var user) || !movementStates.TryGetValue(@event.VirtualId, out var state))
-                return;
-
-            if (state.GoalPoint != null && @event.Position!.Equals(state.GoalPoint))
-            {
-                state.GoalPoint = null;
-                user.RemoveStatus("mv");
-                await SendUserUpdate(user);
-            }
-        }
-
         async Task OnProcessMovement(ProcessMovementEvent @event)
         {
             if (_roomInstance?.Pathfinder == null || _roomInstance?.RoomModel == null || _roomInstance?.Room == null || !users.TryGetValue(@event.VirtualId, out var roomUserInstance))
@@ -147,12 +132,10 @@ namespace NextHave.BL.Services.Rooms.Components
 
             state.IsProcessing = true;
 
-            var nextPoint = _roomInstance.Pathfinder.FindPath(roomUserInstance.Position!.GetX, roomUserInstance.Position!.GetY, state.GoalPoint.GetX, state.GoalPoint.GetY).FirstOrDefault();
+            var nextPoint = _roomInstance.Pathfinder.FindClosestPath(roomUserInstance.Position!.GetX, roomUserInstance.Position!.GetY, state.GoalPoint.GetX, state.GoalPoint.GetY).FirstOrDefault();
 
-            if (nextPoint == default || nextPoint.Equals(roomUserInstance.Position))
+            if (nextPoint == default)
             {
-                state.GoalPoint = null;
-                state.IsProcessing = false;
                 roomUserInstance.RemoveStatus("mv");
                 await SendUserUpdate(roomUserInstance);
                 return;
@@ -181,6 +164,15 @@ namespace NextHave.BL.Services.Rooms.Components
                 }
                 else
                     state.IsProcessing = false;
+            }
+
+            if (nextPoint.Equals(roomUserInstance.Position))
+            {
+                state.GoalPoint = null;
+                state.IsProcessing = false;
+                roomUserInstance.RemoveStatus("mv");
+                await SendUserUpdate(roomUserInstance);
+                return;
             }
         }
 
@@ -259,7 +251,7 @@ namespace NextHave.BL.Services.Rooms.Components
             if (_roomInstance?.Pathfinder == default || _roomInstance?.RoomModel == default || _roomInstance?.Room == default || !movementStates.TryGetValue(roomUserInstance.UserId, out var state) || state.GoalPoint == default)
                 return default;
 
-            var pathFromAlternative = _roomInstance.Pathfinder.FindPath(roomUserInstance.Position!.GetX, roomUserInstance.Position.GetY, state.GoalPoint.GetX, state.GoalPoint.GetY).FirstOrDefault();
+            var pathFromAlternative = _roomInstance.Pathfinder.FindClosestPath(roomUserInstance.Position!.GetX, roomUserInstance.Position.GetY, state.GoalPoint.GetX, state.GoalPoint.GetY).FirstOrDefault();
             if (pathFromAlternative != default)
                 return pathFromAlternative;
 
