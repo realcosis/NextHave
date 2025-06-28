@@ -8,7 +8,7 @@ namespace NextHave.BL.Extensions
         public static string GetUserIp(this IHttpContextAccessor httpContextAccessor)
         {
             var context = httpContextAccessor.HttpContext;
-            if (context == null)
+            if (context == default)
                 return "unknown";
 
             var headers = context.Request.Headers;

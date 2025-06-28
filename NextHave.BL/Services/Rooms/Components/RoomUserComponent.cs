@@ -2,7 +2,6 @@
 using Dolphin.Core.Injection;
 using Microsoft.Extensions.DependencyInjection;
 using NextHave.BL.Context;
-using NextHave.BL.Contexts;
 using NextHave.BL.Events.Rooms;
 using NextHave.BL.Events.Rooms.Movements;
 using NextHave.BL.Events.Users;
@@ -11,6 +10,7 @@ using NextHave.BL.Messages.Output;
 using NextHave.BL.Models;
 using NextHave.BL.Services.Rooms.Factories;
 using NextHave.BL.Services.Rooms.Instances;
+using NextHave.BL.Services.Rooms.Pathfinders;
 using NextHave.BL.Utils;
 using System.Collections.Concurrent;
 using System.Text;
@@ -23,8 +23,6 @@ namespace NextHave.BL.Services.Rooms.Components
         IRoomInstance? _roomInstance;
 
         readonly ConcurrentDictionary<int, IRoomUserInstance> users = [];
-
-        readonly ConcurrentDictionary<Point, TileReservationContext> tileReservations = [];
 
         readonly ConcurrentDictionary<int, UserMovementContext> movementStates = [];
 
@@ -48,13 +46,7 @@ namespace NextHave.BL.Services.Rooms.Components
             if (_roomInstance?.Room == default)
                 return;
 
-            var expiredTime = DateTime.UtcNow.AddSeconds(-2);
-            var expiredReservations = tileReservations.Where(r => !r.Value.IsConfirmed && r.Value.ReservationTime < expiredTime).Select(r => r.Key).ToList();
-
-            foreach (var tile in expiredReservations)
-                tileReservations.TryRemove(tile, out _);
-
-            var pendingMovements = movementStates.Where(m => m.Value.GoalPoint != null && !m.Value.IsProcessing).OrderBy(m => m.Value.RequestTime).ToList();
+            var pendingMovements = movementStates.Where(m => m.Value.GoalPoint != default && !m.Value.IsProcessing).OrderBy(m => m.Value.RequestTime).ToList();
 
             foreach (var movement in pendingMovements)
                 await _roomInstance.EventsService.DispatchAsync<ProcessMovementEvent>(new()
@@ -96,17 +88,11 @@ namespace NextHave.BL.Services.Rooms.Components
 
         async Task OnApplyMovement(ApplyMovementEvent @event)
         {
-            if (_roomInstance?.Room == default || _roomInstance?.RoomModel == default || _roomInstance?.Pathfinder == default || !users.TryGetValue(@event.VirtualId, out var roomUserInstance) || !movementStates.TryGetValue(@event.VirtualId, out var state) || state.NextPoint == default || !state.HasPendingStep)
+            if (_roomInstance?.Room == default || _roomInstance?.RoomModel == default || !users.TryGetValue(@event.VirtualId, out var roomUserInstance) || !movementStates.TryGetValue(@event.VirtualId, out var state) || state.NextPoint == default || !state.HasPendingStep)
                 return;
 
             var oldPosition = roomUserInstance.Position!.ToPoint();
             var newPosition = state.NextPoint;
-
-            if (tileReservations.TryGetValue(newPosition, out var reservation) && reservation.VirtualId == @event.VirtualId)
-                reservation.IsConfirmed = true;
-
-            if (tileReservations.TryGetValue(oldPosition, out var oldReservation) && oldReservation.VirtualId == @event.VirtualId)
-                tileReservations.TryRemove(oldPosition, out _);
 
             roomUserInstance.SetPosition(new ThreeDPoint(newPosition.GetX, newPosition.GetY, 0.0)); // TODO: calcolare Z
             _roomInstance.RoomModel.UpdateUser(oldPosition, newPosition, roomUserInstance);
@@ -124,7 +110,7 @@ namespace NextHave.BL.Services.Rooms.Components
 
         async Task OnProcessMovement(ProcessMovementEvent @event)
         {
-            if (_roomInstance?.Pathfinder == null || _roomInstance?.RoomModel == null || _roomInstance?.Room == null || !users.TryGetValue(@event.VirtualId, out var roomUserInstance))
+            if (_roomInstance?.RoomModel == default || _roomInstance?.Room == default || !users.TryGetValue(@event.VirtualId, out var roomUserInstance))
                 return;
 
             if (!movementStates.TryGetValue(@event.VirtualId, out var state) || state.GoalPoint == default)
@@ -132,7 +118,7 @@ namespace NextHave.BL.Services.Rooms.Components
 
             state.IsProcessing = true;
 
-            var nextPoint = _roomInstance.Pathfinder.FindClosestPath(roomUserInstance.Position!.GetX, roomUserInstance.Position!.GetY, state.GoalPoint.GetX, state.GoalPoint.GetY).FirstOrDefault();
+            var nextPoint = NextHavePathfinder.GetPath(_roomInstance.RoomModel, _roomInstance.Room.AllowDiagonal, roomUserInstance.Position!, state.GoalPoint);
 
             if (nextPoint == default)
             {
@@ -141,39 +127,11 @@ namespace NextHave.BL.Services.Rooms.Components
                 return;
             }
 
-            if (CanMoveToTile(nextPoint, @event.VirtualId))
-            {
-                ReserveTile(nextPoint, @event.VirtualId);
-                state.NextPoint = nextPoint;
-                state.HasPendingStep = true;
+            state.NextPoint = nextPoint;
+            state.HasPendingStep = true;
 
-                PrepareMovement(roomUserInstance, nextPoint.ToThreeDPoint(0.0));
-                await SendUserUpdate(roomUserInstance);
-            }
-            else
-            {
-                var alternative = FindAlternativePath(roomUserInstance, nextPoint);
-                if (alternative != default)
-                {
-                    ReserveTile(alternative, @event.VirtualId);
-                    state.NextPoint = alternative;
-                    state.HasPendingStep = true;
-
-                    PrepareMovement(roomUserInstance, alternative.ToThreeDPoint(0.0));
-                    await SendUserUpdate(roomUserInstance);
-                }
-                else
-                    state.IsProcessing = false;
-            }
-
-            if (nextPoint.Equals(roomUserInstance.Position))
-            {
-                state.GoalPoint = null;
-                state.IsProcessing = false;
-                roomUserInstance.RemoveStatus("mv");
-                await SendUserUpdate(roomUserInstance);
-                return;
-            }
+            PrepareMovement(roomUserInstance, nextPoint.ToThreeDPoint(0.0));
+            await SendUserUpdate(roomUserInstance);
         }
 
         async Task OnMoveAvatarEvent(MoveAvatarEvent @event)
@@ -246,18 +204,6 @@ namespace NextHave.BL.Services.Rooms.Components
                 await client!.Send(buffer);
         }
 
-        Point? FindAlternativePath(IRoomUserInstance roomUserInstance, Point point)
-        {
-            if (_roomInstance?.Pathfinder == default || _roomInstance?.RoomModel == default || _roomInstance?.Room == default || !movementStates.TryGetValue(roomUserInstance.UserId, out var state) || state.GoalPoint == default)
-                return default;
-
-            var pathFromAlternative = _roomInstance.Pathfinder.FindClosestPath(roomUserInstance.Position!.GetX, roomUserInstance.Position.GetY, state.GoalPoint.GetX, state.GoalPoint.GetY).FirstOrDefault();
-            if (pathFromAlternative != default)
-                return pathFromAlternative;
-
-            return default;
-        }
-
         static void PrepareMovement(IRoomUserInstance roomUserInstance, ThreeDPoint nextPoint)
         {
             roomUserInstance.RemoveStatus("mv");
@@ -267,27 +213,5 @@ namespace NextHave.BL.Services.Rooms.Components
             var rotation = RotationCalculatorUtility.Calculate(roomUserInstance.Position!.GetX, roomUserInstance.Position!.GetY, nextPoint.GetX, nextPoint.GetY);
             roomUserInstance.SetRotation(rotation);
         }
-
-        bool CanMoveToTile(Point tile, int virtualId)
-        {
-            if (!tileReservations.TryGetValue(tile, out var reservation))
-                return true;
-
-            return reservation.VirtualId == virtualId || (!reservation.IsConfirmed && reservation.ReservationTime < DateTime.UtcNow.AddSeconds(-1));
-        }
-
-        void ReserveTile(Point tile, int virtualId)
-            => tileReservations.AddOrUpdate(tile, new TileReservationContext
-            {
-                VirtualId = virtualId,
-                ReservationTime = DateTime.UtcNow,
-                IsConfirmed = false
-            }, (key, existing) =>
-            {
-                existing.VirtualId = virtualId;
-                existing.ReservationTime = DateTime.UtcNow;
-                existing.IsConfirmed = false;
-                return existing;
-            });
     }
 }

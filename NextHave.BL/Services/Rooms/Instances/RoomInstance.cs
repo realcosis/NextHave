@@ -1,8 +1,7 @@
 ﻿using NextHave.BL.Events.Rooms;
 using NextHave.BL.Models.Rooms;
-using NextHave.BL.Services.Rooms.Components;
 using NextHave.BL.Services.Rooms.Factories;
-using NextHave.BL.Services.Rooms.Pathfinders;
+using NextHave.BL.Services.Rooms.Components;
 
 namespace NextHave.BL.Services.Rooms.Instances
 {
@@ -10,9 +9,6 @@ namespace NextHave.BL.Services.Rooms.Instances
     {
         bool hasRoom = false;
         Room? room;
-
-        bool hasPathfinderRoom = false;
-        Pathfinder? pathfinder;
 
         public Room? Room
         {
@@ -31,19 +27,6 @@ namespace NextHave.BL.Services.Rooms.Instances
 
         public RoomEventsService EventsService
             => roomEventsFactory.GetForRoom(Room!.Id);
-
-        public Pathfinder? Pathfinder
-        {
-            get => pathfinder;
-            set
-            {
-                if (!hasPathfinderRoom)
-                {
-                    pathfinder = value;
-                    hasPathfinderRoom = true;
-                }
-            }
-        }
 
         public async Task Init()
         {

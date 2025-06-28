@@ -4,6 +4,7 @@ using NextHave.BL.Utils;
 using NextHave.BL.Messages;
 using System.Collections.Concurrent;
 using NextHave.BL.Services.Rooms.Instances;
+using System.Runtime.CompilerServices;
 
 namespace NextHave.BL.Models.Rooms
 {
@@ -29,6 +30,8 @@ namespace NextHave.BL.Models.Rooms
 
         public ConcurrentDictionary<Point, bool> Walkables;
 
+        public ConcurrentDictionary<Point, byte> Maps;
+
         readonly ConcurrentDictionary<Point, List<IRoomUserInstance>> RoomUsers;
 
         public int MapSizeX;
@@ -49,12 +52,24 @@ namespace NextHave.BL.Models.Rooms
             Tiles = new ConcurrentDictionary<Point, TileStates>();
             FloorHeights = new ConcurrentDictionary<Point, short>();
             Walkables = new ConcurrentDictionary<Point, bool>();
+            Maps = new ConcurrentDictionary<Point, byte>();
             RoomUsers = new ConcurrentDictionary<Point, List<IRoomUserInstance>>();
 
             for (var y = 0; y < MapSizeY; y++)
             {
                 for (var x = 0; x < MapSizeX; x++)
                 {
+                    UpsertMap(x, y, 0);
+                    if (x == DoorX && y == DoorY)
+                        UpsertMap(x, y, 3);
+                    else if (_baseModel.Tiles.TryGetValue(new Point(x, y), out var tileState))
+                    {
+                        if (tileState.Equals(TileStates.Open))
+                            UpsertMap(x, y, 1);
+                        else if (tileState.Equals(TileStates.Seat))
+                            UpsertMap(x, y, 2);
+                    }
+
                     if (x > _baseModel.MapSizeX - 1 || y > _baseModel.MapSizeY - 1)
                         Tiles.TryAdd(new Point(x, y), TileStates.Blocked);
                     else if (_baseModel.Tiles.TryGetValue(new Point(x, y), out var tileState))
@@ -67,6 +82,9 @@ namespace NextHave.BL.Models.Rooms
                 }
             }
         }
+
+        public void UpsertMap(int x, int y, byte data)
+            => Maps.AddOrUpdate(new Point(x, y), data, (_, value) => data);
 
         public void SerializeHeightmap(ServerMessage serverMessage)
         {
@@ -140,6 +158,32 @@ namespace NextHave.BL.Models.Rooms
         {
             RemoveUser(oldCoord, roomUserInstance);
             AddUser(newCoord, roomUserInstance);
+        }
+
+        public bool CanWalk(int x, int y, double z, bool lastStep, bool @override)
+        {
+            if (!ValidTile(x, y))
+                return false;
+
+            if (!@override && OccupiedTile(x, y, z))
+                return false;
+            
+            var data = Maps[new Point(x, y)];
+            if (!lastStep)
+            {
+                if (!@override)
+                    return data == 1 || data == 4;
+            }
+
+            if (!@override)
+                return data switch
+                {
+                    3 => true,
+                    1 => true,
+                    _ => false
+                };
+
+            return true;
         }
 
         public bool CanWalk(int x, int y, double z = 0.0, bool @override = false)

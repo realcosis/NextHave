@@ -4,9 +4,12 @@
     {
         public int GetX
             => x;
-        
+
         public int GetY
             => y;
+
+        public static Point operator +(Point left, Point right)
+            => new(left.GetX + right.GetX, left.GetY + right.GetY);
 
         public static bool operator !=(Point? left, Point? right)
             => !(left == right);
@@ -29,6 +32,13 @@
             if (other is null) return false;
             if (ReferenceEquals(this, other)) return true;
             return GetX == other.GetX && GetY == other.GetY;
+        }
+
+        public int GetDistance(Point other)
+        {
+            var x = GetX - other.GetX;
+            var y = GetY - other.GetY;
+            return x * x + y * y;
         }
 
         public override string ToString()

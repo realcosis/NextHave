@@ -27,8 +27,6 @@ namespace NextHave.BL.Services.Rooms.Components
             {
                 roomModel.RoomInstance = _roomInstance;
                 _roomInstance.RoomModel = new WorkRoomModel(_roomInstance, roomModel);
-                _roomInstance.Pathfinder = new();
-                _roomInstance.Pathfinder.Initialize(_roomInstance.RoomModel);
             }
         }
     }

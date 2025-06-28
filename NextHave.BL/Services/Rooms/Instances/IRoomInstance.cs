@@ -5,8 +5,6 @@ namespace NextHave.BL.Services.Rooms.Instances
 {
     public interface IRoomInstance
     {
-        public Pathfinder? Pathfinder { get; set; }
-
         public Room? Room { get; set; }
 
         public WorkRoomModel? RoomModel { get; set; }
