@@ -18,5 +18,8 @@ namespace NextHave.BL.Services.Rooms.Factories
 
             return roomInstance;
         }
+
+        public void DestroyRoomInstance(int userId)
+            => roomInstanceProvider.Disable(userId);
     }
 }
