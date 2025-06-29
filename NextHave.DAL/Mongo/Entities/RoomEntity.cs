@@ -46,27 +46,9 @@ namespace NextHave.DAL.Mongo.Entities
 
         public string? Password { get; set; }
 
-        public int MuteSettings { get; set; }
-
-        public int BanSettings { get; set; }
-
-        public int KickSettings { get; set; }
-
-        public int TradeSettings { get; set; }
-
-        public int WallHeight { get; set; }
-
-        public int RollerSpeed { get; set; }
-
         public Dictionary<string, double> Bans { get; set; } = [];
 
         public List<uint> Rights { get; set; } = [];
-
-        public string? Wallpaper { get; set; }
-
-        public string? Floorpaper { get; set; }
-
-        public string? Landscape { get; set; }
 
         public bool AllowPets { get; set; }
 
@@ -84,6 +66,24 @@ namespace NextHave.DAL.Mongo.Entities
 
         public int FloorThickness { get; set; }
 
-        public bool? AllowDiagonal { get; set; } = true;
+        public bool? AllowDiagonal { get; set; }
+
+        public int MuteSettings { get; set; }
+
+        public int BanSettings { get; set; }
+
+        public int KickSettings { get; set; }
+
+        public int TradeSettings { get; set; }
+
+        public int WallHeight { get; set; }
+
+        public int RollerSpeed { get; set; }
+
+        public string? Wallpaper { get; set; }
+
+        public string? Floorpaper { get; set; }
+
+        public string? Landscape { get; set; }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using NextHave.BL.Models.Users;
 using NextHave.BL.Messages.Input;
 using Microsoft.AspNetCore.SignalR;
+using NextHave.BL.Messages;
 
 namespace NextHave.BL.Clients
 {
@@ -24,10 +25,13 @@ namespace NextHave.BL.Clients
             };
         }
 
-        public async Task Send(byte[] output)
+        public async Task Send(Composer message)
         {
             if (ClientProxy != default)
+            {
+                var output = message.Write().Bytes();
                 await ClientProxy.SendAsync("ReceiveBinary", output);
+            }
         }
     }
 }

@@ -3,10 +3,12 @@ using Dolphin.Core.Injection;
 using Microsoft.Extensions.DependencyInjection;
 using NextHave.BL.Context;
 using NextHave.BL.Events.Rooms;
-using NextHave.BL.Events.Rooms.Movements;
+using NextHave.BL.Events.Rooms.Users;
+using NextHave.BL.Events.Rooms.Users.Movements;
 using NextHave.BL.Events.Users;
 using NextHave.BL.Messages;
 using NextHave.BL.Messages.Output;
+using NextHave.BL.Messages.Output.Rooms.Engine;
 using NextHave.BL.Models;
 using NextHave.BL.Services.Rooms.Factories;
 using NextHave.BL.Services.Rooms.Instances;
@@ -81,9 +83,7 @@ namespace NextHave.BL.Services.Rooms.Components
             users.TryRemove(roomUserInstance.VirutalId, out var _);
             roomUserFactory.DestroyRoomUserInstance(roomUserInstance.UserId);
 
-            await using var userRemoveMessageComposer = ServerMessageFactory.GetServerMessage(OutputCode.UserRemoveMessageComposer);
-            userRemoveMessageComposer.AddString(roomUserInstance.VirutalId.ToString());
-            await Send(userRemoveMessageComposer);
+            await Send(new UserRemoveMessageComposer(roomUserInstance.VirutalId));
         }
 
         async Task OnApplyMovement(ApplyMovementEvent @event)
@@ -165,43 +165,27 @@ namespace NextHave.BL.Services.Rooms.Components
             if (@event?.User?.Client == default || _roomInstance == default || _roomInstance.RoomModel == default)
                 return;
 
-            @event.User.CurrentRoomInstance = _roomInstance;
+            var roomUserInstance = roomUserFactory.GetRoomUserInstance(@event.User.Id, @event.User.Username!, virtualId++, @event.User, _roomInstance);
 
-            var roomUser = roomUserFactory.GetRoomUserInstance(@event.User.Id, @event.User.Username!, virtualId++, @event.User, _roomInstance);
+            roomUserInstance.SetPosition(new ThreeDPoint(_roomInstance.RoomModel.DoorX, _roomInstance.RoomModel.DoorY, _roomInstance.RoomModel.DoorZ));
+            roomUserInstance.SetRotation(_roomInstance.RoomModel.DoorOrientation);
 
-            roomUser.SetPosition(new ThreeDPoint(_roomInstance.RoomModel.DoorX, _roomInstance.RoomModel.DoorY, _roomInstance.RoomModel.DoorZ));
-            roomUser.SetRotation(_roomInstance.RoomModel.DoorOrientation);
+            _roomInstance.RoomModel.AddUser(roomUserInstance.Position!.ToPoint(), roomUserInstance);
 
-            _roomInstance.RoomModel.AddUser(roomUser.Position!.ToPoint(), roomUser);
+            await roomUserInstance.Client!.Send(new UsersMessageComposer([.. users.Values]));
 
-            await using var usersMessageComposerToUser = ServerMessageFactory.GetServerMessage(OutputCode.UsersMessageComposer);
-            usersMessageComposerToUser.AddInt32(users.Count);
-            foreach (var user in users.Values)
-                user.Serialize(usersMessageComposerToUser);
-            await roomUser.Client!.Send(usersMessageComposerToUser.Bytes());
+            users.TryAdd(roomUserInstance.VirutalId, roomUserInstance);
 
-            users.TryAdd(roomUser.VirutalId, roomUser);
-
-            await using var usersMessageComposerToRoom = ServerMessageFactory.GetServerMessage(OutputCode.UsersMessageComposer);
-            usersMessageComposerToRoom.AddInt32(1);
-            roomUser.Serialize(usersMessageComposerToRoom);
-            await Send(usersMessageComposerToRoom);
+            await Send(new UsersMessageComposer([roomUserInstance]));
         }
 
-        async Task SendUserUpdate(IRoomUserInstance user)
-        {
-            await using var updateMessage = ServerMessageFactory.GetServerMessage(OutputCode.UserUpdateMessageComposer);
-            updateMessage.AddInt32(1);
-            user.SerializeStatus(updateMessage);
-            await Send(updateMessage);
-        }
+        async Task SendUserUpdate(IRoomUserInstance roomUserInstance)
+            => await Send(new UserUpdateMessageComposer([roomUserInstance]));
 
-        async Task Send(ServerMessage message)
+        async Task Send(Composer message)
         {
-            var buffer = message.Bytes();
-
             foreach (var client in users.Values.Select(u => u.Client).Where(c => c != default))
-                await client!.Send(buffer);
+                await client!.Send(message);
         }
 
         static void PrepareMovement(IRoomUserInstance roomUserInstance, ThreeDPoint nextPoint)

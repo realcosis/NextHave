@@ -1,4 +1,4 @@
-﻿namespace NextHave.BL.Events.Rooms.Movements
+﻿namespace NextHave.BL.Events.Rooms.Users.Movements
 {
     public class MoveAvatarEvent : RoomEvent
     {

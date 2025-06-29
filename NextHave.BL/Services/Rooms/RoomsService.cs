@@ -91,8 +91,6 @@ namespace NextHave.BL.Services.Rooms
                     while (await roomTimer.WaitForNextTickAsync(cancellationSource.Token))
                         await Parallel.ForEachAsync(Instance.ActiveRooms.Values, cancellationSource.Token, async (room, ct) => await room.OnRoomTick());
                 }, cancellationSource.Token);
-
-                logger.LogInformation("RoomsManager has been loaded with {count} navigator categories definitions", Instance.NavigatorCategories.Count);
             }
             catch (Exception ex)
             {

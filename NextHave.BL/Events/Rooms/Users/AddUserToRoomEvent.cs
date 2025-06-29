@@ -1,6 +1,6 @@
 ﻿using NextHave.BL.Models.Users;
 
-namespace NextHave.BL.Events.Rooms
+namespace NextHave.BL.Events.Rooms.Users
 {
     public class AddUserToRoomEvent : RoomEvent
     {

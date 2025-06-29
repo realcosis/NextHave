@@ -1,4 +1,4 @@
-﻿namespace NextHave.BL.Messages.Input.Rooms
+﻿namespace NextHave.BL.Messages.Input.Rooms.Connection
 {
     public record OpenFlatMessage : IInput
     {

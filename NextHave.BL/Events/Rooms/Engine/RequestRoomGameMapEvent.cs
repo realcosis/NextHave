@@ -1,4 +1,4 @@
-﻿namespace NextHave.BL.Events.Rooms
+﻿namespace NextHave.BL.Events.Rooms.Engine
 {
     public class RequestRoomGameMapEvent : RoomEvent
     {

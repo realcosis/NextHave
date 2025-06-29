@@ -1,4 +1,4 @@
-﻿using NextHave.BL.Messages.Input.Rooms;
+﻿using NextHave.BL.Messages.Input.Rooms.Engine;
 
 namespace NextHave.BL.Messages.Parsers.Rooms
 {

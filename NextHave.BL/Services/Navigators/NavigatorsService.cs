@@ -11,7 +11,7 @@ using System.Collections.Concurrent;
 namespace NextHave.BL.Services.Navigators
 {
     [Service(ServiceLifetime.Singleton)]
-    class NavigatorService(ILogger<INavigatorsService> logger, IServiceScopeFactory serviceScopeFactory, IRoomsService roomsService) : INavigatorsService, IStartableService
+    class NavigatorsService(ILogger<INavigatorsService> logger, IServiceScopeFactory serviceScopeFactory, IRoomsService roomsService) : INavigatorsService, IStartableService
     {
         INavigatorsService Instance => this;
 
@@ -19,7 +19,6 @@ namespace NextHave.BL.Services.Navigators
 
         async Task IStartableService.StartAsync()
         {
-
             using var scope = serviceScopeFactory.CreateAsyncScope();
             var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
             Instance.PublicCategories.Clear();
@@ -40,8 +39,6 @@ namespace NextHave.BL.Services.Navigators
                             category.AddRoom(room);
                     }
                 }
-
-                logger.LogInformation("NavigatorManager has been loaded with {count} public categories definitions", Instance.PublicCategories.Count);
             }
             catch (Exception ex)
             {

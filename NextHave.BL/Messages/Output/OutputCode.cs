@@ -28,6 +28,10 @@
 
         public const short UserRemoveMessageComposer = 2661;
 
-        public const short PrepareRoomMessageComposer = 758;
+        public const short FurnitureAliasesMessageComposer = 1723;
+
+        public const short OpenConnectionMessageComposer = 758;
+
+        public const short CloseConnectionMessageComposer = 122;
     }
 }
