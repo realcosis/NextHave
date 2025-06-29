@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 namespace NextHave.BL.Services.Catalogs
 {
     [Service(ServiceLifetime.Singleton)]
-    class CatalogsService(ILogger<ICatalogsService> logger, IServiceProvider serviceProvider) : ICatalogsService, IStartableService
+    class CatalogsService(ILogger<ICatalogsService> logger) : ICatalogsService, IStartableService
     {
         ICatalogsService Instance => this;
 
@@ -13,7 +13,7 @@ namespace NextHave.BL.Services.Catalogs
         {
             try
             {
-
+                await Task.CompletedTask;
             }
             catch (Exception ex)
             {

@@ -22,7 +22,7 @@
         }
 
         public override int GetHashCode()
-            => HashCode.Combine(x, y);
+            => HashCode.Combine(GetX, GetY);
 
         public override bool Equals(object? obj)
             => obj is Point point && Equals(point);

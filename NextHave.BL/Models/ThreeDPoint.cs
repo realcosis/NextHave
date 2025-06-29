@@ -16,7 +16,7 @@
         }
 
         public override int GetHashCode()
-            => HashCode.Combine(x, y, z);
+            => HashCode.Combine(GetX, GetY, GetZ);
 
         public override bool Equals(object? obj)
         {

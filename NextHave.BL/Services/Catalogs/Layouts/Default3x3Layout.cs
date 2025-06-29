@@ -6,7 +6,7 @@ using NextHave.BL.Messages;
 namespace NextHave.BL.Services.Catalogs.Layouts
 {
     [Service(ServiceLifetime.Singleton, Keyed = true, Key = "Default3x3Layout")]
-    class Default3x3Layout(IServiceProvider serviceProvider) : ICatalogLayout
+    class Default3x3Layout() : ICatalogLayout
     {
         ICatalogLayout Instance => this;
 

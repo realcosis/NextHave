@@ -1,13 +1,11 @@
-﻿using Dolphin.Core.Events;
-using Dolphin.Core.Injection;
+﻿using Dolphin.Core.Injection;
 using Microsoft.Extensions.DependencyInjection;
 using NextHave.BL.Context;
 using NextHave.BL.Events.Rooms;
+using NextHave.BL.Events.Rooms.Session;
 using NextHave.BL.Events.Rooms.Users;
 using NextHave.BL.Events.Rooms.Users.Movements;
-using NextHave.BL.Events.Users;
 using NextHave.BL.Messages;
-using NextHave.BL.Messages.Output;
 using NextHave.BL.Messages.Output.Rooms.Engine;
 using NextHave.BL.Models;
 using NextHave.BL.Services.Rooms.Factories;
@@ -20,7 +18,7 @@ using System.Text;
 namespace NextHave.BL.Services.Rooms.Components
 {
     [Service(ServiceLifetime.Scoped)]
-    class RoomUserComponent(RoomUserFactory roomUserFactory, IEventsService eventsService) : IRoomComponent
+    class RoomUserComponent(RoomUserFactory roomUserFactory) : IRoomComponent
     {
         IRoomInstance? _roomInstance;
 
@@ -35,12 +33,14 @@ namespace NextHave.BL.Services.Rooms.Components
             _roomInstance = roomInstance;
 
             await roomInstance.EventsService.SubscribeAsync<RoomTickEvent>(roomInstance, OnRoomTick);
-            await eventsService.SubscribeAsync<UserDisconnectedEvent>(roomInstance, OnUserDisconnect);
             await roomInstance.EventsService.SubscribeAsync<AddUserToRoomEvent>(roomInstance, OnAddUserToRoomEvent);
+            await roomInstance.EventsService.SubscribeAsync<UserRoomExitEvent>(roomInstance, OnUserExit);
 
             await roomInstance.EventsService.SubscribeAsync<MoveAvatarEvent>(roomInstance, OnMoveAvatarEvent);
             await roomInstance.EventsService.SubscribeAsync<ProcessMovementEvent>(roomInstance, OnProcessMovement);
             await roomInstance.EventsService.SubscribeAsync<ApplyMovementEvent>(roomInstance, OnApplyMovement);
+
+            await roomInstance.EventsService.SubscribeAsync<SendPacketToRoom>(roomInstance, OnSendPacketToRoom);
         }
 
         async Task OnRoomTick(RoomTickEvent @event)
@@ -70,7 +70,7 @@ namespace NextHave.BL.Services.Rooms.Components
             }
         }
 
-        async Task OnUserDisconnect(UserDisconnectedEvent @event)
+        async Task OnUserExit(UserRoomExitEvent @event)
         {
             if (_roomInstance == default || _roomInstance.RoomModel == default)
                 return;
@@ -177,6 +177,14 @@ namespace NextHave.BL.Services.Rooms.Components
             users.TryAdd(roomUserInstance.VirutalId, roomUserInstance);
 
             await Send(new UsersMessageComposer([roomUserInstance]));
+        }
+
+        async Task OnSendPacketToRoom(SendPacketToRoom @event)
+        {
+            if (@event.Composer == default)
+                return;
+
+            await Send(@event.Composer);
         }
 
         async Task SendUserUpdate(IRoomUserInstance roomUserInstance)

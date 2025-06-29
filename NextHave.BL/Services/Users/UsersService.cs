@@ -12,12 +12,11 @@ using NextHave.BL.Extensions;
 using NextHave.BL.Mappers;
 using NextHave.BL.Services.Settings;
 using NextHave.DAL.MySQL.Entities;
-using Dolphin.Core.Events;
 
 namespace NextHave.BL.Services.Users
 {
     [Service(ServiceLifetime.Singleton)]
-    class UsersService(IServiceScopeFactory serviceScopeFactory, ILogger<IUsersService> logger, ISettingsService settingsService, IEventsService eventsService) : IUsersService
+    class UsersService(IServiceScopeFactory serviceScopeFactory, ILogger<IUsersService> logger, ISettingsService settingsService) : IUsersService
     {
         IUsersService Instance => this;
 

@@ -1,12 +1,11 @@
-﻿using Dolphin.Core.Events;
-using Microsoft.AspNetCore.SignalR;
+﻿using Microsoft.AspNetCore.SignalR;
 using NextHave.BL.Clients;
-using NextHave.BL.Events.Users;
+using NextHave.BL.Events.Rooms.Users;
 using NextHave.BL.PacketParsers;
 
 namespace NextHave.Nitro.Sockets
 {
-    public class SocketHub(IServiceScopeFactory serviceScopeFactory, IEventsService eventsService) : Hub
+    public class SocketHub(IServiceScopeFactory serviceScopeFactory) : Hub
     {
         public override async Task OnConnectedAsync()
         {
@@ -24,10 +23,16 @@ namespace NextHave.Nitro.Sockets
         {
             if (Sessions.ConnectedClients.TryGetValue(Context.ConnectionId, out var client))
             {
-                await eventsService.DispatchAsync<UserDisconnectedEvent>(new()
+                if (client.User?.CurrentRoomInstance != default)
                 {
-                    UserId = client.User?.Id
-                });
+                    await client.User.CurrentRoomInstance.EventsService.DispatchAsync(new UserRoomExitEvent
+                    {
+                        UserId = client.User.Id,
+                        RoomId = client.User.CurrentRoomId!.Value,
+                    });
+                    client.User.CurrentRoomInstance = default;
+                    client.User.CurrentRoomId = default;
+                }
                 Sessions.ConnectedClients.TryRemove(Context.ConnectionId, out _);
             }
 
