@@ -1,6 +1,5 @@
-﻿using NextHave.BL.Models.Groups;
-using NextHave.BL.Models.Rooms;
-using NextHave.BL.Models.Rooms.Navigators;
+﻿using NextHave.BL.Models.Rooms;
+using NextHave.BL.Models.Groups;
 using NextHave.DAL.Mongo.Entities;
 using NextHave.DAL.MySQL.Entities;
 
@@ -17,5 +16,16 @@ namespace NextHave.BL.Mappers
                                                (dest => dest.ModelName!, src => src.Model!.ModelId),
                                                (dest => dest.Group!, src => group),
                                                (dest => dest.State!, src => entity.AccessStatus));
+
+        public static RoomToner Map(this RoomTonerEntity entity)
+            => new()
+            {
+                Brightness = entity.Brightness!.Value,
+                Enabled = entity.Enabled,
+                Hue = entity.Hue!.Value,
+                ItemId = entity.ItemId!.Value,
+                RoomId = entity.RoomId!.Value,
+                Saturation = entity.Saturation!.Value
+            };
     }
 }

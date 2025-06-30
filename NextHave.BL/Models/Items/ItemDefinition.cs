@@ -1,4 +1,6 @@
-﻿using NextHave.DAL.Enums;
+﻿using NextHave.BL.Attributes;
+using NextHave.BL.Services.Items.Interactions;
+using NextHave.DAL.Enums;
 
 namespace NextHave.BL.Models.Items
 {
@@ -36,7 +38,9 @@ namespace NextHave.BL.Models.Items
 
         public bool AllowInventoryStack { get; set; }
 
-        public string? InteractionType { get; set; }
+        public InteractionTypes? InteractionType { get; set; }
+
+        public IInteractor? Interactor { get; set; }
 
         public int? InteractionCount { get; set; }
 

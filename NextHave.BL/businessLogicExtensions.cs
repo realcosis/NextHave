@@ -5,6 +5,7 @@ using NextHave.BL.PacketParsers;
 using NextHave.BL.Services.Rooms.Components;
 using NextHave.BL.Services.Rooms.Factories;
 using NextHave.BL.Services.Rooms.Instances;
+using NextHave.DAL.Enums;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -43,7 +44,8 @@ namespace NextHave.BL
             {
                 var roomComponents = sp.GetRequiredService<IEnumerable<IRoomComponent>>();
                 var roomEventsFactory = sp.GetRequiredService<RoomEventsFactory>();
-                return new RoomInstance(roomComponents, roomEventsFactory);
+                var serviceScopeFactory = sp.GetRequiredService<IServiceScopeFactory>();
+                return new RoomInstance(roomComponents, roomEventsFactory, serviceScopeFactory);
             });
 
             services.AddKeyedService<IRoomUserInstance, RoomUserInstance>((sp, key) => new RoomUserInstance());

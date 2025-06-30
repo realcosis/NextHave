@@ -1,12 +1,13 @@
-﻿using Dolphin.Core.Backgrounds;
+﻿using NextHave.DAL.MySQL;
+using NextHave.BL.Mappers;
 using Dolphin.Core.Injection;
+using NextHave.BL.Models.Items;
+using Microsoft.Extensions.Logging;
+using System.Collections.Concurrent;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using NextHave.BL.Mappers;
-using NextHave.BL.Models.Items;
-using NextHave.DAL.MySQL;
-using System.Collections.Concurrent;
+using NextHave.BL.Services.Items.Factories;
+using NextHave.DAL.Enums;
 
 namespace NextHave.BL.Services.Items
 {
@@ -26,13 +27,15 @@ namespace NextHave.BL.Services.Items
                 using var scope = serviceScopeFactory.CreateAsyncScope();
                 var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
 
+                var interactionFactory = scope.ServiceProvider.GetRequiredService<InteractorFactory>();
+
                 var itemDefinitions = await mysqlDbContext.ItemDefinitions.AsNoTracking().ToListAsync();
 
                 Parallel.ForEach(itemDefinitions, new()
                 {
                     CancellationToken = new(),
                     MaxDegreeOfParallelism = Environment.ProcessorCount
-                }, item => Instance.ItemDefinitions.TryAdd(item.Id, item.Map()));
+                }, async item => Instance.ItemDefinitions.TryAdd(item.Id, item.Map(await interactionFactory.GetInteractor(item.InteractionType!.Value))));
 
                 logger.LogInformation("ItemsService started with {count} item definitions", Instance.ItemDefinitions.Count);
             }

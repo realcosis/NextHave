@@ -2,6 +2,8 @@
 {
     public class Tables
     {
+        public const string RoomToners = "room_toners";
+
         public const string Users = "users";
 
         public const string UserTickets = "user_tickets";

@@ -7,6 +7,8 @@ namespace NextHave.BL.Services.Rooms.Instances
     {
         public Room? Room { get; set; }
 
+        public RoomToner? Toner { get; set; }
+
         public WorkRoomModel? RoomModel { get; set; }
 
         public RoomEventsService EventsService { get; }

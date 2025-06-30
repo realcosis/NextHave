@@ -86,7 +86,7 @@ namespace NextHave.BL.Models.Rooms
 
         public int RollerSpeed { get; set; } = 4;
 
-        public string HideWired { get; set; } = "0";
+        public bool HideWired { get; set; }
 
         public Group? Group { get; set; }
 

@@ -1,4 +1,5 @@
 ﻿using Dolphin.Core.Injection;
+using Dolphin.Core.Validations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NextHave.BL.Events.Rooms;
@@ -63,7 +64,12 @@ namespace NextHave.BL.Services.Rooms.Components
             if (_roomInstance?.Room == default|| @event.Client == default)
                 return;
 
-            await @event.Client.Send(new ObjectsMessageComposer(_roomInstance.Room.OwnerId!.Value, _roomInstance.Room.Owner!, [.. items.Values.Where(i => i.Base != default && i.Base.Type == ItemTypes.Floor)]));
+            var floorItems = items.Values.Where(i => i.Base != default && i.Base.Type == ItemTypes.Floor).ToList();
+
+            if (_roomInstance.Room.HideWired)
+                floorItems = [.. floorItems.Where(i => !i.IsWired && !i.IsCondition)];
+
+            await @event.Client.Send(new ObjectsMessageComposer(_roomInstance.Room.OwnerId!.Value, _roomInstance.Room.Owner!, floorItems));
         }
     }
 }

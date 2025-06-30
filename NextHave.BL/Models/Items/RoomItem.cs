@@ -1,7 +1,8 @@
-﻿using NextHave.BL.Messages;
-using NextHave.BL.Services.Rooms.Instances;
-using NextHave.BL.Utils;
+﻿using NextHave.BL.Utils;
 using NextHave.DAL.Enums;
+using NextHave.BL.Messages;
+using NextHave.BL.Services.Items.Interactions;
+using NextHave.BL.Services.Rooms.Instances;
 
 namespace NextHave.BL.Models.Items
 {
@@ -35,103 +36,137 @@ namespace NextHave.BL.Models.Items
 
         public ItemDefinition? Base { get; set; }
 
-        public void Serialize(ServerMessage Message, int userId)
+        public bool IsWired
+            => Base!.InteractionType!.Value.IsWired();
+
+        public bool IsCondition
+            => Base!.InteractionType!.Value.IsCondition();
+
+        public void Serialize(ServerMessage message, int userId)
         {
+            if (RoomInstance == default)
+                return;
+
             if (Base != default && Base.Type == ItemTypes.Floor)
             {
-                Message.AddInt32(Id);
-                Message.AddInt32(Base.SpriteId!.Value);
-                Message.AddInt32(Point!.GetX);
-                Message.AddInt32(Point!.GetY);
-                Message.AddInt32(Rotation);
-                Message.AddString(Point.GetZ.GetString());
-                Message.AddString(Base.Height!.Value.GetString());
+                message.AddInt32(Id);
+                message.AddInt32(Base.SpriteId!.Value);
+                message.AddInt32(Point!.GetX);
+                message.AddInt32(Point!.GetY);
+                message.AddInt32(Rotation);
+                message.AddString(Point.GetZ.GetString());
+                message.AddString(Base.Height!.Value.GetString());
                 if (Base.ItemName!.Equals("ads_mpu_720") || Base.ItemName.Equals("ads_background") || Base.ItemName.Equals("ads_mpu_300") || Base.ItemName.Equals("ads_mpu_160"))
                 {
-                    Message.AddInt32(0);
-                    Message.AddInt32(1);
+                    message.AddInt32(0);
+                    message.AddInt32(1);
                     var array = ExtraData!.Split(Convert.ToChar(9)).ToArray();
                     if (ExtraData != "" && array.Length > 1)
                     {
-                        Message.AddInt32(unchecked(array.Length / 2));
+                        message.AddInt32(unchecked(array.Length / 2));
                         for (int i = 0; i <= array.Length - 1; i++)
                         {
-                            Message.AddString(array[i]);
+                            message.AddString(array[i]);
                         }
                     }
                     else
                     {
-                        Message.AddInt32(0);
+                        message.AddInt32(0);
                     }
+                }
+                else if (Base.InteractionType!.Value.Equals(InteractionTypes.RecordsBoard) || Base.InteractionType!.Value.Equals(InteractionTypes.WonGamesRecordsBoard))
+                {
+                    message.AddInt32(1);
+                    message.AddInt32(6);
+                    message.AddString(ExtraData!);
+                    message.AddInt32(2);
+                    message.AddInt32(1);
+                    message.AddInt32(0); // count
+                        //Message.AddInt32(scoresRecords.Item2); x count
+                        //Message.AddInt32(1);
+                        //Message.AddString(scoresRecords.Item1)
                 }
                 else if (Base.ItemName.Equals("boutique_mannequin1"))
                 {
-                    Message.AddInt32(0);
-                    Message.AddInt32(1);
-                    Message.AddInt32(3);
-                    Message.AddString("GENDER");
-                    Message.AddString("m");
+                    message.AddInt32(0);
+                    message.AddInt32(1);
+                    message.AddInt32(3);
+                    message.AddString("GENDER");
+                    message.AddString("m");
                     if (ExtraData!.Contains('\n'))
                     {
-                        Message.AddString("FIGURE");
-                        Message.AddString(ExtraData.Split('\n')[0]);
-                        Message.AddString("OUTFIT_NAME");
-                        Message.AddString(ExtraData.Split('\n')[1]);
+                        message.AddString("FIGURE");
+                        message.AddString(ExtraData.Split('\n')[0]);
+                        message.AddString("OUTFIT_NAME");
+                        message.AddString(ExtraData.Split('\n')[1]);
                     }
                     else
                     {
-                        Message.AddString("FIGURE");
-                        Message.AddString(ExtraData);
-                        Message.AddString("OUTFIT_NAME");
-                        Message.AddString("Il mio look");
+                        message.AddString("FIGURE");
+                        message.AddString(ExtraData);
+                        message.AddString("OUTFIT_NAME");
+                        message.AddString("Il mio look");
                     }
+                }
+                else if (Base.ItemName == "roombg_color")
+                {
+                    message.AddInt32(0);
+                    message.AddInt32(5);
+                    message.AddInt32(4);
+                    message.AddInt32(RoomInstance.Toner!.Enabled ? 1 : 0);
+                    message.AddInt32(RoomInstance.Toner!.Hue);
+                    message.AddInt32(RoomInstance.Toner!.Saturation);
+                    message.AddInt32(RoomInstance.Toner!.Brightness);
                 }
                 else
                 {
-                    Message.AddInt32(0);
+                    message.AddInt32(0);
                     if (Base.ItemName.Contains("badge_display"))
                     {
                         if (!string.IsNullOrWhiteSpace(ExtraData) && ExtraData.Split(Convert.ToChar(1)).Length >= 3)
                         {
                             var array5 = ExtraData.Split(Convert.ToChar(1)).ToArray();
-                            Message.AddInt32(2);
-                            Message.AddInt32(4);
-                            Message.AddString("0");
-                            Message.AddString((array5[0] != "") ? array5[0] : "BR011");
-                            Message.AddString((array5[1] != "") ? array5[1] : "FalseStyle:3");
-                            Message.AddString((array5[2] != "") ? array5[2] : (DateTime.Now.Day + "-" + DateTime.Now.Month + "-" + DateTime.Now.Year));
+                            message.AddInt32(2);
+                            message.AddInt32(4);
+                            message.AddString("0");
+                            message.AddString((array5[0] != "") ? array5[0] : "BR011");
+                            message.AddString((array5[1] != "") ? array5[1] : "FalseStyle:3");
+                            message.AddString((array5[2] != "") ? array5[2] : (DateTime.Now.Day + "-" + DateTime.Now.Month + "-" + DateTime.Now.Year));
                         }
                         else
                         {
-                            Message.AddInt32(2);
-                            Message.AddInt32(4);
-                            Message.AddString("0");
-                            Message.AddString("BR011");
-                            Message.AddString("FalseStyle:3");
-                            Message.AddString(DateTime.Now.Day + "-" + DateTime.Now.Month + "-" + DateTime.Now.Year);
+                            message.AddInt32(2);
+                            message.AddInt32(4);
+                            message.AddString("0");
+                            message.AddString("BR011");
+                            message.AddString("FalseStyle:3");
+                            message.AddString(DateTime.Now.Day + "-" + DateTime.Now.Month + "-" + DateTime.Now.Year);
                         }
                     }
                     else if (CurrentStack > 0)
                     {
-                        Message.AddString("");
-                        Message.AddBoolean(value: true);
-                        Message.AddBoolean(value: false);
-                        Message.AddString(ExtraData!);
-                        Message.AddInt32(CurrentStack);
-                        Message.AddInt32(TotalStack);
+                        message.AddString("");
+                        message.AddBoolean(value: true);
+                        message.AddBoolean(value: false);
+                        message.AddString(ExtraData!);
+                        message.AddInt32(CurrentStack);
+                        message.AddInt32(TotalStack);
                     }
                     else
                     {
-                        Message.AddInt32(0);
-                        Message.AddString(ExtraData!);
+                        message.AddInt32(0);
+                        if (!Base.InteractionType.Value.Equals(InteractionTypes.FBGate))
+                            message.AddString(ExtraData!);
+                        else
+                            message.AddString(string.Empty);
                     }
                 }
-                Message.AddInt32(-1);
-                Message.AddInt32(Base.InteractionCount!.Value);
-                Message.AddInt32(userId);
-                Message.AddInt32(RareValue);
-                Message.AddBoolean(ValidRare);
-                Message.AddString(PaymentReason ?? string.Empty);
+                message.AddInt32(-1);
+                message.AddInt32(Base.InteractionCount!.Value);
+                message.AddInt32(userId);
+                message.AddInt32(RareValue);
+                message.AddBoolean(ValidRare);
+                message.AddString(PaymentReason ?? string.Empty);
             }
         }
     }

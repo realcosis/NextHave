@@ -49,9 +49,10 @@ namespace NextHave.DAL.MySQL.Entities
         public bool AllowInventoryStack { get; set; } = true;
 
         [Required]
-        public string? InteractionType { get; set; } = "default";
+        public InteractionTypes? InteractionType { get; set; }
 
-        [Required]
+        public string? OldInteractionType { get; set; } = "default";
+
         public int? InteractionCount { get; set; } = 0;
     }
 }

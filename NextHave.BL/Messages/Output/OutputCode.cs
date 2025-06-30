@@ -35,5 +35,7 @@
         public const short CloseConnectionMessageComposer = 122;
 
         public const short ObjectsMessageComposer = 1778;
+
+        public const short RoomVisualizationSettingsMessageComposer = 3547;
     }
 }

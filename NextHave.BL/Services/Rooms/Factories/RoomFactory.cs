@@ -1,6 +1,5 @@
 ﻿using Dolphin.Core.Injection;
 using NextHave.BL.Models.Rooms;
-using NextHave.BL.Events.Rooms.Items;
 using NextHave.BL.Services.Rooms.Instances;
 using Microsoft.Extensions.DependencyInjection;
 

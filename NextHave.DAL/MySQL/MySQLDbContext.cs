@@ -24,11 +24,15 @@ namespace NextHave.DAL.MySQL
 
         public DbSet<RoomModelEntity> RoomModels { get; set; }
 
+        public DbSet<RoomTonerEntity> RoomToners { get; set; }
+
         public DbSet<RoomModelCustomEntity> RoomModelCustoms { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+
+            builder.Entity<RoomTonerEntity>().HasKey(e => new { e.RoomId, e.ItemId });
 
             builder.Entity<NextHaveSettingEntity>().HasKey(e => new { e.Key, e.Type });
         }

@@ -3,13 +3,14 @@ using NextHave.BL.Models.Items;
 using NextHave.DAL.MySQL.Entities;
 using NextHave.DAL.Mongo.Entities;
 using NextHave.BL.Services.Rooms.Instances;
+using NextHave.BL.Services.Items.Interactions;
 
 namespace NextHave.BL.Mappers
 {
     public static class ItemMappers
     {
-        public static ItemDefinition Map(this ItemDefinitionEntity entity)
-            => entity.GetMap<ItemDefinitionEntity, ItemDefinition>();
+        public static ItemDefinition Map(this ItemDefinitionEntity entity, IInteractor? interactor)
+            => entity.GetMap<ItemDefinitionEntity, ItemDefinition>((dest => dest.Interactor!, src => interactor));
 
         public static RoomItem Map(this RoomItemEntity entity, ItemDefinition definition, IRoomInstance roomInstance, int rareValue = 0)
             => new()
