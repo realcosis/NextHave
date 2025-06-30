@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NextHave.BL.Events.Rooms;
 using NextHave.BL.Events.Rooms.Items;
-using NextHave.BL.Events.Rooms.Session;
 using NextHave.BL.Mappers;
 using NextHave.BL.Messages.Output.Rooms.Engine;
 using NextHave.BL.Models.Items;
@@ -61,14 +60,10 @@ namespace NextHave.BL.Services.Rooms.Components
 
         async Task OnSendItemsToNewUser(SendItemsToNewUserEvent @event)
         {
-            if (_roomInstance?.Room == default)
+            if (_roomInstance?.Room == default|| @event.Client == default)
                 return;
 
-            await _roomInstance.EventsService.DispatchAsync<SendRoomPacketEvent>(new()
-            {
-                RoomId = @event.RoomId,
-                Composer = new ObjectsMessageComposer(_roomInstance.Room.OwnerId!.Value, _roomInstance.Room.Owner!, [.. items.Values.Where(i => i.Base != default && i.Base.Type == ItemTypes.Floor)])
-            });
+            await @event.Client.Send(new ObjectsMessageComposer(_roomInstance.Room.OwnerId!.Value, _roomInstance.Room.Owner!, [.. items.Values.Where(i => i.Base != default && i.Base.Type == ItemTypes.Floor)]));
         }
     }
 }

@@ -2,7 +2,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using NextHave.BL.Context;
 using NextHave.BL.Events.Rooms;
-using NextHave.BL.Events.Rooms.Items;
 using NextHave.BL.Events.Rooms.Session;
 using NextHave.BL.Events.Rooms.Users;
 using NextHave.BL.Events.Rooms.Users.Movements;

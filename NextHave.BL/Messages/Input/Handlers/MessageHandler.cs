@@ -87,7 +87,8 @@ namespace NextHave.BL.Messages.Input.Handlers
 
                 await roomInstance.EventsService.DispatchAsync<SendItemsToNewUserEvent>(new()
                 {
-                    RoomId = roomInstance.Room.Id
+                    Client = client,
+                    RoomId = roomInstance.Room.Id,
                 });
 
                 await roomInstance.EventsService.DispatchAsync<AddUserToRoomEvent>(new()
