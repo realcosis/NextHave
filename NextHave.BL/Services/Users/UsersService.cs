@@ -18,8 +18,6 @@ namespace NextHave.BL.Services.Users
     [Service(ServiceLifetime.Singleton)]
     class UsersService(IServiceScopeFactory serviceScopeFactory, ILogger<IUsersService> logger, ISettingsService settingsService) : IUsersService
     {
-        IUsersService Instance => this;
-
         ConcurrentDictionary<int, User> IUsersService.Users { get; } = [];
 
         async Task<User?> IUsersService.GetHabbo(int userId)

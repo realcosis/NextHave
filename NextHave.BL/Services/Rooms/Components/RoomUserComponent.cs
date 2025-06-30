@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using NextHave.BL.Context;
 using NextHave.BL.Events.Rooms;
+using NextHave.BL.Events.Rooms.Items;
 using NextHave.BL.Events.Rooms.Session;
 using NextHave.BL.Events.Rooms.Users;
 using NextHave.BL.Events.Rooms.Users.Movements;
@@ -32,15 +33,15 @@ namespace NextHave.BL.Services.Rooms.Components
         {
             _roomInstance = roomInstance;
 
-            await roomInstance.EventsService.SubscribeAsync<RoomTickEvent>(roomInstance, OnRoomTick);
-            await roomInstance.EventsService.SubscribeAsync<AddUserToRoomEvent>(roomInstance, OnAddUserToRoomEvent);
-            await roomInstance.EventsService.SubscribeAsync<UserRoomExitEvent>(roomInstance, OnUserExit);
+            await _roomInstance.EventsService.SubscribeAsync<RoomTickEvent>(_roomInstance, OnRoomTick);
+            await _roomInstance.EventsService.SubscribeAsync<AddUserToRoomEvent>(_roomInstance, OnAddUserToRoomEvent);
+            await _roomInstance.EventsService.SubscribeAsync<UserRoomExitEvent>(_roomInstance, OnUserExit);
 
-            await roomInstance.EventsService.SubscribeAsync<MoveAvatarEvent>(roomInstance, OnMoveAvatarEvent);
-            await roomInstance.EventsService.SubscribeAsync<ProcessMovementEvent>(roomInstance, OnProcessMovement);
-            await roomInstance.EventsService.SubscribeAsync<ApplyMovementEvent>(roomInstance, OnApplyMovement);
+            await _roomInstance.EventsService.SubscribeAsync<MoveAvatarEvent>(_roomInstance, OnMoveAvatarEvent);
+            await _roomInstance.EventsService.SubscribeAsync<ProcessMovementEvent>(_roomInstance, OnProcessMovement);
+            await _roomInstance.EventsService.SubscribeAsync<ApplyMovementEvent>(_roomInstance, OnApplyMovement);
 
-            await roomInstance.EventsService.SubscribeAsync<SendPacketToRoom>(roomInstance, OnSendPacketToRoom);
+            await _roomInstance.EventsService.SubscribeAsync<SendRoomPacketEvent>(_roomInstance, OnSendRoomPacketEvent);
         }
 
         async Task OnRoomTick(RoomTickEvent @event)
@@ -162,7 +163,7 @@ namespace NextHave.BL.Services.Rooms.Components
 
         async Task OnAddUserToRoomEvent(AddUserToRoomEvent @event)
         {
-            if (@event?.User?.Client == default || _roomInstance == default || _roomInstance.RoomModel == default)
+            if (@event?.User?.Client == default || _roomInstance == default || _roomInstance?.Room == default || _roomInstance?.RoomModel == default)
                 return;
 
             var roomUserInstance = roomUserFactory.GetRoomUserInstance(@event.User.Id, @event.User.Username!, virtualId++, @event.User, _roomInstance);
@@ -179,7 +180,7 @@ namespace NextHave.BL.Services.Rooms.Components
             await Send(new UsersMessageComposer([roomUserInstance]));
         }
 
-        async Task OnSendPacketToRoom(SendPacketToRoom @event)
+        async Task OnSendRoomPacketEvent(SendRoomPacketEvent @event)
         {
             if (@event.Composer == default)
                 return;

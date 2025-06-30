@@ -17,8 +17,5 @@ namespace NextHave.BL.Mappers
                                                (dest => dest.ModelName!, src => src.Model!.ModelId),
                                                (dest => dest.Group!, src => group),
                                                (dest => dest.State!, src => entity.AccessStatus));
-
-        public static NavigatorCategory Map(this NavigatorUserCategoryEntity entity)
-            => entity.GetMap<NavigatorUserCategoryEntity, NavigatorCategory>();
     }
 }

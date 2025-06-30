@@ -53,7 +53,5 @@ namespace NextHave.DAL.MySQL.Entities
 
         [Required]
         public int? InteractionCount { get; set; } = 0;
-
-        public bool IsRareItem { get; set; } = false;
     }
 }

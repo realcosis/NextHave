@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NextHave.BL.Mappers;
 using NextHave.BL.Models.Navigators;
+using NextHave.BL.Models.Rooms.Navigators;
 using NextHave.BL.Services.Rooms;
 using NextHave.DAL.MySQL;
 using System.Collections.Concurrent;
@@ -15,18 +16,25 @@ namespace NextHave.BL.Services.Navigators
     {
         INavigatorsService Instance => this;
 
+        ConcurrentDictionary<int, NavigatorCategory> INavigatorsService.NavigatorCategories { get; } = [];
+
         ConcurrentDictionary<int, NavigatorPublicCategory> INavigatorsService.PublicCategories { get; } = [];
 
         async Task IStartableService.StartAsync()
         {
-            using var scope = serviceScopeFactory.CreateAsyncScope();
-            var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
             Instance.PublicCategories.Clear();
+            Instance.NavigatorCategories.Clear();
 
             try
             {
-                var categories = await mysqlDbContext.NavigatorPublicCategories.AsNoTracking().ToListAsync();
-                categories.ForEach(category => Instance.PublicCategories.TryAdd(category.Id, category.Map()));
+                using var scope = serviceScopeFactory.CreateAsyncScope();
+                var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
+
+                var publicCategories = await mysqlDbContext.NavigatorPublicCategories.AsNoTracking().ToListAsync();
+                publicCategories.ForEach(category => Instance.PublicCategories.TryAdd(category.Id, category.Map()));
+
+                var userCategories = await mysqlDbContext.NavigatorUserCategories.AsNoTracking().ToListAsync();
+                userCategories.ForEach(category => Instance.NavigatorCategories.TryAdd(category.Id, category.Map()));
 
                 var publicRooms = await mysqlDbContext.NavigatorPublicRooms.AsNoTracking().ToListAsync();
                 foreach (var publicRoom in publicRooms)
@@ -39,10 +47,13 @@ namespace NextHave.BL.Services.Navigators
                             category.AddRoom(room);
                     }
                 }
+
+                logger.LogInformation("NavigatorsService started with {count} public categories definitions", Instance.PublicCategories.Count);
+                logger.LogInformation("NavigatorsService started with {count} user categories definitions", Instance.NavigatorCategories.Count);
             }
             catch (Exception ex)
             {
-                logger.LogWarning("Exception during starting of NavigatorManager: {ex}", ex);
+                logger.LogWarning("Exception during starting of NavigatorsService: {ex}", ex);
             }
         }
     }

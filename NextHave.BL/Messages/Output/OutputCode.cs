@@ -33,5 +33,7 @@
         public const short OpenConnectionMessageComposer = 758;
 
         public const short CloseConnectionMessageComposer = 122;
+
+        public const short ObjectsMessageComposer = 1778;
     }
 }

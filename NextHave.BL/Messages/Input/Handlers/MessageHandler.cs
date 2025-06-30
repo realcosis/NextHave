@@ -3,6 +3,7 @@ using Dolphin.Core.Injection;
 using Microsoft.Extensions.DependencyInjection;
 using NextHave.BL.Clients;
 using NextHave.BL.Events.Rooms.Engine;
+using NextHave.BL.Events.Rooms.Items;
 using NextHave.BL.Events.Rooms.Users;
 using NextHave.BL.Events.Rooms.Users.Movements;
 using NextHave.BL.Events.Users;
@@ -84,9 +85,14 @@ namespace NextHave.BL.Messages.Input.Handlers
                 await client.Send(new HeightMapMessageComposer(roomInstance.RoomModel));
                 await client.Send(new RoomEntryInfoMessageComposer(roomInstance.Room.Id, false));
 
+                await roomInstance.EventsService.DispatchAsync<SendItemsToNewUserEvent>(new()
+                {
+                    RoomId = roomInstance.Room.Id
+                });
+
                 await roomInstance.EventsService.DispatchAsync<AddUserToRoomEvent>(new()
                 {
-                    RoomId = client.User.CurrentRoomId!.Value,
+                    RoomId = roomInstance.Room.Id,
                     User = client.User,
                     Spectator = false
                 });

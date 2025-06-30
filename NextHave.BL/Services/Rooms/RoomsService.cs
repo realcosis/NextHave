@@ -3,11 +3,11 @@ using Dolphin.Core.Injection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using NextHave.BL.Events.Rooms.Items;
 using NextHave.BL.Localizations;
 using NextHave.BL.Mappers;
 using NextHave.BL.Models.Groups;
 using NextHave.BL.Models.Rooms;
-using NextHave.BL.Models.Rooms.Navigators;
 using NextHave.BL.Services.Rooms.Factories;
 using NextHave.BL.Services.Rooms.Instances;
 using NextHave.DAL.Mongo;
@@ -20,8 +20,6 @@ namespace NextHave.BL.Services.Rooms
     class RoomsService(IServiceScopeFactory serviceScopeFactory, ILogger<IRoomsService> logger) : IRoomsService, IStartableService
     {
         IRoomsService Instance => this;
-
-        ConcurrentDictionary<int, NavigatorCategory> IRoomsService.NavigatorCategories { get; } = [];
 
         ConcurrentDictionary<int, IRoomInstance> IRoomsService.ActiveRooms { get; } = [];
 
@@ -55,8 +53,13 @@ namespace NextHave.BL.Services.Rooms
             var room = await Instance.GetRoom(roomId);
             if (room != default)
             {
-                roomInstance = serviceProvider.GetRequiredService<RoomFactory>().GetRoomInstance(roomId, room);
+                (roomInstance, var firstLoad) = serviceProvider.GetRequiredService<RoomFactory>().GetRoomInstance(roomId, room);
                 await roomInstance.Init();
+                if (firstLoad)
+                    await roomInstance.EventsService.DispatchAsync<LoadRoomItemsEvent>(new()
+                    {
+                        RoomId = roomInstance.Room!.Id
+                    });
                 Instance.ActiveRooms.TryAdd(roomId, roomInstance);
                 return roomInstance;
             }
@@ -74,15 +77,8 @@ namespace NextHave.BL.Services.Rooms
 
         async Task IStartableService.StartAsync()
         {
-            using var scope = serviceScopeFactory.CreateAsyncScope();
-            var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
-            Instance.NavigatorCategories.Clear();
-
             try
             {
-                var categories = await mysqlDbContext.NavigatorUserCategories.AsNoTracking().ToListAsync();
-                categories.ForEach(category => Instance.NavigatorCategories.TryAdd(category.Id, category.Map()));
-
                 var cancellationSource = new CancellationTokenSource();
                 _ = Task.Run(async () =>
                 {
@@ -91,10 +87,11 @@ namespace NextHave.BL.Services.Rooms
                     while (await roomTimer.WaitForNextTickAsync(cancellationSource.Token))
                         await Parallel.ForEachAsync(Instance.ActiveRooms.Values, cancellationSource.Token, async (room, ct) => await room.OnRoomTick());
                 }, cancellationSource.Token);
+                await Task.CompletedTask;
             }
             catch (Exception ex)
             {
-                logger.LogWarning("Exception during starting of RoomsManager: {ex}", ex);
+                logger.LogWarning("Exception during starting of RoomsService: {ex}", ex);
             }
         }
 

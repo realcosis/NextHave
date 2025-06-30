@@ -12,6 +12,8 @@ namespace NextHave.DAL.Mongo
 
         public DbSet<RoomEntity> Rooms { get; set; }
 
+        public DbSet<RoomItemEntity> RoomItems { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);

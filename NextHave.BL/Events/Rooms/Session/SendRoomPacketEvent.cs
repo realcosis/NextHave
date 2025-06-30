@@ -2,7 +2,7 @@
 
 namespace NextHave.BL.Events.Rooms.Session
 {
-    public class SendPacketToRoom : RoomEvent
+    public class SendRoomPacketEvent : RoomEvent
     {
         public Composer? Composer { get; set; }
     }

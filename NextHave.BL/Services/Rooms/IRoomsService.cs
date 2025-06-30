@@ -7,8 +7,6 @@ namespace NextHave.BL.Services.Rooms
 {
     public interface IRoomsService
     {
-        ConcurrentDictionary<int, NavigatorCategory> NavigatorCategories { get; }
-
         ConcurrentDictionary<int, IRoomInstance> ActiveRooms { get; }
 
         Task<Room?> GetRoom(int roomId);

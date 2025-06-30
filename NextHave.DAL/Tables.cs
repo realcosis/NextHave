@@ -10,6 +10,8 @@
 
         public const string ItemDefinitions = "item_definitions";
 
+        public const string RoomItems = "room_items";
+
         public const string NextHaveSettings = "nexthave_settings";
 
         public const string NavigatorPublicRooms = "navigator_public_rooms";

@@ -1,5 +1,6 @@
-﻿using NextHave.BL.Models.Navigators;
-using NextHave.DAL.MySQL.Entities;
+﻿using NextHave.DAL.MySQL.Entities;
+using NextHave.BL.Models.Navigators;
+using NextHave.BL.Models.Rooms.Navigators;
 
 namespace NextHave.BL.Mappers
 {
@@ -10,8 +11,17 @@ namespace NextHave.BL.Mappers
             {
                 Name = entity.Name,
                 Id = entity.Id,
-                OrderNum = entity.OrderNumber,
+                OrderNumber = entity.OrderNumber,
                 Rooms = []
+            };
+
+        public static NavigatorCategory Map(this NavigatorUserCategoryEntity entity)
+            => new()
+            {
+                Id = entity.Id,
+                Name = entity.Name,
+                Enabled = entity.Enabled,
+                MinRank = entity.MinRank
             };
     }
 }

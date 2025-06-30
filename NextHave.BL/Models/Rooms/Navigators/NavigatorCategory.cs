@@ -4,9 +4,9 @@
     {
         public int Id { get; set; }
 
-        public string? Caption { get; set; }
+        public string? Name { get; set; }
 
-        public string Enabled { get; set; } = "1";
+        public bool Enabled { get; set; }
 
         public int MinRank { get; set; } = 1;
     }

@@ -10,7 +10,7 @@ namespace NextHave.BL.Models.Navigators
 
         public List<Room> Rooms { get; set; } = [];
 
-        public int OrderNum { get; set; }
+        public int OrderNumber { get; set; }
 
         public void AddRoom(Room room)
             => Rooms.Add(room);
