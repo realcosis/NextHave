@@ -1,16 +1,16 @@
-﻿using Blazored.Toast;
-using Dolphin.Core.Configurations;
-using Dolphin.Core.Injection;
-using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Hosting.StaticWebAssets;
-using NextHave.BL;
-using NextHave.BL.Models.Configurations;
-using NextHave.DAL.Mongo;
-using NextHave.DAL.MySQL;
-using NextHave.Nitro.Authentications;
-using NextHave.Nitro.Components;
-using NextHave.Nitro.Sockets;
+﻿using NextHave.BL;
+using Blazored.Toast;
 using System.Reflection;
+using NextHave.DAL.MySQL;
+using NextHave.DAL.Mongo;
+using NextHave.Nitro.Sockets;
+using Dolphin.Core.Injection;
+using NextHave.Nitro.Components;
+using Dolphin.Core.Configurations;
+using NextHave.Nitro.Authentications;
+using NextHave.BL.Models.Configurations;
+using Microsoft.AspNetCore.Hosting.StaticWebAssets;
+using Microsoft.AspNetCore.Components.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,19 +37,20 @@ builder.Services.AddCors(options =>
 builder.Services.AddScoped<NextHaveAuthenticationStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(provider => provider.GetRequiredService<NextHaveAuthenticationStateProvider>());
 
+if (builder.Environment.IsDevelopment())
+    StaticWebAssetsLoader.UseStaticWebAssets(builder.Environment, builder.Configuration);
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
-{
     app.UseDeveloperExceptionPage();
-}
 else
 {
     app.UseExceptionHandler("/Error", true);
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+app.UseStaticFiles();
 app.MapStaticAssets();
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 app.UseRouting();
@@ -61,5 +62,4 @@ var services = app.Services.GetRequiredService<IEnumerable<IStartableService>>()
 foreach (var service in services)
     await service.StartAsync();
 
-StaticWebAssetsLoader.UseStaticWebAssets(app.Environment, app.Configuration);
 await app.RunAsync();
