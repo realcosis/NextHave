@@ -17,6 +17,9 @@ namespace NextHave.DAL.MySQL.Entities
         [MaxLength(256)]
         public string? Badge { get; set; }
 
+        [Required]
+        public int? SecurityLevel { get; set; }
+
         public ICollection<PermissionEntity> Permissions { get; set; } = [];
     }
 }

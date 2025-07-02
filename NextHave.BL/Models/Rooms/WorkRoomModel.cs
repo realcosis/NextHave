@@ -4,7 +4,6 @@ using NextHave.BL.Utils;
 using NextHave.BL.Messages;
 using System.Collections.Concurrent;
 using NextHave.BL.Services.Rooms.Instances;
-using System.Runtime.CompilerServices;
 
 namespace NextHave.BL.Models.Rooms
 {
@@ -167,7 +166,10 @@ namespace NextHave.BL.Models.Rooms
 
             if (!@override && OccupiedTile(x, y, z))
                 return false;
-            
+
+            if (Walkables.TryGetValue(new Point(x, y), out var result))
+                return result;
+
             var data = Maps[new Point(x, y)];
             if (!lastStep)
             {

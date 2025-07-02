@@ -37,6 +37,7 @@ namespace NextHave.BL.Services.Permissions
                     Id = permissionGroup.Id,
                     Name = permissionGroup.Name,
                     Badge = permissionGroup.Badge,
+                    SecurityLevel = permissionGroup.SecurityLevel,
                     Rights = [.. permissionGroup.Permissions.Select(p => p.Right!.Name!)],
                 }));
 

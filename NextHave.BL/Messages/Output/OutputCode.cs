@@ -38,6 +38,20 @@
 
         public const short RoomVisualizationSettingsMessageComposer = 3547;
 
+        public const short CantConnectMessageComposer = 899;
+
         public const short RoomPropertyMessageComposer = 2454;
+
+        public const short YouAreControllerMessageComposer = 780;
+
+        public const short YouAreNotControllerMessageComposer = 2392;
+
+        public const short YouAreOwnerMessageComposer = 339;
+
+        public const short DoorbellMessageComposer = 2309;
+
+        public const short FlatAccessDeniedMessageComposer = 878;
+
+        public const short GenericErrorMessageComposer = 1600;
     }
 }

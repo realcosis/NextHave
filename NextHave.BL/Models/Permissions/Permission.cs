@@ -8,6 +8,8 @@
 
         public string? Badge { get; set; }
 
+        public int? SecurityLevel { get; set; }
+
         public List<string> Rights { get; set; } = [];
 
         public bool HasRight(string right)

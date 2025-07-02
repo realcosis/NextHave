@@ -42,6 +42,8 @@ namespace NextHave.BL.Services.Parsers
         {
             parsers.TryAdd(InputCode.SSOTicketMessageEvent, new SSOTicketMessageParser());
 
+            parsers.TryAdd(InputCode.MoveObjectMessageEvent, new MoveObjectParser());
+
             parsers.TryAdd(InputCode.InfoRetrieveMessageEvent, new InfoRetrieveParser());
 
             parsers.TryAdd(InputCode.GetRoomEntryDataMessageEvent, new GetRoomEntryParser());

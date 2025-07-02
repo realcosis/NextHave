@@ -4,6 +4,7 @@ using Dolphin.HabboHotel.Groups;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using NextHave.BL.Events.Rooms.Engine;
 using NextHave.BL.Events.Rooms.Items;
 using NextHave.BL.Localizations;
 using NextHave.BL.Mappers;
@@ -57,10 +58,17 @@ namespace NextHave.BL.Services.Rooms
                 (roomInstance, var firstLoad) = serviceProvider.GetRequiredService<RoomFactory>().GetRoomInstance(roomId, room);
                 await roomInstance.Init();
                 if (firstLoad)
+                {
+                    await roomInstance.EventsService.DispatchAsync(new RequestRoomGameMapEvent
+                    {
+                        ModelName = roomInstance.Room!.ModelName,
+                        RoomId = roomInstance.Room.Id,
+                    });
                     await roomInstance.EventsService.DispatchAsync<LoadRoomItemsEvent>(new()
                     {
-                        RoomId = roomInstance.Room!.Id
+                        RoomId = roomInstance.Room.Id
                     });
+                }
                 Instance.ActiveRooms.TryAdd(roomId, roomInstance);
                 return roomInstance;
             }

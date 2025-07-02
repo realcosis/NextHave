@@ -7,6 +7,7 @@ using NextHave.BL.Events.Rooms.Users;
 using NextHave.BL.Events.Rooms.Users.Movements;
 using NextHave.BL.Messages;
 using NextHave.BL.Messages.Output.Rooms.Engine;
+using NextHave.BL.Messages.Output.Rooms.Permissions;
 using NextHave.BL.Models;
 using NextHave.BL.Services.Rooms.Factories;
 using NextHave.BL.Services.Rooms.Instances;
@@ -179,6 +180,35 @@ namespace NextHave.BL.Services.Rooms.Components
             users.TryAdd(roomUserInstance.VirutalId, roomUserInstance);
 
             await Send(new UsersMessageComposer([roomUserInstance]));
+
+            if (_roomInstance.CheckRights(@event.User, true))
+            {
+                roomUserInstance.AddStatus("flatctrl", "useradmin");
+                await @event.User.Client!.Send(new YouAreOwnerMessageComposer());
+                await @event.User.Client!.Send(new YouAreControllerMessageComposer(4));
+
+                if (@event.User.Permission!.HasRight("nexthave_administrator"))
+                {
+                    roomUserInstance.AddStatus("flatctrl", "5");
+                    await @event.User.Client!.Send(new YouAreControllerMessageComposer(5));
+                }
+            }
+            else if (_roomInstance.CheckRights(@event.User, false) && _roomInstance.Room.Group == default)
+            {
+                roomUserInstance.AddStatus("flatctrl", "1");
+                await @event.User.Client!.Send(new YouAreControllerMessageComposer(1));
+            }
+            else if (_roomInstance.CheckRights(@event.User, false) && _roomInstance.Room.Group != default)
+            {
+                roomUserInstance.AddStatus("flatctrl", "3");
+                await @event.User.Client!.Send(new YouAreControllerMessageComposer(3));
+            }
+            else
+                await @event.User.Client!.Send(new YouAreNotControllerMessageComposer());
+
+            await @event.User.Client.Send(new UserUpdateMessageComposer([roomUserInstance]));
+
+            _roomInstance.Room.UsersNow++;
         }
 
         async Task OnSendRoomPacketEvent(SendRoomPacketEvent @event)
@@ -186,15 +216,27 @@ namespace NextHave.BL.Services.Rooms.Components
             if (@event.Composer == default)
                 return;
 
-            await Send(@event.Composer);
+            if (@event.WithRights)
+                await SendToRights(@event.Composer);
+            else
+                await Send(@event.Composer);
         }
 
         async Task SendUserUpdate(IRoomUserInstance roomUserInstance)
             => await Send(new UserUpdateMessageComposer([roomUserInstance]));
 
+        async Task SendToRights(Composer message)
+        {
+            if (_roomInstance?.Room == default)
+                return;
+
+            foreach (var client in users.Values.Where(u => u.User != default && _roomInstance.CheckRights(u.User, false)).Select(u => u.Client).Where(c => c != default))
+                await client!.Send(message);
+        }
+
         async Task Send(Composer message)
         {
-            foreach (var client in users.Values.Select(u => u.Client).Where(c => c != default))
+            foreach (var client in users.Values.Where(u => u.User != default).Select(u => u.Client).Where(c => c != default))
                 await client!.Send(message);
         }
 

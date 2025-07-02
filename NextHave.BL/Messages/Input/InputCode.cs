@@ -14,5 +14,7 @@
         public const short MoveAvatarMessageEvent = 3320;
 
         public const short GetRoomEntryDataMessageEvent = 2300;
+
+        public const short MoveObjectMessageEvent = 248;
     }
 }

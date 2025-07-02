@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using NextHave.BL.Clients;
 using NextHave.BL.Events.Rooms.Engine;
 using NextHave.BL.Events.Rooms.Items;
+using NextHave.BL.Events.Rooms.Session;
 using NextHave.BL.Events.Rooms.Users;
 using NextHave.BL.Events.Rooms.Users.Movements;
 using NextHave.BL.Events.Users;
@@ -13,6 +14,7 @@ using NextHave.BL.Messages.Input.Rooms.Connection;
 using NextHave.BL.Messages.Input.Rooms.Engine;
 using NextHave.BL.Messages.Output;
 using NextHave.BL.Messages.Output.Handshake;
+using NextHave.BL.Messages.Output.Navigators;
 using NextHave.BL.Messages.Output.Rooms.Engine;
 using NextHave.BL.Messages.Output.Rooms.Session;
 using NextHave.BL.Messages.Output.Users;
@@ -21,6 +23,7 @@ using NextHave.BL.Services.Packets;
 using NextHave.BL.Services.Rooms;
 using NextHave.BL.Services.Users;
 using NextHave.BL.Utils;
+using NextHave.DAL.Enums;
 
 namespace NextHave.BL.Messages.Input.Handlers
 {
@@ -42,7 +45,24 @@ namespace NextHave.BL.Messages.Input.Handlers
 
             packetsService.Subscribe<MoveAvatarMessage>(this, OnMoveAvatar);
 
+            packetsService.Subscribe<MoveObjectMessage>(this, OnMoveObject);
+
             await Task.CompletedTask;
+        }
+
+        public async Task OnMoveObject(MoveObjectMessage message, Client client)
+        {
+            if (client?.User == default || !client.User.CurrentRoomId.HasValue || client.User.CurrentRoomInstance == default)
+                return;
+
+            await client.User.CurrentRoomInstance.EventsService.DispatchAsync<MoveObjectEvent>(new()
+            {
+                RoomId = client.User.CurrentRoomId!.Value,
+                ItemId = message.ItemId,
+                Rotation = message.Rotation,
+                NewY = message.NewY,
+                NewX = message.NewX
+            });
         }
 
         public async Task OnMoveAvatar(MoveAvatarMessage message, Client client)
@@ -85,17 +105,17 @@ namespace NextHave.BL.Messages.Input.Handlers
                 await client.Send(new HeightMapMessageComposer(roomInstance.RoomModel));
                 await client.Send(new RoomEntryInfoMessageComposer(roomInstance.Room.Id, false));
 
-                await roomInstance.EventsService.DispatchAsync<SendItemsToNewUserEvent>(new()
-                {
-                    Client = client,
-                    RoomId = roomInstance.Room.Id,
-                });
-
                 await roomInstance.EventsService.DispatchAsync<AddUserToRoomEvent>(new()
                 {
                     RoomId = roomInstance.Room.Id,
                     User = client.User,
                     Spectator = false
+                });
+
+                await roomInstance.EventsService.DispatchAsync<SendItemsToNewUserEvent>(new()
+                {
+                    Client = client,
+                    RoomId = roomInstance.Room.Id,
                 });
             }
         }
@@ -147,6 +167,38 @@ namespace NextHave.BL.Messages.Input.Handlers
 
             await client.Send(new OpenConnectionMessageComposer(roomInstance.Room.Id));
 
+            if (!roomInstance.CheckRights(client.User, true))
+            {
+                if (roomInstance.Room.State == RoomAccessStatus.Locked && !client.User.Permission!.HasRight("nexthave_enter_locked_room"))
+                {
+                    if (roomInstance.Room.UsersNow > 0)
+                    {
+                        await client.Send(new DoorbellMessageComposer(string.Empty));
+                        await roomInstance.EventsService.DispatchAsync(new SendRoomPacketEvent
+                        {
+                            Composer = new DoorbellMessageComposer(client.User.Username!),
+                            WithRights = true,
+                            RoomId = roomInstance.Room.Id,
+                        });
+                        return;
+                    }
+
+                    await client.Send(new FlatAccessDeniedMessageComposer(string.Empty));
+                    await client.Send(new CloseConnectionMessageComposer());
+                    return;
+                }
+
+                if (roomInstance.Room.State == RoomAccessStatus.Password && !client.User.Permission!.HasRight("nexthave_enter_locked_room"))
+                {
+                    if (!message.Password!.ToLower().Equals(roomInstance.Room.Password!.ToLower()) || string.IsNullOrWhiteSpace(message.Password))
+                    {
+                        await client.Send(new GenericErrorMessageComposer(-100002));
+                        await client.Send(new CloseConnectionMessageComposer());
+                        return;
+                    }
+                }
+            }
+
             await client.Send(new RoomReadyMessageComposer(roomInstance.Room.Id, roomInstance.Room.ModelName!));
 
             if (!string.IsNullOrWhiteSpace(roomInstance.Room.Wallpaper) && !roomInstance.Room.Wallpaper.Equals("0.0"))
@@ -155,12 +207,6 @@ namespace NextHave.BL.Messages.Input.Handlers
                 await client.Send(new RoomPropertyMessageComposer("floor", roomInstance.Room.Floor!));
 
             await client.Send(new RoomPropertyMessageComposer("landscape", roomInstance.Room.Landscape!));
-
-            await roomInstance.EventsService.DispatchAsync(new RequestRoomGameMapEvent
-            {
-                ModelName = roomInstance.Room.ModelName,
-                RoomId = roomInstance.Room.Id,
-            });
 
             client.User.CurrentRoomInstance = roomInstance;
             client.User.CurrentRoomId = roomInstance.Room.Id;
@@ -200,7 +246,7 @@ namespace NextHave.BL.Messages.Input.Handlers
         {
             await client.Send(new AuthenticationOKMessageComposer());
             await client.Send(new AvailabilityStatusMessageComposer(true, false, true));
-            await client.Send(new UserRightsMessageComposer(2, user.Rank, false));
+            await client.Send(new UserRightsMessageComposer(2, user.Permission!.SecurityLevel!.Value, true));
             await client.Send(new NavigatorHomeRoomMessageComposer(user.HomeRoom ?? 0, user.HomeRoom ?? 0));
         }
 

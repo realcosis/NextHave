@@ -1,6 +1,4 @@
-﻿using NextHave.BL.Models.Users;
-
-namespace NextHave.BL.Messages.Output.Users
+﻿namespace NextHave.BL.Messages.Output.Users
 {
     public class UserRightsMessageComposer(int clubLevel, int rank, bool isAmbassador) : Composer(OutputCode.UserRightsMessageComposer)
     {
