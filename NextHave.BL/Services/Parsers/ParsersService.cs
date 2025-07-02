@@ -11,7 +11,7 @@ namespace NextHave.BL.Services.Parsers
     [Service(ServiceLifetime.Singleton)]
     class ParsersService : IParsersService, IStartableService
     {
-        ConcurrentDictionary<short, IParser> parsers = [];
+        readonly ConcurrentDictionary<short, IParser> parsers = [];
 
         async Task IStartableService.StartAsync()
         {

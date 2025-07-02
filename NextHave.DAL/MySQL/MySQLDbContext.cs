@@ -12,6 +12,8 @@ namespace NextHave.DAL.MySQL
 
         public DbSet<UserEntity> Users { get; set; }
 
+        public DbSet<ChatlogRoomEntity> ChatlogRooms { get; set; }
+
         public DbSet<UserTicketEntity> UserTickets { get; set; }
 
         public DbSet<NextHaveSettingEntity> NextHaveSettings { get; set; }
@@ -24,13 +26,27 @@ namespace NextHave.DAL.MySQL
 
         public DbSet<RoomModelEntity> RoomModels { get; set; }
 
+        public DbSet<RoomModelCustomEntity> RoomModelCustoms { get; set; }
+
         public DbSet<RoomTonerEntity> RoomToners { get; set; }
 
-        public DbSet<RoomModelCustomEntity> RoomModelCustoms { get; set; }
+        public DbSet<PermissionGroupEntity> PermissionGroups { get; set; }
+
+        public DbSet<PermissionRightEntity> PermissionRights { get; set; }
+
+        public DbSet<PermissionEntity> Permissions { get; set; }
+
+        public DbSet<GroupEntity> Groups { get; set; }
+
+        public DbSet<GroupElementEntity> GroupElements { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+
+            builder.Entity<PermissionEntity>().HasKey(e => new { e.GroupId, e.RightId });
+
+            builder.Entity<GroupMembershipEntity>().HasKey(e => new { e.GroupId, e.UserId });
 
             builder.Entity<RoomTonerEntity>().HasKey(e => new { e.RoomId, e.ItemId });
 

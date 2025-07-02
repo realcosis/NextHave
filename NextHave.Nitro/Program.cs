@@ -12,7 +12,11 @@ using NextHave.BL.Models.Configurations;
 using Microsoft.AspNetCore.Hosting.StaticWebAssets;
 using Microsoft.AspNetCore.Components.Authorization;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions()
+{
+    Args = args,
+    ApplicationName = "NextHave.Nitro"
+});
 
 builder.Host.ConfigureDolphinApplication<NextHaveConfiguration>("NextHave", "1");
 
@@ -37,8 +41,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddScoped<NextHaveAuthenticationStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(provider => provider.GetRequiredService<NextHaveAuthenticationStateProvider>());
 
-if (builder.Environment.IsDevelopment())
-    StaticWebAssetsLoader.UseStaticWebAssets(builder.Environment, builder.Configuration);
+StaticWebAssetsLoader.UseStaticWebAssets(builder.Environment, builder.Configuration);
 
 var app = builder.Build();
 

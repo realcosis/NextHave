@@ -88,6 +88,8 @@ namespace NextHave.BL.Models.Rooms
 
         public bool HideWired { get; set; }
 
+        public List<int> Rights { get; set; } = [];
+
         public Group? Group { get; set; }
 
         public void Serialize(ServerMessage message)

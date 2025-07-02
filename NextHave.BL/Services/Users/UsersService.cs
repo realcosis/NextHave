@@ -12,6 +12,7 @@ using NextHave.BL.Extensions;
 using NextHave.BL.Mappers;
 using NextHave.BL.Services.Settings;
 using NextHave.DAL.MySQL.Entities;
+using NextHave.BL.Services.Permissions;
 
 namespace NextHave.BL.Services.Users
 {
@@ -40,7 +41,10 @@ namespace NextHave.BL.Services.Users
                 var date = DateTime.Now.AddMilliseconds(time);
 
                 using var scope = serviceScopeFactory.CreateAsyncScope();
+
                 var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
+
+                var permissionsService = scope.ServiceProvider.GetRequiredService<IPermissionsService>();
 
                 var userTicket = await mysqlDbContext
                                         .UserTickets
@@ -55,7 +59,14 @@ namespace NextHave.BL.Services.Users
                 mysqlDbContext.UserTickets.Update(userTicket);
                 await mysqlDbContext.SaveChangesAsync();
 
-                return user.MapResult();
+                var result = user.MapResult();
+
+                if (permissionsService.Groups.TryGetValue(user.Rank!.Value, out var permissionGroup))
+                    result.Permission = permissionGroup;
+                else
+                    logger.LogWarning("Rank with id {groupId} not found for user {Username}", user.Rank, user.Username);
+
+                return result;
             }
             catch (Exception ex)
             {

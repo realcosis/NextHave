@@ -37,5 +37,7 @@
         public const short ObjectsMessageComposer = 1778;
 
         public const short RoomVisualizationSettingsMessageComposer = 3547;
+
+        public const short RoomPropertyMessageComposer = 2454;
     }
 }

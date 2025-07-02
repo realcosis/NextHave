@@ -2,6 +2,14 @@
 {
     public class Tables
     {
+        public const string ChatlogRooms = "chatlog_rooms";
+
+        public const string Permissions = "permissions";
+
+        public const string PermissionGroups = "permission_groups";
+
+        public const string PermissionRights = "permission_rights";
+
         public const string RoomToners = "room_toners";
 
         public const string Users = "users";
@@ -25,6 +33,12 @@
         public const string RoomModelCustoms = "room_models_customs";
 
         public const string RoomModels = "room_models";
+
+        public const string Groups = "groups";
+
+        public const string GroupElements = "group_elements";
+
+        public const string GroupsMemberships = "group_memberships";
 
         public const string Rooms = "rooms";
     }

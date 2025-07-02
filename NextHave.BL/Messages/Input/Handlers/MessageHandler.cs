@@ -114,10 +114,7 @@ namespace NextHave.BL.Messages.Input.Handlers
 
             var roomInstance = await roomsService.GetRoomInstance(client.User.CurrentRoomId.Value);
             if (roomInstance?.Room != default)
-            {
                 await client.Send(new FurnitureAliasesMessageComposer());
-                await client.Send(new RoomReadyMessageComposer(roomInstance.Room.Id, roomInstance.Room.ModelName!));
-            }
         }
 
         public async Task OnOpenFlatMessage(OpenFlatMessage message, Client client)
@@ -151,6 +148,13 @@ namespace NextHave.BL.Messages.Input.Handlers
             await client.Send(new OpenConnectionMessageComposer(roomInstance.Room.Id));
 
             await client.Send(new RoomReadyMessageComposer(roomInstance.Room.Id, roomInstance.Room.ModelName!));
+
+            if (!string.IsNullOrWhiteSpace(roomInstance.Room.Wallpaper) && !roomInstance.Room.Wallpaper.Equals("0.0"))
+                await client.Send(new RoomPropertyMessageComposer("wallpaper", roomInstance.Room.Wallpaper!));
+            if (!string.IsNullOrWhiteSpace(roomInstance.Room.Floor) && !roomInstance.Room.Floor.Equals("0.0"))
+                await client.Send(new RoomPropertyMessageComposer("floor", roomInstance.Room.Floor!));
+
+            await client.Send(new RoomPropertyMessageComposer("landscape", roomInstance.Room.Landscape!));
 
             await roomInstance.EventsService.DispatchAsync(new RequestRoomGameMapEvent
             {

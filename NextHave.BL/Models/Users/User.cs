@@ -1,4 +1,5 @@
 ﻿using NextHave.BL.Clients;
+using NextHave.BL.Models.Permissions;
 using NextHave.BL.Services.Rooms.Instances;
 
 namespace NextHave.BL.Models.Users
@@ -28,5 +29,7 @@ namespace NextHave.BL.Models.Users
         public int? CurrentRoomId { get; set; }
 
         public IRoomInstance? CurrentRoomInstance { get; set; }
+
+        public Permission? Permission { get; set; }
     }
 }

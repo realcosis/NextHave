@@ -1,5 +1,6 @@
 ﻿using Dolphin.Core.Exceptions;
 using Dolphin.Core.Injection;
+using Dolphin.HabboHotel.Groups;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -17,7 +18,7 @@ using System.Collections.Concurrent;
 namespace NextHave.BL.Services.Rooms
 {
     [Service(ServiceLifetime.Singleton)]
-    class RoomsService(IServiceScopeFactory serviceScopeFactory, ILogger<IRoomsService> logger) : IRoomsService, IStartableService
+    class RoomsService(IServiceScopeFactory serviceScopeFactory, ILogger<IRoomsService> logger, IGroupsService groupsService) : IRoomsService, IStartableService
     {
         IRoomsService Instance => this;
 
@@ -33,8 +34,8 @@ namespace NextHave.BL.Services.Rooms
             if (dbRoom != default)
             {
                 var group = default(Group?);
-                //if (dbRoom.Group != default)
-                //    group = await groupsManager.GetGroup(dbRoom.Group.GroupId);
+                if (dbRoom.Group != default)
+                    group = await groupsService.GetGroup(dbRoom.Group.GroupId);
 
                 return dbRoom.Map(group);
             }

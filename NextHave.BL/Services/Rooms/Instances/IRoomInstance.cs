@@ -1,4 +1,5 @@
 ﻿using NextHave.BL.Models.Rooms;
+using NextHave.BL.Models.Users;
 using NextHave.BL.Services.Rooms.Pathfinders;
 
 namespace NextHave.BL.Services.Rooms.Instances
@@ -16,5 +17,7 @@ namespace NextHave.BL.Services.Rooms.Instances
         Task OnRoomTick();
 
         Task Init();
+
+        bool CheckRights(User user, bool isOwner);
     }
 }

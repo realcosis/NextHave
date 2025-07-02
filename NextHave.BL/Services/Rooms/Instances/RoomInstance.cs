@@ -6,6 +6,8 @@ using Microsoft.Extensions.DependencyInjection;
 using NextHave.DAL.MySQL;
 using Microsoft.EntityFrameworkCore;
 using NextHave.BL.Mappers;
+using NextHave.BL.Models.Users;
+using System.Globalization;
 
 namespace NextHave.BL.Services.Rooms.Instances
 {
@@ -58,6 +60,35 @@ namespace NextHave.BL.Services.Rooms.Instances
             {
                 RoomId = Room!.Id
             });
+        }
+
+        bool IRoomInstance.CheckRights(User user, bool isOwner)
+        {
+            if (user == default || Room == default || user.Permission == default)
+                return false;
+
+            if (Room.OwnerId.Equals(user.Id))
+                return true;
+
+            if (user.Permission.HasRight("nexthave_administrator") || user.Permission.HasRight("nexthave_all_rooms_owner"))
+                return true;
+
+            if (!isOwner)
+            {
+                if (user.Permission.HasRight("nexthave_all_rooms_rights"))
+                    return true;
+
+                if (Room.Rights.Contains(user.Id))
+                    return true;
+
+                if (Room.AllowRightsOverride)
+                    return true;
+
+                if (Room.Group != default && Room.Group.Members.TryGetValue(user.Id, out var groupMember) && groupMember.Rank <= 1)
+                    return true;
+            }
+
+            return false;
         }
     }
 }
