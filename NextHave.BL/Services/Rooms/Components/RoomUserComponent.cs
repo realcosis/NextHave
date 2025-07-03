@@ -1,11 +1,15 @@
-﻿using Dolphin.Core.Injection;
+﻿using Dolphin.Backgrounds.Tasks;
+using Dolphin.Core.Backgrounds;
+using Dolphin.Core.Injection;
 using Microsoft.Extensions.DependencyInjection;
 using NextHave.BL.Context;
 using NextHave.BL.Events.Rooms;
+using NextHave.BL.Events.Rooms.Chat;
 using NextHave.BL.Events.Rooms.Session;
 using NextHave.BL.Events.Rooms.Users;
 using NextHave.BL.Events.Rooms.Users.Movements;
 using NextHave.BL.Messages;
+using NextHave.BL.Messages.Output.Rooms.Chat;
 using NextHave.BL.Messages.Output.Rooms.Engine;
 using NextHave.BL.Messages.Output.Rooms.Permissions;
 using NextHave.BL.Models;
@@ -13,13 +17,14 @@ using NextHave.BL.Services.Rooms.Factories;
 using NextHave.BL.Services.Rooms.Instances;
 using NextHave.BL.Services.Rooms.Pathfinders;
 using NextHave.BL.Utils;
+using System;
 using System.Collections.Concurrent;
 using System.Text;
 
 namespace NextHave.BL.Services.Rooms.Components
 {
     [Service(ServiceLifetime.Scoped)]
-    class RoomUserComponent(RoomUserFactory roomUserFactory) : IRoomComponent
+    class RoomUserComponent(RoomUserFactory roomUserFactory, IServiceScopeFactory serviceScopeFactory) : IRoomComponent
     {
         IRoomInstance? _roomInstance;
 
@@ -40,6 +45,8 @@ namespace NextHave.BL.Services.Rooms.Components
             await _roomInstance.EventsService.SubscribeAsync<MoveAvatarEvent>(_roomInstance, OnMoveAvatarEvent);
             await _roomInstance.EventsService.SubscribeAsync<ProcessMovementEvent>(_roomInstance, OnProcessMovement);
             await _roomInstance.EventsService.SubscribeAsync<ApplyMovementEvent>(_roomInstance, OnApplyMovement);
+
+            await _roomInstance.EventsService.SubscribeAsync<ChatMessageEvent>(_roomInstance, OnChatMessage);
 
             await _roomInstance.EventsService.SubscribeAsync<SendRoomPacketEvent>(_roomInstance, OnSendRoomPacketEvent);
         }
@@ -69,6 +76,33 @@ namespace NextHave.BL.Services.Rooms.Components
                     VirtualId = userId
                 });
             }
+        }
+
+        async Task OnChatMessage(ChatMessageEvent @event)
+        {
+            if (_roomInstance?.Room == default)
+                return;
+
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+
+            var backgroundsService = scope.ServiceProvider.GetRequiredService<IBackgroundsService>();
+
+            var roomUserInstance = users.FirstOrDefault(u => u.Value.UserId == @event.UserId).Value;
+            if (roomUserInstance == default)
+                return;
+
+            @event.Message = @event.Message!.Length > 100 ? @event.Message[..100] : @event.Message;
+
+            var task = scope.ServiceProvider.GetTask<AddCatalogTask>("AddCatalogTask");
+            if (task == default)
+                return;
+
+            task.Parameters.TryAdd("message", @event.Message);
+            task.Parameters.TryAdd("roomId", _roomInstance.Room.Id);
+            task.Parameters.TryAdd("userId", @event.UserId);
+            backgroundsService.Queue(task);
+
+            await Send(new ChatMessageMessageComposer(roomUserInstance.VirutalId, @event.Message, 0, @event.Color));
         }
 
         async Task OnUserExit(UserRoomExitEvent @event)

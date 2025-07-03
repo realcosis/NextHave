@@ -3,7 +3,9 @@ using Microsoft.Extensions.DependencyInjection;
 using NextHave.BL.Messages;
 using NextHave.BL.Messages.Input;
 using NextHave.BL.Messages.Parsers.Handshake;
-using NextHave.BL.Messages.Parsers.Rooms;
+using NextHave.BL.Messages.Parsers.Rooms.Chat;
+using NextHave.BL.Messages.Parsers.Rooms.Connection;
+using NextHave.BL.Messages.Parsers.Rooms.Rooms;
 using System.Collections.Concurrent;
 
 namespace NextHave.BL.Services.Parsers
@@ -51,6 +53,8 @@ namespace NextHave.BL.Services.Parsers
             parsers.TryAdd(InputCode.GetFurnitureAliasesMessageEvent, new GetFurnitureAliasesParser());
 
             parsers.TryAdd(InputCode.MoveAvatarMessageEvent, new MoveAvatarParser());
+
+            parsers.TryAdd(InputCode.ChatMessageEvent, new ChatMessageParser());
 
             parsers.TryAdd(InputCode.OpenFlatConnectionMessageEvent, new OpenFlatParser());
         }

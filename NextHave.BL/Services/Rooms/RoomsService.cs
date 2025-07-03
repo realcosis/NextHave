@@ -1,6 +1,5 @@
 ﻿using Dolphin.Core.Exceptions;
 using Dolphin.Core.Injection;
-using Dolphin.HabboHotel.Groups;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -10,6 +9,7 @@ using NextHave.BL.Localizations;
 using NextHave.BL.Mappers;
 using NextHave.BL.Models.Groups;
 using NextHave.BL.Models.Rooms;
+using NextHave.BL.Services.Groups;
 using NextHave.BL.Services.Rooms.Factories;
 using NextHave.BL.Services.Rooms.Instances;
 using NextHave.DAL.Mongo;

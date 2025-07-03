@@ -16,5 +16,7 @@
         public const short GetRoomEntryDataMessageEvent = 2300;
 
         public const short MoveObjectMessageEvent = 248;
+
+        public const short ChatMessageEvent = 1314;
     }
 }

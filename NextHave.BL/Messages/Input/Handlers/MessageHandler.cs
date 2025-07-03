@@ -2,6 +2,7 @@
 using Dolphin.Core.Injection;
 using Microsoft.Extensions.DependencyInjection;
 using NextHave.BL.Clients;
+using NextHave.BL.Events.Rooms.Chat;
 using NextHave.BL.Events.Rooms.Engine;
 using NextHave.BL.Events.Rooms.Items;
 using NextHave.BL.Events.Rooms.Session;
@@ -10,19 +11,17 @@ using NextHave.BL.Events.Rooms.Users.Movements;
 using NextHave.BL.Events.Users.Session;
 using NextHave.BL.Messages.Input.Handshake;
 using NextHave.BL.Messages.Input.Rooms;
+using NextHave.BL.Messages.Input.Rooms.Chat;
 using NextHave.BL.Messages.Input.Rooms.Connection;
 using NextHave.BL.Messages.Input.Rooms.Engine;
-using NextHave.BL.Messages.Output;
 using NextHave.BL.Messages.Output.Handshake;
 using NextHave.BL.Messages.Output.Navigators;
 using NextHave.BL.Messages.Output.Rooms.Engine;
 using NextHave.BL.Messages.Output.Rooms.Session;
 using NextHave.BL.Messages.Output.Users;
-using NextHave.BL.Models.Users;
 using NextHave.BL.Services.Packets;
 using NextHave.BL.Services.Rooms;
 using NextHave.BL.Services.Users;
-using NextHave.BL.Utils;
 using NextHave.DAL.Enums;
 
 namespace NextHave.BL.Messages.Input.Handlers
@@ -32,7 +31,6 @@ namespace NextHave.BL.Messages.Input.Handlers
     {
         public async Task StartAsync()
         {
-
             packetsService.Subscribe<SSOTicketMessage>(this, OnSSOTicket);
 
             packetsService.Subscribe<InfoRetrieveMessage>(this, OnInfoRetrieve);
@@ -47,7 +45,23 @@ namespace NextHave.BL.Messages.Input.Handlers
 
             packetsService.Subscribe<MoveObjectMessage>(this, OnMoveObject);
 
+            packetsService.Subscribe<ChatMessage>(this, OnChatMessage);
+
             await Task.CompletedTask;
+        }
+
+        public async Task OnChatMessage(ChatMessage message, Client client)
+        {
+            if (client?.UserInstance == default || !client.UserInstance.CurrentRoomId.HasValue || client.UserInstance.CurrentRoomInstance == default)
+                return;
+            
+            await client.UserInstance.CurrentRoomInstance.EventsService.DispatchAsync<ChatMessageEvent>(new()
+            {
+                Color = message.Color,
+                Message = message.Message,
+                UserId = client.UserInstance.User!.Id,
+                RoomId = client.UserInstance.CurrentRoomId!.Value
+            });
         }
 
         public async Task OnMoveObject(MoveObjectMessage message, Client client)

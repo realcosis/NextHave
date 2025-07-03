@@ -1,6 +1,6 @@
 ﻿using NextHave.BL.Messages.Input.Rooms.Connection;
 
-namespace NextHave.BL.Messages.Parsers.Rooms
+namespace NextHave.BL.Messages.Parsers.Rooms.Connection
 {
     public class OpenFlatParser : AbstractParser<OpenFlatMessage>
     {

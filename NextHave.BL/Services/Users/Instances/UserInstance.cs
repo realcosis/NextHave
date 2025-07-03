@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using NextHave.BL.Clients;
 using NextHave.BL.Models.Permissions;
-using NextHave.BL.Models.Rooms;
 using NextHave.BL.Models.Users;
 using NextHave.BL.Services.Rooms;
 using NextHave.BL.Services.Rooms.Factories;

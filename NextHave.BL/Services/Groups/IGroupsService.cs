@@ -1,7 +1,7 @@
 ﻿using NextHave.BL.Models.Groups;
 using System.Collections.Concurrent;
 
-namespace Dolphin.HabboHotel.Groups
+namespace NextHave.BL.Services.Groups
 {
     public interface IGroupsService
     {

@@ -7,7 +7,7 @@ using NextHave.BL.Models.Groups;
 using NextHave.DAL.MySQL;
 using NextHave.BL.Mappers;
 
-namespace Dolphin.HabboHotel.Groups
+namespace NextHave.BL.Services.Groups
 {
     [Service(ServiceLifetime.Singleton)]
     class GroupsService(IServiceScopeFactory serviceScopeFactory, ILogger<IGroupsService> logger) : IGroupsService, IStartableService
