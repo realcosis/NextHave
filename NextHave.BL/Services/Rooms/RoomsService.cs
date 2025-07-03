@@ -59,7 +59,7 @@ namespace NextHave.BL.Services.Rooms
                 await roomInstance.Init();
                 if (firstLoad)
                 {
-                    await roomInstance.EventsService.DispatchAsync(new RequestRoomGameMapEvent
+                    await roomInstance.EventsService.DispatchAsync<RequestRoomGameMapEvent>(new()
                     {
                         ModelName = roomInstance.Room!.ModelName,
                         RoomId = roomInstance.Room.Id,

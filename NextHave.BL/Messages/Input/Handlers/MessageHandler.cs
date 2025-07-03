@@ -149,7 +149,7 @@ namespace NextHave.BL.Messages.Input.Handlers
 
             if (client.UserInstance.CurrentRoomInstance != default)
             {
-                await client.UserInstance.CurrentRoomInstance.EventsService.DispatchAsync(new UserRoomExitEvent
+                await client.UserInstance.CurrentRoomInstance.EventsService.DispatchAsync<UserRoomExitEvent>(new()
                 {
                     UserId = client.UserInstance!.User!.Id,
                     RoomId = client.UserInstance.CurrentRoomId!.Value,
@@ -174,7 +174,7 @@ namespace NextHave.BL.Messages.Input.Handlers
                     if (roomInstance.Room.UsersNow > 0)
                     {
                         await client.Send(new DoorbellMessageComposer(string.Empty));
-                        await roomInstance.EventsService.DispatchAsync(new SendRoomPacketEvent
+                        await roomInstance.EventsService.DispatchAsync<SendRoomPacketEvent>(new()
                         {
                             Composer = new DoorbellMessageComposer(client.UserInstance!.User!.Username!),
                             WithRights = true,
@@ -217,23 +217,22 @@ namespace NextHave.BL.Messages.Input.Handlers
             using var scope = serviceScopeFactory.CreateAsyncScope();
             var serviceProvider = scope.ServiceProvider;
             var usersService = serviceProvider.GetRequiredService<IUsersService>();
-            var user = await usersService.LoadHabbo(message.SSO!, message.ElapsedMilliseconds);
+            var userInstance = await usersService.LoadHabbo(message.SSO!, message.ElapsedMilliseconds);
 
-            if (user == default)
+            if (userInstance == default)
                 return;
 
-            var eventsService = serviceProvider.GetRequiredService<IEventsService>();
-            user.Client = client;
-            client.UserInstance = user;
+            userInstance.Client = client;
+            client.UserInstance = userInstance;
 
             await client.Send(new AuthenticationOKMessageComposer());
             await client.Send(new AvailabilityStatusMessageComposer(true, false, true));
-            await client.Send(new UserRightsMessageComposer(2, user.Permission!.SecurityLevel!.Value, true));
-            await client.Send(new NavigatorHomeRoomMessageComposer(user.User!.HomeRoom ?? 0, user.User!.HomeRoom ?? 0));
+            await client.Send(new UserRightsMessageComposer(2, userInstance.Permission!.SecurityLevel!.Value, true));
+            await client.Send(new NavigatorHomeRoomMessageComposer(userInstance.User!.HomeRoom ?? 0, userInstance.User!.HomeRoom ?? 0));
 
-            await eventsService.DispatchAsync<UserConnectedEvent>(new()
+            await userInstance.EventsService.DispatchAsync<UserConnectedEvent>(new()
             {
-                UserId = user.User!.Id
+                UserId = userInstance.User!.Id
             });
         }
 

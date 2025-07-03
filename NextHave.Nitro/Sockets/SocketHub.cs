@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using NextHave.BL.Clients;
 using NextHave.BL.Events.Rooms.Users;
+using NextHave.BL.Events.Users.Session;
 using NextHave.BL.PacketParsers;
 
 namespace NextHave.Nitro.Sockets
@@ -25,7 +26,7 @@ namespace NextHave.Nitro.Sockets
             {
                 if (client.UserInstance?.CurrentRoomInstance != default)
                 {
-                    await client.UserInstance.CurrentRoomInstance.EventsService.DispatchAsync(new UserRoomExitEvent
+                    await client.UserInstance.CurrentRoomInstance.EventsService.DispatchAsync<UserRoomExitEvent>(new()
                     {
                         UserId = client.UserInstance!.User!.Id,
                         RoomId = client.UserInstance.CurrentRoomId!.Value,
@@ -33,6 +34,10 @@ namespace NextHave.Nitro.Sockets
                     client.UserInstance.CurrentRoomInstance = default;
                     client.UserInstance.CurrentRoomId = default;
                 }
+                await client.UserInstance!.EventsService.DispatchAsync<UserDisconnectedEvent>(new()
+                {
+                    UserId = client.UserInstance.User!.Id,
+                });
                 Sessions.ConnectedClients.TryRemove(Context.ConnectionId, out _);
             }
 

@@ -73,7 +73,7 @@ namespace NextHave.BL.Services.Rooms.Components
 
         async Task OnUserExit(UserRoomExitEvent @event)
         {
-            if (_roomInstance == default || _roomInstance.RoomModel == default)
+            if (_roomInstance == default || _roomInstance?.Room == default || _roomInstance?.RoomModel == default)
                 return;
 
             var roomUserInstance = users.FirstOrDefault(u => u.Value.UserId == @event.UserId).Value;
@@ -83,6 +83,10 @@ namespace NextHave.BL.Services.Rooms.Components
             _roomInstance.RoomModel.RemoveUser(roomUserInstance.Position!, roomUserInstance);
             users.TryRemove(roomUserInstance.VirutalId, out var _);
             roomUserFactory.DestroyRoomUserInstance(roomUserInstance.UserId);
+
+            _roomInstance.Room.UsersNow--;
+            if (_roomInstance.Room.UsersNow <= 0)
+                _roomInstance.Room.UsersNow = 0;
 
             await Send(new UserRemoveMessageComposer(roomUserInstance.VirutalId));
         }
