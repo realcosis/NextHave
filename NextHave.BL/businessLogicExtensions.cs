@@ -1,15 +1,15 @@
 ﻿using AutoMapper;
-using Dolphin.Core.Injection;
-using Microsoft.Extensions.DependencyInjection;
-using NextHave.BL.PacketParsers;
-using NextHave.BL.Services.Rooms.Components;
-using NextHave.BL.Services.Rooms.Factories;
-using NextHave.BL.Services.Rooms.Instances;
-using NextHave.BL.Services.Users.Components;
-using NextHave.BL.Services.Users.Instances;
-using NextHave.DAL.Enums;
-using System.Linq.Expressions;
 using System.Reflection;
+using Dolphin.Core.Injection;
+using System.Linq.Expressions;
+using NextHave.BL.PacketParsers;
+using Microsoft.Extensions.Logging;
+using NextHave.BL.Services.Rooms.Instances;
+using NextHave.BL.Services.Users.Instances;
+using NextHave.BL.Services.Rooms.Factories;
+using NextHave.BL.Services.Users.Components;
+using NextHave.BL.Services.Rooms.Components;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace NextHave.BL
 {
@@ -74,7 +74,7 @@ namespace NextHave.BL
 
         public static R GetMap<E, R>(this E @object, params (Expression<Func<R, object>> destinationMember, Expression<Func<E, object?>> sourceMember)[] properties)
         {
-            var config = new MapperConfiguration(cfg => cfg.CreateMap<E, R>().MapProperties(properties));
+            var config = new MapperConfiguration(cfg => cfg.CreateMap<E, R>().MapProperties(properties), LoggerFactory.Create((configure) => { }));
             return config.CreateMapper().Map<R>(@object);
         }
     }
