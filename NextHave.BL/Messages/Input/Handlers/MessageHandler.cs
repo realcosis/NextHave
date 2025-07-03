@@ -7,7 +7,7 @@ using NextHave.BL.Events.Rooms.Items;
 using NextHave.BL.Events.Rooms.Session;
 using NextHave.BL.Events.Rooms.Users;
 using NextHave.BL.Events.Rooms.Users.Movements;
-using NextHave.BL.Events.Users;
+using NextHave.BL.Events.Users.Session;
 using NextHave.BL.Messages.Input.Handshake;
 using NextHave.BL.Messages.Input.Rooms;
 using NextHave.BL.Messages.Input.Rooms.Connection;
@@ -52,12 +52,12 @@ namespace NextHave.BL.Messages.Input.Handlers
 
         public async Task OnMoveObject(MoveObjectMessage message, Client client)
         {
-            if (client?.User == default || !client.User.CurrentRoomId.HasValue || client.User.CurrentRoomInstance == default)
+            if (client?.UserInstance == default || !client.UserInstance.CurrentRoomId.HasValue || client.UserInstance.CurrentRoomInstance == default)
                 return;
 
-            await client.User.CurrentRoomInstance.EventsService.DispatchAsync<MoveObjectEvent>(new()
+            await client.UserInstance.CurrentRoomInstance.EventsService.DispatchAsync<MoveObjectEvent>(new()
             {
-                RoomId = client.User.CurrentRoomId!.Value,
+                RoomId = client.UserInstance.CurrentRoomId!.Value,
                 ItemId = message.ItemId,
                 Rotation = message.Rotation,
                 NewY = message.NewY,
@@ -67,38 +67,38 @@ namespace NextHave.BL.Messages.Input.Handlers
 
         public async Task OnMoveAvatar(MoveAvatarMessage message, Client client)
         {
-            if (client?.User == default)
+            if (client?.UserInstance == default)
                 return;
 
-            if (!client.User.CurrentRoomId.HasValue)
+            if (!client.UserInstance.CurrentRoomId.HasValue)
                 return;
 
 
-            if (client.User.CurrentRoomInstance == default)
+            if (client.UserInstance.CurrentRoomInstance == default)
                 return;
 
-            await client.User.CurrentRoomInstance.EventsService.DispatchAsync<MoveAvatarEvent>(new()
+            await client.UserInstance.CurrentRoomInstance.EventsService.DispatchAsync<MoveAvatarEvent>(new()
             {
-                RoomId = client.User.CurrentRoomId!.Value,
+                RoomId = client.UserInstance.CurrentRoomId!.Value,
                 NewX = message.NewX,
                 NewY = message.NewY,
-                UserId = client.User.Id
+                UserId = client.UserInstance!.User!.Id
             });
         }
 
         public async Task OnGetRoomEntryDataMessage(GetRoomEntryDataMessage message, Client client)
         {
-            if (client?.User == default)
+            if (client?.UserInstance == default)
                 return;
 
-            if (!client.User.CurrentRoomId.HasValue)
+            if (!client.UserInstance.CurrentRoomId.HasValue)
                 return;
 
             using var scope = serviceScopeFactory.CreateAsyncScope();
             var serviceProvider = scope.ServiceProvider;
             var roomsService = serviceProvider.GetRequiredService<IRoomsService>();
 
-            var roomInstance = await roomsService.GetRoomInstance(client.User.CurrentRoomId.Value);
+            var roomInstance = await roomsService.GetRoomInstance(client.UserInstance.CurrentRoomId.Value);
             if (roomInstance?.Room != default && roomInstance?.RoomModel != default)
             {
                 await client.Send(new FloorHeightMapMessageComposer(roomInstance.RoomModel));
@@ -108,7 +108,7 @@ namespace NextHave.BL.Messages.Input.Handlers
                 await roomInstance.EventsService.DispatchAsync<AddUserToRoomEvent>(new()
                 {
                     RoomId = roomInstance.Room.Id,
-                    User = client.User,
+                    User = client.UserInstance,
                     Spectator = false
                 });
 
@@ -122,24 +122,24 @@ namespace NextHave.BL.Messages.Input.Handlers
 
         public async Task OnGetFurnitureAliasesMessage(GetFurnitureAliasesMessage message, Client client)
         {
-            if (client?.User == default)
+            if (client?.UserInstance == default)
                 return;
 
-            if (!client.User.CurrentRoomId.HasValue)
+            if (!client.UserInstance.CurrentRoomId.HasValue)
                 return;
 
             using var scope = serviceScopeFactory.CreateAsyncScope();
             var serviceProvider = scope.ServiceProvider;
             var roomsService = serviceProvider.GetRequiredService<IRoomsService>();
 
-            var roomInstance = await roomsService.GetRoomInstance(client.User.CurrentRoomId.Value);
+            var roomInstance = await roomsService.GetRoomInstance(client.UserInstance.CurrentRoomId.Value);
             if (roomInstance?.Room != default)
                 await client.Send(new FurnitureAliasesMessageComposer());
         }
 
         public async Task OnOpenFlatMessage(OpenFlatMessage message, Client client)
         {
-            if (client?.User == default)
+            if (client?.UserInstance == default)
                 return;
 
             using var scope = serviceScopeFactory.CreateAsyncScope();
@@ -147,15 +147,15 @@ namespace NextHave.BL.Messages.Input.Handlers
             var roomsService = serviceProvider.GetRequiredService<IRoomsService>();
             var eventsService = serviceProvider.GetRequiredService<IEventsService>();
 
-            if (client.User.CurrentRoomInstance != default)
+            if (client.UserInstance.CurrentRoomInstance != default)
             {
-                await client.User.CurrentRoomInstance.EventsService.DispatchAsync(new UserRoomExitEvent
+                await client.UserInstance.CurrentRoomInstance.EventsService.DispatchAsync(new UserRoomExitEvent
                 {
-                    UserId = client.User.Id,
-                    RoomId = client.User.CurrentRoomId!.Value,
+                    UserId = client.UserInstance!.User!.Id,
+                    RoomId = client.UserInstance.CurrentRoomId!.Value,
                 });
-                client.User.CurrentRoomInstance = default;
-                client.User.CurrentRoomId = default;
+                client.UserInstance.CurrentRoomInstance = default;
+                client.UserInstance.CurrentRoomId = default;
             }
 
             var roomInstance = await roomsService.GetRoomInstance(message.RoomId);
@@ -167,16 +167,16 @@ namespace NextHave.BL.Messages.Input.Handlers
 
             await client.Send(new OpenConnectionMessageComposer(roomInstance.Room.Id));
 
-            if (!roomInstance.CheckRights(client.User, true))
+            if (!roomInstance.CheckRights(client.UserInstance, true))
             {
-                if (roomInstance.Room.State == RoomAccessStatus.Locked && !client.User.Permission!.HasRight("nexthave_enter_locked_room"))
+                if (roomInstance.Room.State == RoomAccessStatus.Locked && !client.UserInstance.Permission!.HasRight("nexthave_enter_locked_room"))
                 {
                     if (roomInstance.Room.UsersNow > 0)
                     {
                         await client.Send(new DoorbellMessageComposer(string.Empty));
                         await roomInstance.EventsService.DispatchAsync(new SendRoomPacketEvent
                         {
-                            Composer = new DoorbellMessageComposer(client.User.Username!),
+                            Composer = new DoorbellMessageComposer(client.UserInstance!.User!.Username!),
                             WithRights = true,
                             RoomId = roomInstance.Room.Id,
                         });
@@ -188,7 +188,7 @@ namespace NextHave.BL.Messages.Input.Handlers
                     return;
                 }
 
-                if (roomInstance.Room.State == RoomAccessStatus.Password && !client.User.Permission!.HasRight("nexthave_enter_locked_room"))
+                if (roomInstance.Room.State == RoomAccessStatus.Password && !client.UserInstance.Permission!.HasRight("nexthave_enter_locked_room"))
                 {
                     if (!message.Password!.ToLower().Equals(roomInstance.Room.Password!.ToLower()) || string.IsNullOrWhiteSpace(message.Password))
                     {
@@ -208,8 +208,8 @@ namespace NextHave.BL.Messages.Input.Handlers
 
             await client.Send(new RoomPropertyMessageComposer("landscape", roomInstance.Room.Landscape!));
 
-            client.User.CurrentRoomInstance = roomInstance;
-            client.User.CurrentRoomId = roomInstance.Room.Id;
+            client.UserInstance.CurrentRoomInstance = roomInstance;
+            client.UserInstance.CurrentRoomId = roomInstance.Room.Id;
         }
 
         public async Task OnSSOTicket(SSOTicketMessage message, Client client)
@@ -224,37 +224,25 @@ namespace NextHave.BL.Messages.Input.Handlers
 
             var eventsService = serviceProvider.GetRequiredService<IEventsService>();
             user.Client = client;
-            client.User = user;
-            await SendSSOTicketResponse(client, user);
+            client.UserInstance = user;
+
+            await client.Send(new AuthenticationOKMessageComposer());
+            await client.Send(new AvailabilityStatusMessageComposer(true, false, true));
+            await client.Send(new UserRightsMessageComposer(2, user.Permission!.SecurityLevel!.Value, true));
+            await client.Send(new NavigatorHomeRoomMessageComposer(user.User!.HomeRoom ?? 0, user.User!.HomeRoom ?? 0));
+
             await eventsService.DispatchAsync<UserConnectedEvent>(new()
             {
-                UserId = user.Id
+                UserId = user.User!.Id
             });
         }
 
         public async Task OnInfoRetrieve(InfoRetrieveMessage message, Client client)
         {
-            if (client?.User == default)
+            if (client?.UserInstance == default)
                 return;
 
-            await SendInfoRetrieveResponse(client, client.User!);
+            await client.Send(new UserObjectMessageComposer(client.UserInstance.User!));
         }
-
-        #region private methods
-
-        static async Task SendSSOTicketResponse(Client client, User user)
-        {
-            await client.Send(new AuthenticationOKMessageComposer());
-            await client.Send(new AvailabilityStatusMessageComposer(true, false, true));
-            await client.Send(new UserRightsMessageComposer(2, user.Permission!.SecurityLevel!.Value, true));
-            await client.Send(new NavigatorHomeRoomMessageComposer(user.HomeRoom ?? 0, user.HomeRoom ?? 0));
-        }
-
-        static async Task SendInfoRetrieveResponse(Client client, User user)
-        {
-            await client.Send(new UserObjectMessageComposer(user));
-        }
-
-        #endregion
     }
 }

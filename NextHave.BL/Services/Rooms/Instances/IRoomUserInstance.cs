@@ -1,8 +1,8 @@
 ﻿using NextHave.BL.Models;
 using NextHave.BL.Clients;
 using NextHave.BL.Messages;
-using NextHave.BL.Models.Users;
 using System.Collections.Concurrent;
+using NextHave.BL.Services.Users.Instances;
 
 namespace NextHave.BL.Services.Rooms.Instances
 {
@@ -12,7 +12,7 @@ namespace NextHave.BL.Services.Rooms.Instances
 
         public Timer? Timer { get; set; }
 
-        public User? User { get; set; }
+        public IUserInstance? UserInstance { get; set; }
 
         public Point? GoalPoint { get; set; }
 

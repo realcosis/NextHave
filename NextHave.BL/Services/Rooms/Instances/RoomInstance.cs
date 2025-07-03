@@ -7,16 +7,18 @@ using NextHave.DAL.MySQL;
 using Microsoft.EntityFrameworkCore;
 using NextHave.BL.Mappers;
 using NextHave.BL.Models.Users;
-using System.Globalization;
+using NextHave.BL.Services.Users.Instances;
 
 namespace NextHave.BL.Services.Rooms.Instances
 {
     class RoomInstance(IEnumerable<IRoomComponent> roomComponents, RoomEventsFactory roomEventsFactory, IServiceScopeFactory serviceScopeFactory) : IRoomInstance
     {
+        IRoomInstance Instance => this;
+
         bool hasRoom = false;
         Room? room;
 
-        public Room? Room
+        Room? IRoomInstance.Room
         {
             get => room;
             set
@@ -29,62 +31,61 @@ namespace NextHave.BL.Services.Rooms.Instances
             }
         }
 
-        public RoomToner? Toner { get; set; }
+        RoomToner? IRoomInstance.Toner { get; set; }
 
-        public WorkRoomModel? RoomModel { get; set; }
+        WorkRoomModel? IRoomInstance.RoomModel { get; set; }
 
-        public RoomEventsService EventsService
-            => roomEventsFactory.GetForRoom(Room!.Id);
+        RoomEventsService IRoomInstance.EventsService => roomEventsFactory.Get(Instance.Room!.Id);
 
-        public async Task Init()
+        async Task IRoomInstance.Init()
         {
             await using var scope = serviceScopeFactory.CreateAsyncScope();
 
             var mysqlDbontext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
 
-            var dbToner = await mysqlDbontext.RoomToners.AsNoTracking().FirstOrDefaultAsync(t => t.RoomId == Room!.Id);
+            var dbToner = await mysqlDbontext.RoomToners.AsNoTracking().FirstOrDefaultAsync(t => t.RoomId == Instance.Room!.Id);
 
             if (dbToner != default)
-                Toner = dbToner.Map();
+                Instance.Toner = dbToner.Map();
 
             foreach (var roomComponent in roomComponents)
                 await roomComponent.Init(this);
         }
 
-        public async Task OnRoomTick()
+        async Task IRoomInstance.OnRoomTick()
         {
-            if (Room == default)
+            if (Instance.Room == default)
                 return;
 
-            await EventsService.DispatchAsync<RoomTickEvent>(new()
+            await Instance.EventsService.DispatchAsync<RoomTickEvent>(new()
             {
-                RoomId = Room!.Id
+                RoomId = Instance.Room!.Id
             });
         }
 
-        bool IRoomInstance.CheckRights(User user, bool isOwner)
+        bool IRoomInstance.CheckRights(IUserInstance userInstance, bool isOwner)
         {
-            if (user == default || Room == default || user.Permission == default)
+            if (userInstance == default || Instance.Room == default || userInstance.Permission == default)
                 return false;
 
-            if (Room.OwnerId.Equals(user.Id))
+            if (Instance.Room.OwnerId.Equals(userInstance.User!.Id))
                 return true;
 
-            if (user.Permission.HasRight("nexthave_administrator") || user.Permission.HasRight("nexthave_all_rooms_owner"))
+            if (userInstance.Permission.HasRight("nexthave_administrator") || userInstance.Permission.HasRight("nexthave_all_rooms_owner"))
                 return true;
 
             if (!isOwner)
             {
-                if (user.Permission.HasRight("nexthave_all_rooms_rights"))
+                if (userInstance.Permission.HasRight("nexthave_all_rooms_rights"))
                     return true;
 
-                if (Room.Rights.Contains(user.Id))
+                if (Instance.Room.Rights.Contains(userInstance.User!.Id))
                     return true;
 
-                if (Room.AllowRightsOverride)
+                if (Instance.Room.AllowRightsOverride)
                     return true;
 
-                if (Room.Group != default && Room.Group.Members.TryGetValue(user.Id, out var groupMember) && groupMember.Rank <= 1)
+                if (Instance.Room.Group != default && Instance.Room.Group.Members.TryGetValue(userInstance.User!.Id, out var groupMember) && groupMember.Rank <= 1)
                     return true;
             }
 

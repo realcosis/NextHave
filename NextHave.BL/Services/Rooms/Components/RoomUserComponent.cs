@@ -166,7 +166,7 @@ namespace NextHave.BL.Services.Rooms.Components
             if (@event?.User?.Client == default || _roomInstance == default || _roomInstance?.Room == default || _roomInstance?.RoomModel == default)
                 return;
 
-            var roomUserInstance = roomUserFactory.GetRoomUserInstance(@event.User.Id, @event.User.Username!, virtualId++, @event.User, _roomInstance);
+            var roomUserInstance = roomUserFactory.GetRoomUserInstance(@event.User!.User!.Id, @event.User!.User!.Username!, virtualId++, @event.User, _roomInstance);
 
             roomUserInstance.SetPosition(new ThreeDPoint(_roomInstance.RoomModel.DoorX, _roomInstance.RoomModel.DoorY, _roomInstance.RoomModel.DoorZ));
             roomUserInstance.SetRotation(_roomInstance.RoomModel.DoorOrientation);
@@ -230,13 +230,13 @@ namespace NextHave.BL.Services.Rooms.Components
             if (_roomInstance?.Room == default)
                 return;
 
-            foreach (var client in users.Values.Where(u => u.User != default && _roomInstance.CheckRights(u.User, false)).Select(u => u.Client).Where(c => c != default))
+            foreach (var client in users.Values.Where(u => u.UserInstance != default && _roomInstance.CheckRights(u.UserInstance, false)).Select(u => u.Client).Where(c => c != default))
                 await client!.Send(message);
         }
 
         async Task Send(Composer message)
         {
-            foreach (var client in users.Values.Where(u => u.User != default).Select(u => u.Client).Where(c => c != default))
+            foreach (var client in users.Values.Where(u => u.UserInstance != default).Select(u => u.Client).Where(c => c != default))
                 await client!.Send(message);
         }
 

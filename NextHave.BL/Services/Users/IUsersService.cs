@@ -1,17 +1,16 @@
 ﻿using NextHave.BL.Models.Users;
-using NextHave.BL.Models.Badges;
-using NextHave.BL.Models.Wardrobes;
 using System.Collections.Concurrent;
+using NextHave.BL.Services.Users.Instances;
 
 namespace NextHave.BL.Services.Users
 {
     public interface IUsersService
     {
-        ConcurrentDictionary<int, User> Users { get; }
+        ConcurrentDictionary<int, IUserInstance> Users { get; }
 
         Task<User?> GetHabbo(int userId);
 
-        Task<User?> LoadHabbo(string authTicket, int time);
+        Task<IUserInstance?> LoadHabbo(string authTicket, int time);
 
         Task<User?> Login(UserLoginWrite userLogin);
 

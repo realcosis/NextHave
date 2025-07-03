@@ -23,15 +23,15 @@ namespace NextHave.Nitro.Sockets
         {
             if (Sessions.ConnectedClients.TryGetValue(Context.ConnectionId, out var client))
             {
-                if (client.User?.CurrentRoomInstance != default)
+                if (client.UserInstance?.CurrentRoomInstance != default)
                 {
-                    await client.User.CurrentRoomInstance.EventsService.DispatchAsync(new UserRoomExitEvent
+                    await client.UserInstance.CurrentRoomInstance.EventsService.DispatchAsync(new UserRoomExitEvent
                     {
-                        UserId = client.User.Id,
-                        RoomId = client.User.CurrentRoomId!.Value,
+                        UserId = client.UserInstance!.User!.Id,
+                        RoomId = client.UserInstance.CurrentRoomId!.Value,
                     });
-                    client.User.CurrentRoomInstance = default;
-                    client.User.CurrentRoomId = default;
+                    client.UserInstance.CurrentRoomInstance = default;
+                    client.UserInstance.CurrentRoomId = default;
                 }
                 Sessions.ConnectedClients.TryRemove(Context.ConnectionId, out _);
             }

@@ -23,13 +23,5 @@ namespace NextHave.BL.Models.Users
         public string? Gender { get; set; }
 
         public int? HomeRoom { get; set; }
-
-        public Client? Client { get; set; }
-
-        public int? CurrentRoomId { get; set; }
-
-        public IRoomInstance? CurrentRoomInstance { get; set; }
-
-        public Permission? Permission { get; set; }
     }
 }

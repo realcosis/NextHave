@@ -1,10 +1,10 @@
-﻿using NextHave.BL.Models.Users;
+﻿using NextHave.BL.Services.Users.Instances;
 
 namespace NextHave.BL.Events.Rooms.Users
 {
     public class AddUserToRoomEvent : RoomEvent
     {
-        public User? User { get; set; }
+        public IUserInstance? User { get; set; }
 
         public bool Spectator { get; set; }
     }

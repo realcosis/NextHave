@@ -10,7 +10,7 @@ namespace NextHave.BL.Services.Rooms.Factories
     {
         readonly ConcurrentDictionary<int, RoomEventsService> roomEventsServices = [];
 
-        public RoomEventsService GetForRoom(int roomId)
+        public RoomEventsService Get(int roomId)
             => roomEventsServices.GetOrAdd(roomId, id => new RoomEventsService(eventsService)
             {
                 RoomId = id

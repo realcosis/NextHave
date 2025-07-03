@@ -2,6 +2,7 @@
 using NextHave.BL.Messages;
 using NextHave.BL.Models;
 using NextHave.BL.Models.Users;
+using NextHave.BL.Services.Users.Instances;
 using NextHave.BL.Utils;
 using System.Collections.Concurrent;
 using System.Text;
@@ -25,7 +26,7 @@ namespace NextHave.BL.Services.Rooms.Instances
 
         Client? IRoomUserInstance.Client { get; set; }
 
-        User? IRoomUserInstance.User { get; set; }
+        IUserInstance? IRoomUserInstance.UserInstance { get; set; }
 
         ThreeDPoint? IRoomUserInstance.Position { get; set; }
 
@@ -66,15 +67,15 @@ namespace NextHave.BL.Services.Rooms.Instances
         {
             message.AddInt32(Instance.UserId);
             message.AddString(Instance.Username!);
-            message.AddString(Instance.User!.Motto ?? string.Empty);
-            message.AddString(Instance.User!.Look!);
+            message.AddString(Instance.UserInstance!.User!.Motto ?? string.Empty);
+            message.AddString(Instance.UserInstance.User.Look!);
             message.AddInt32(Instance.VirutalId);
             message.AddInt32(Instance.Position!.GetX);
             message.AddInt32(Instance.Position!.GetY);
             message.AddString(Instance.Position.GetZ.GetString());
             message.AddInt32(BodyDirection);
             message.AddInt32(1);
-            message.AddString(Instance.User.Gender!.ToLower());
+            message.AddString(Instance.UserInstance.User.Gender!.ToLower());
             message.AddInt32(-1);
             message.AddInt32(-1);
             message.AddString(string.Empty);

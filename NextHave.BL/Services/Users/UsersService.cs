@@ -1,25 +1,27 @@
-﻿using NextHave.DAL.MySQL;
-using Microsoft.EntityFrameworkCore;
-using System.Collections.Concurrent;
-using NextHave.BL.Models.Users;
+﻿using Dolphin.Core.Exceptions;
 using Dolphin.Core.Injection;
-using Dolphin.Core.Exceptions;
+using Dolphin.Core.Validations;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using NextHave.BL.Localizations;
-using Dolphin.Core.Validations;
 using NextHave.BL.Extensions;
+using NextHave.BL.Localizations;
 using NextHave.BL.Mappers;
-using NextHave.BL.Services.Settings;
-using NextHave.DAL.MySQL.Entities;
+using NextHave.BL.Models.Users;
 using NextHave.BL.Services.Permissions;
+using NextHave.BL.Services.Settings;
+using NextHave.BL.Services.Users.Factories;
+using NextHave.BL.Services.Users.Instances;
+using NextHave.DAL.MySQL;
+using NextHave.DAL.MySQL.Entities;
+using System.Collections.Concurrent;
 
 namespace NextHave.BL.Services.Users
 {
     [Service(ServiceLifetime.Singleton)]
     class UsersService(IServiceScopeFactory serviceScopeFactory, ILogger<IUsersService> logger, ISettingsService settingsService) : IUsersService
     {
-        ConcurrentDictionary<int, User> IUsersService.Users { get; } = [];
+        ConcurrentDictionary<int, IUserInstance> IUsersService.Users { get; } = [];
 
         async Task<User?> IUsersService.GetHabbo(int userId)
         {
@@ -34,7 +36,7 @@ namespace NextHave.BL.Services.Users
             return user.MapResult();
         }
 
-        async Task<User?> IUsersService.LoadHabbo(string authTicket, int time)
+        async Task<IUserInstance?> IUsersService.LoadHabbo(string authTicket, int time)
         {
             try
             {
@@ -45,6 +47,8 @@ namespace NextHave.BL.Services.Users
                 var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
 
                 var permissionsService = scope.ServiceProvider.GetRequiredService<IPermissionsService>();
+
+                var userFactory = scope.ServiceProvider.GetRequiredService<UserFactory>();
 
                 var userTicket = await mysqlDbContext
                                         .UserTickets
@@ -61,12 +65,14 @@ namespace NextHave.BL.Services.Users
 
                 var result = user.MapResult();
 
-                if (permissionsService.Groups.TryGetValue(user.Rank!.Value, out var permissionGroup))
-                    result.Permission = permissionGroup;
-                else
-                    logger.LogWarning("Rank with id {groupId} not found for user {Username}", user.Rank, user.Username);
+                var userInstance = userFactory.GetUserInstance(result.Id, result);
 
-                return result;
+                if (permissionsService.Groups.TryGetValue(user.Rank!.Value, out var permissionGroup))
+                    userInstance.Permission = permissionGroup;
+
+                await userInstance.Init();
+
+                return userInstance;
             }
             catch (Exception ex)
             {

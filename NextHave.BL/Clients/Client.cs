@@ -1,7 +1,7 @@
-﻿using NextHave.BL.Models.Users;
-using NextHave.BL.Messages.Input;
+﻿using NextHave.BL.Messages.Input;
 using Microsoft.AspNetCore.SignalR;
 using NextHave.BL.Messages;
+using NextHave.BL.Services.Users.Instances;
 
 namespace NextHave.BL.Clients
 {
@@ -13,7 +13,7 @@ namespace NextHave.BL.Clients
 
         public IClientProxy? ClientProxy { get; set; }
 
-        public User? User { get; set; }
+        public IUserInstance? UserInstance { get; set; }
 
         public void Init(string connectionId, IClientProxy clientProxy)
         {
