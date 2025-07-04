@@ -30,7 +30,7 @@ namespace Dolphin.Backgrounds.Tasks
 
             await mysqlDbContext.ChatlogRooms.AddAsync(new()
             {
-                Datetime = DateTime.UtcNow,
+                Datetime = DateTime.Now,
                 Message = message,
                 RoomId = roomId,
                 UserId = userId

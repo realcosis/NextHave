@@ -20,6 +20,8 @@ namespace NextHave.DAL.MySQL
 
         public DbSet<NextHaveSettingEntity> NextHaveSettings { get; set; }
 
+        public DbSet<NextHaveTextEntity> NextHaveTexts { get; set; }
+
         public DbSet<NavigatorPublicCategoryEntity> NavigatorPublicCategories { get; set; }
 
         public DbSet<NavigatorUserCategoryEntity> NavigatorUserCategories { get; set; }

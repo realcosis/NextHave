@@ -5,16 +5,16 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NextHave.BL.Events.Rooms.Chat;
 using NextHave.BL.Events.Rooms.Session;
-using NextHave.BL.Messages.Input.Rooms.Chat;
 using NextHave.BL.Messages.Output.Rooms.Chat;
-using NextHave.BL.Models.Users;
 using NextHave.BL.Services.Rooms.Instances;
+using NextHave.BL.Services.Texts;
+using NextHave.BL.Services.Users.Factories;
 using NextHave.DAL.MySQL;
 
 namespace NextHave.BL.Services.Rooms.Components
 {
     [Service(ServiceLifetime.Scoped)]
-    class RoomChatComponent(IServiceScopeFactory serviceScopeFactory) : IRoomComponent
+    class RoomChatComponent(IServiceScopeFactory serviceScopeFactory, UserFactory userFactory) : IRoomComponent
     {
         IRoomInstance? _roomInstance;
 
@@ -42,6 +42,21 @@ namespace NextHave.BL.Services.Rooms.Components
             await using var scope = serviceScopeFactory.CreateAsyncScope();
 
             var backgroundsService = scope.ServiceProvider.GetRequiredService<IBackgroundsService>();
+            var textsService = scope.ServiceProvider.GetRequiredService<ITextsService>();
+
+            var userInstance = userFactory.GetUserInstance(@event.UserId);
+
+            if (userInstance == default)
+                return;
+
+            if (!userInstance.Permission!.HasRight("nexthave_room_bypass_mute") && _roomInstance.CheckMute(@event.VirtualId, userInstance))
+            {
+                await userInstance.Client!.SendSystemNotification("generic", new()
+                {
+                    ["message"] = textsService.GetText("nexthave_roomuser_muted", "You are muted in this room.") 
+                });
+                return;
+            }
 
             var task = scope.ServiceProvider.GetTask<AddCatalogTask>("AddCatalogTask");
             if (task == default)

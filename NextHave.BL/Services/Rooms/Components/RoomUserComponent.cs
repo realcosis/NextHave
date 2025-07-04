@@ -176,13 +176,13 @@ namespace NextHave.BL.Services.Rooms.Components
             var state = movementStates.AddOrUpdate(roomUserInstance.VirutalId, new UserMovementContext
             {
                 GoalPoint = new Point(@event.NewX!.Value, @event.NewY!.Value),
-                RequestTime = DateTime.UtcNow,
+                RequestTime = DateTime.Now,
                 IsProcessing = false,
                 HasPendingStep = false
             }, (key, existing) =>
             {
                 existing.GoalPoint = new Point(@event.NewX!.Value, @event.NewY!.Value);
-                existing.RequestTime = DateTime.UtcNow;
+                existing.RequestTime = DateTime.Now;
                 existing.IsProcessing = false;
                 return existing;
             });

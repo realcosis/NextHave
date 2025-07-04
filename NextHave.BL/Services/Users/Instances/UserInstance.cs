@@ -25,6 +25,10 @@ namespace NextHave.BL.Services.Users.Instances
 
         Permission? IUserInstance.Permission { get; set; }
 
+        bool IUserInstance.IsMuted { get; set; }
+
+        DateTime? IUserInstance.MutedUntil { get; set; }
+
         async Task IUserInstance.Init()
         {
             foreach (var userComponent in userComponents)

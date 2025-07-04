@@ -1,24 +1,28 @@
 ﻿using NextHave.BL.Models.Rooms;
-using NextHave.BL.Models.Users;
-using NextHave.BL.Services.Rooms.Pathfinders;
 using NextHave.BL.Services.Users.Instances;
 
 namespace NextHave.BL.Services.Rooms.Instances
 {
     public interface IRoomInstance
     {
-        public Room? Room { get; set; }
+        Room? Room { get; set; }
 
-        public RoomToner? Toner { get; set; }
+        bool RoomMuted { get; set; }
 
-        public WorkRoomModel? RoomModel { get; set; }
+        RoomToner? Toner { get; set; }
 
-        public RoomEventsService EventsService { get; }
+        WorkRoomModel? RoomModel { get; set; }
+
+        RoomEventsService EventsService { get; }
 
         Task OnRoomTick();
 
         Task Init();
 
         bool CheckRights(IUserInstance userInstance, bool isOwner);
+
+        void MuteUser(int virtualId, DateTime until);
+
+        bool CheckMute(int virtualId, IUserInstance userInstance);
     }
 }

@@ -6,13 +6,15 @@ using Microsoft.Extensions.DependencyInjection;
 using NextHave.DAL.MySQL;
 using Microsoft.EntityFrameworkCore;
 using NextHave.BL.Mappers;
-using NextHave.BL.Models.Users;
 using NextHave.BL.Services.Users.Instances;
+using System.Collections.Concurrent;
 
 namespace NextHave.BL.Services.Rooms.Instances
 {
     class RoomInstance(IEnumerable<IRoomComponent> roomComponents, RoomEventsFactory roomEventsFactory, IServiceScopeFactory serviceScopeFactory) : IRoomInstance
     {
+        readonly ConcurrentDictionary<int, DateTime> mutedUsers = [];
+
         IRoomInstance Instance => this;
 
         bool hasRoom = false;
@@ -30,6 +32,8 @@ namespace NextHave.BL.Services.Rooms.Instances
                 }
             }
         }
+
+        bool IRoomInstance.RoomMuted { get; set; }
 
         RoomToner? IRoomInstance.Toner { get; set; }
 
@@ -88,6 +92,24 @@ namespace NextHave.BL.Services.Rooms.Instances
                 if (Instance.Room.Group != default && Instance.Room.Group.Members.TryGetValue(userInstance.User!.Id, out var groupMember) && groupMember.Rank <= 1)
                     return true;
             }
+
+            return false;
+        }
+
+        void IRoomInstance.MuteUser(int virtualId, DateTime until)
+            => mutedUsers.AddOrUpdate(virtualId, until, (key, oldValue) => until > oldValue ? until : oldValue);
+
+        bool IRoomInstance.CheckMute(int virtualId, IUserInstance userInstance)
+        {
+            if (mutedUsers.TryGetValue(virtualId, out var until))
+            {
+                if (until > DateTime.Now)
+                    return true;
+                mutedUsers.TryRemove(virtualId, out _);
+            }
+
+            if (userInstance.IsMuted || (Instance.RoomMuted && Instance.Room!.OwnerId.Equals(userInstance.User!.Id)))
+                return true;
 
             return false;
         }

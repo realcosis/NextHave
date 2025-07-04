@@ -8,6 +8,14 @@ namespace NextHave.BL.Services.Users.Factories
     [Service(ServiceLifetime.Scoped)]
     class UserFactory(IKeyedServicesProvider<IUserInstance> userInstanceProvider)
     {
+        public IUserInstance? GetUserInstance(int roomId)
+        {
+            if (userInstanceProvider.HasServiceRegstered(roomId, out var userInstance))
+                return userInstance;
+
+            return default;
+        }
+
         public IUserInstance GetUserInstance(int roomId, User user)
         {
             if (userInstanceProvider.HasServiceRegstered(roomId, out var userInstance))

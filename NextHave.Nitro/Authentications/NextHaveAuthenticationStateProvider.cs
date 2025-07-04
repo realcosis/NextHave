@@ -88,7 +88,7 @@ namespace NextHave.Nitro.Authentications
                 issuer: configuration["Jwt:Issuer"]!,
                 audience: configuration["Jwt:Audience"]!,
                 claims: claims,
-                expires: DateTime.UtcNow.AddHours(2),
+                expires: DateTime.Now.AddHours(2),
                 signingCredentials: creds);
 
             return new JwtSecurityTokenHandler().WriteToken(token);

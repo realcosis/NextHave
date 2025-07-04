@@ -1,6 +1,8 @@
-﻿using NextHave.BL.Messages.Input;
-using Microsoft.AspNetCore.SignalR;
+﻿using Microsoft.AspNetCore.SignalR;
 using NextHave.BL.Messages;
+using NextHave.BL.Messages.Input;
+using NextHave.BL.Messages.Output;
+using NextHave.BL.Messages.Output.Rooms.Notifications;
 using NextHave.BL.Services.Users.Instances;
 
 namespace NextHave.BL.Clients
@@ -23,6 +25,20 @@ namespace NextHave.BL.Clients
             {
                 Client = this
             };
+        }
+
+        public async Task SendSystemNotification(string type, Dictionary<string, string> items)
+        {
+            items.TryAdd("sound", "systemnotification");
+            items.TryAdd("color", "#ff0000");
+
+            await SendBubble(type, items);
+        }
+
+        public async Task SendBubble(string type, Dictionary<string, string> items)
+        {
+            items.TryAdd("display", "BUBBLE");
+            await Send(new BubbleNotificationsMessageComposer(type, items));
         }
 
         public async Task Send(Composer message)

@@ -20,6 +20,10 @@ namespace NextHave.BL.Services.Users.Instances
 
         public Permission? Permission { get; set; }
 
+        public bool IsMuted { get; set; }
+
+        public DateTime? MutedUntil { get; set; }
+
         Task Init();
     }
 }

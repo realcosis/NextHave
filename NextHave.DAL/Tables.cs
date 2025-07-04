@@ -26,6 +26,8 @@
 
         public const string NextHaveSettings = "nexthave_settings";
 
+        public const string NextHaveTexts = "nexthave_texts";
+
         public const string NavigatorPublicRooms = "navigator_public_rooms";
 
         public const string NavigatorPublicCategories = "navigator_public_categories";

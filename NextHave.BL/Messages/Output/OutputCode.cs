@@ -55,5 +55,7 @@
         public const short ChatMessageComposer = 1446;
 
         public const short GenericErrorMessageComposer = 1600;
+
+        public const short RoomNotificationMessageComposer = 1992;
     }
 }
