@@ -16,7 +16,7 @@
 @inject NextHaveAuthenticationStateProvider authenticationStateProvider
 
 <script src="/nitro/loader.js"></script>
-<link rel="modulepreload" crossorigin href="/nitro/vendor-C03uLZeS.js" />
+<link rel="modulepreload" crossorigin href="/nitro/vendor-C03uLZeS.js" as="script" />
 <link rel="stylesheet" href="/nitro/index.css" />
 
 <PageTitle>@hotelName ~ Hotel</PageTitle>
@@ -30,6 +30,13 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        var authState = await authenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (!(user.Identity is { IsAuthenticated: true }))
+            navigation.NavigateTo("/login");
+
+
         if (firstRender)
         {
             var userId = await authenticationStateProvider.GetUserIdFromToken();

@@ -1,3 +1,14 @@
-﻿@inherits LayoutComponentBase
+﻿@using NextHave.BL.Services.Settings
 
-@Body
+@inject ISettingsService settingsService
+
+@inherits LayoutComponentBase
+
+<CascadingValue Value="hotelName">@Body</CascadingValue>
+
+@code {
+    string? hotelName => settingsService.GetSetting("hotel_name");
+
+    [Parameter]
+    public string? title { get; set; }
+}
