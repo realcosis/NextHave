@@ -56,6 +56,12 @@ namespace NextHave.BL.Services.Rooms.Instances
                 await roomComponent.Init(this);
         }
 
+        async Task IRoomInstance.Dispose()
+        {
+            foreach (var roomComponent in roomComponents)
+                await roomComponent.Dispose();
+        }
+
         async Task IRoomInstance.OnRoomTick()
         {
             if (Instance.Room == default)

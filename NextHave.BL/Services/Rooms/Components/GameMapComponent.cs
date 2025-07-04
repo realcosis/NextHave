@@ -11,10 +11,19 @@ namespace NextHave.BL.Services.Rooms.Components
     {
         IRoomInstance? _roomInstance;
 
+        async Task IRoomComponent.Dispose()
+        {
+            if (_roomInstance == default)
+                return;
+
+            await _roomInstance.EventsService.UnsubscribeAsync<RequestRoomGameMapEvent>(_roomInstance, OnRequestGameMapEvent);
+            _roomInstance = default;
+        }
+
         async Task IRoomComponent.Init(IRoomInstance roomInstance)
         {
             _roomInstance = roomInstance;
-            await roomInstance.EventsService.SubscribeAsync<RequestRoomGameMapEvent>(roomInstance, OnRequestGameMapEvent);
+            await _roomInstance.EventsService.SubscribeAsync<RequestRoomGameMapEvent>(roomInstance, OnRequestGameMapEvent);
         }
 
         async Task OnRequestGameMapEvent(RequestRoomGameMapEvent @event)

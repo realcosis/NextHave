@@ -19,6 +19,8 @@ namespace NextHave.BL.Services.Rooms.Instances
 
         Task Init();
 
+        Task Dispose();
+
         bool CheckRights(IUserInstance userInstance, bool isOwner);
 
         void MuteUser(int virtualId, DateTime until);

@@ -23,6 +23,22 @@ namespace NextHave.BL.Services.Rooms.Components
 
         readonly ConcurrentDictionary<int, RoomItem> items = [];
 
+        async Task IRoomComponent.Dispose()
+        {
+            if (_roomInstance == default)
+                return;
+            
+            await _roomInstance.EventsService.UnsubscribeAsync<RoomTickEvent>(_roomInstance, OnRoomTick);
+
+            await _roomInstance.EventsService.UnsubscribeAsync<LoadRoomItemsEvent>(_roomInstance, OnLoadRoomItems);
+
+            await _roomInstance.EventsService.UnsubscribeAsync<SendItemsToNewUserEvent>(_roomInstance, OnSendItemsToNewUser);
+
+            await _roomInstance.EventsService.UnsubscribeAsync<MoveObjectEvent>(_roomInstance, OnMoveObject);
+            
+            _roomInstance = default;
+        }
+
         async Task IRoomComponent.Init(IRoomInstance roomInstance)
         {
             _roomInstance = roomInstance;

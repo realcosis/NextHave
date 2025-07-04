@@ -5,5 +5,7 @@ namespace NextHave.BL.Services.Rooms.Components
     public interface IRoomComponent
     {
         Task Init(IRoomInstance roomInstance);
+
+        Task Dispose();
     }
 }

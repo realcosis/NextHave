@@ -27,7 +27,10 @@ namespace NextHave.BL.Services.Rooms
                    if (evt is RoomEvent roomEvent && roomEvent.RoomId == RoomId)
                        await handler(evt);
                });
-        
+
+        public async Task UnsubscribeAsync<T>(object subscriber, Delegate handler) where T : DolphinEvent
+            => await eventsService.UnsubscribeAsync<T>(subscriber, handler);
+
         public async Task<T> DispatchAsync<T>(T message) where T : DolphinEvent
         {
             if (message is RoomEvent roomEvent)

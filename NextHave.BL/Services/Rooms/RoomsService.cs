@@ -51,12 +51,11 @@ namespace NextHave.BL.Services.Rooms
                 return roomInstance;
 
             using var scope = serviceScopeFactory.CreateAsyncScope();
-            var serviceProvider = scope.ServiceProvider;
 
             var room = await Instance.GetRoom(roomId);
             if (room != default)
             {
-                (roomInstance, var firstLoad) = serviceProvider.GetRequiredService<RoomFactory>().GetRoomInstance(roomId, room);
+                (roomInstance, var firstLoad) = scope.ServiceProvider.GetRequiredService<RoomFactory>().GetRoomInstance(roomId, room);
                 await roomInstance.Init();
                 if (firstLoad)
                 {
@@ -82,16 +81,17 @@ namespace NextHave.BL.Services.Rooms
             if (Instance.ActiveRooms.TryGetValue(roomId, out var roomInstance))
             {
                 using var scope = serviceScopeFactory.CreateAsyncScope();
-                var serviceProvider = scope.ServiceProvider;
-
-                serviceProvider.GetRequiredService<RoomFactory>().DestroyRoomInstance(roomId);
-
-                Instance.ActiveRooms.TryRemove(roomId, out _);
 
                 await roomInstance.EventsService.DispatchAsync<DisposeRoomEvent>(new()
                 {
                     RoomId = roomId
                 });
+
+                await roomInstance.Dispose();
+
+                scope.ServiceProvider.GetRequiredService<RoomFactory>().DestroyRoomInstance(roomId);
+
+                Instance.ActiveRooms.TryRemove(roomId, out _);
             }
         }
 

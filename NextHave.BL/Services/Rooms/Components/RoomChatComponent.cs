@@ -20,6 +20,15 @@ namespace NextHave.BL.Services.Rooms.Components
 
         readonly Dictionary<string, string> emojis = [];
 
+        async Task IRoomComponent.Dispose()
+        {
+            if (_roomInstance == default)
+                return;
+
+            await _roomInstance.EventsService.UnsubscribeAsync<ChatMessageEvent>(_roomInstance, OnChatMessage);
+            _roomInstance = default;
+        }
+
         async Task IRoomComponent.Init(IRoomInstance roomInstance)
         {
             _roomInstance = roomInstance;

@@ -31,6 +31,26 @@ namespace NextHave.BL.Services.Rooms.Components
 
         int virtualId = 1;
 
+        async Task IRoomComponent.Dispose()
+        {
+            if (_roomInstance == default)
+                return;
+
+            await _roomInstance.EventsService.UnsubscribeAsync<RoomTickEvent>(_roomInstance, OnRoomTick);
+            await _roomInstance.EventsService.UnsubscribeAsync<AddUserToRoomEvent>(_roomInstance, OnAddUserToRoomEvent);
+            await _roomInstance.EventsService.UnsubscribeAsync<UserRoomExitEvent>(_roomInstance, OnUserExit);
+
+            await _roomInstance.EventsService.UnsubscribeAsync<MoveAvatarEvent>(_roomInstance, OnMoveAvatarEvent);
+            await _roomInstance.EventsService.UnsubscribeAsync<ProcessMovementEvent>(_roomInstance, OnProcessMovement);
+            await _roomInstance.EventsService.UnsubscribeAsync<ApplyMovementEvent>(_roomInstance, OnApplyMovement);
+
+            await _roomInstance.EventsService.UnsubscribeAsync<GetVirtualIdChatMessageEvent>(_roomInstance, OnGetVirtualIdChatMessage);
+
+            await _roomInstance.EventsService.UnsubscribeAsync<SendRoomPacketEvent>(_roomInstance, OnSendRoomPacketEvent);
+
+            _roomInstance = default;
+        }
+
         async Task IRoomComponent.Init(IRoomInstance roomInstance)
         {
             _roomInstance = roomInstance;
