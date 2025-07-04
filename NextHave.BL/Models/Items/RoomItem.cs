@@ -1,7 +1,6 @@
 ﻿using NextHave.BL.Utils;
 using NextHave.DAL.Enums;
 using NextHave.BL.Messages;
-using NextHave.BL.Services.Items.Interactions;
 using NextHave.BL.Services.Rooms.Instances;
 
 namespace NextHave.BL.Models.Items

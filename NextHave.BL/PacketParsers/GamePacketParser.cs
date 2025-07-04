@@ -33,7 +33,7 @@ namespace NextHave.BL.PacketParsers
 
             try
             {
-                clientMessage = ProcessData(data, bytes, sessionId);
+                clientMessage = ProcessData(data, bytes);
             }
             catch (Exception ex)
             {
@@ -43,7 +43,7 @@ namespace NextHave.BL.PacketParsers
             return clientMessage;
         }
 
-        private ClientMessage? ProcessData(byte[] data, int bytes, string sessionId)
+        private ClientMessage? ProcessData(byte[] data, int bytes)
         {
             var position = 0;
 
@@ -59,7 +59,7 @@ namespace NextHave.BL.PacketParsers
                 }
 
                 if (EnoughDataReceived(bytes - position))
-                    return ProcessCompletePacket(data, ref position, sessionId);
+                    return ProcessCompletePacket(data, ref position);
                 else
                 {
                     StoreIncompleteData(data, bytes, position);
@@ -76,7 +76,7 @@ namespace NextHave.BL.PacketParsers
         private static bool IsValidPacketLength(int length)
             => length is >= 2 and <= 417792;
 
-        private ClientMessage? ProcessCompletePacket(byte[] data, ref int position, string sessionId)
+        private ClientMessage? ProcessCompletePacket(byte[] data, ref int position)
         {
             if (bufferPos > 0)
             {
@@ -88,7 +88,7 @@ namespace NextHave.BL.PacketParsers
             var packetStart = bufferPos > 0 ? 0 : position;
             var header = packetData.ToInt16(ref packetStart);
 
-            var message = ClientMessageFactory.GetClientMessage(packetData, packetStart, sessionId, header);
+            var message = ClientMessageFactory.GetClientMessage(packetData, packetStart, header);
 
             position += currentPacketLength;
 

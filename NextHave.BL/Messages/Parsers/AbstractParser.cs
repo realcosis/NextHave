@@ -1,5 +1,4 @@
 ﻿using NextHave.BL.Clients;
-using NextHave.BL.Messages.Input;
 using NextHave.BL.Services.Packets;
 using System.Collections.Concurrent;
 
@@ -16,7 +15,5 @@ namespace NextHave.BL.Messages.Parsers
         }
 
         abstract public IInput Parse(ClientMessage packet);
-
-        
     }
 }

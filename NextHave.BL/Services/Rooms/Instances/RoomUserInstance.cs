@@ -1,7 +1,6 @@
 ﻿using NextHave.BL.Clients;
 using NextHave.BL.Messages;
 using NextHave.BL.Models;
-using NextHave.BL.Models.Users;
 using NextHave.BL.Services.Users.Instances;
 using NextHave.BL.Utils;
 using System.Collections.Concurrent;

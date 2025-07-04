@@ -1,5 +1,4 @@
 ﻿using Dolphin.Core.Injection;
-using NextHave.BL.Models.Users;
 using NextHave.BL.Services.Rooms.Instances;
 using Microsoft.Extensions.DependencyInjection;
 using NextHave.BL.Services.Users.Instances;

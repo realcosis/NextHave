@@ -1,18 +1,14 @@
 using NextHave.BL.Utils;
-using System.Diagnostics;
 using System.Text;
 
 namespace NextHave.BL.Messages
 {
-    public class ClientMessage(byte[] body, int position, string sessionId, short header) : IDisposable
+    public class ClientMessage(byte[] body, int position, short header) : IDisposable
     {
         private readonly static Encoding Encoding = Encoding.UTF8;
 
         public int RemainingLength
             => body.Length - position;
-
-        public string SessionId
-            => sessionId;
 
         public short Header
             => header;
@@ -56,7 +52,6 @@ namespace NextHave.BL.Messages
         {
             body = [];
             position = default;
-            sessionId = string.Empty;
             GC.SuppressFinalize(this);
         }
     }

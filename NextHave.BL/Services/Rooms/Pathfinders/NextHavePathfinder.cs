@@ -1,8 +1,6 @@
 ﻿using NextHave.BL.Models;
 using NextHave.BL.Models.Rooms;
 using NextHave.BL.Models.Pathfinders;
-using NextHave.BL.Services.Rooms.Instances;
-using System.Text;
 
 namespace NextHave.BL.Services.Rooms.Pathfinders
 {

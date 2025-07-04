@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using NextHave.BL.Clients;
+﻿using NextHave.BL.Clients;
 using NextHave.BL.Models.Permissions;
 using NextHave.BL.Models.Users;
 using NextHave.BL.Services.Rooms;
@@ -9,7 +8,7 @@ using NextHave.BL.Services.Users.Components;
 
 namespace NextHave.BL.Services.Users.Instances
 {
-    class UserInstance(IEnumerable<IUserComponent> userComponents, UserEventsFactory userEventsFactory, IServiceScopeFactory serviceScopeFactory) : IUserInstance
+    class UserInstance(IEnumerable<IUserComponent> userComponents, UserEventsFactory userEventsFactory) : IUserInstance
     {
         IUserInstance Instance => this;
 

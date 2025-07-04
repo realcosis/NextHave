@@ -2,7 +2,6 @@
 using System.Reflection;
 using Dolphin.Core.Injection;
 using System.Linq.Expressions;
-using NextHave.BL.PacketParsers;
 using Microsoft.Extensions.Logging;
 using NextHave.BL.Services.Rooms.Instances;
 using NextHave.BL.Services.Users.Instances;
@@ -33,8 +32,6 @@ namespace NextHave.BL
                 var attributeData = assemblyService.GetCustomAttribute<Service>();
                 if (attributeData != default)
                 {
-                    if (attributeData.Keyed && attributeData.Key == nameof(GamePacketParser))
-                        Console.WriteLine("non funziono");
                     if (attributeData.Keyed)
                         services.AddKeyedWithInterfaces(assemblyService, attributeData.Lifetime, attributeData.Key);
                     else
@@ -54,8 +51,7 @@ namespace NextHave.BL
             {
                 var userComponents = sp.GetRequiredService<IEnumerable<IUserComponent>>();
                 var userEventsFactory = sp.GetRequiredService<UserEventsFactory>();
-                var serviceScopeFactory = sp.GetRequiredService<IServiceScopeFactory>();
-                return new UserInstance(userComponents, userEventsFactory, serviceScopeFactory);
+                return new UserInstance(userComponents, userEventsFactory);
             });
 
             services.AddKeyedService<IRoomUserInstance, RoomUserInstance>((sp, key) => new RoomUserInstance());

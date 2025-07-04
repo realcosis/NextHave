@@ -1,6 +1,4 @@
-﻿using Dolphin.Backgrounds.Tasks;
-using Dolphin.Core.Backgrounds;
-using Dolphin.Core.Injection;
+﻿using Dolphin.Core.Injection;
 using Microsoft.Extensions.DependencyInjection;
 using NextHave.BL.Context;
 using NextHave.BL.Events.Rooms;
@@ -9,7 +7,6 @@ using NextHave.BL.Events.Rooms.Session;
 using NextHave.BL.Events.Rooms.Users;
 using NextHave.BL.Events.Rooms.Users.Movements;
 using NextHave.BL.Messages;
-using NextHave.BL.Messages.Output.Rooms.Chat;
 using NextHave.BL.Messages.Output.Rooms.Engine;
 using NextHave.BL.Messages.Output.Rooms.Permissions;
 using NextHave.BL.Models;
@@ -23,7 +20,7 @@ using System.Text;
 namespace NextHave.BL.Services.Rooms.Components
 {
     [Service(ServiceLifetime.Scoped)]
-    class RoomUserComponent(RoomUserFactory roomUserFactory, IServiceScopeFactory serviceScopeFactory) : IRoomComponent
+    class RoomUserComponent(RoomUserFactory roomUserFactory) : IRoomComponent
     {
         IRoomInstance? _roomInstance;
 

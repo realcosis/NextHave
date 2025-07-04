@@ -1,5 +1,4 @@
-﻿using NextHave.BL.Attributes;
-using NextHave.BL.Services.Items.Interactions;
+﻿using NextHave.BL.Services.Items.Interactions;
 using NextHave.DAL.Enums;
 
 namespace NextHave.BL.Models.Items

@@ -7,7 +7,6 @@ using System.Collections.Concurrent;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NextHave.BL.Services.Items.Factories;
-using NextHave.DAL.Enums;
 
 namespace NextHave.BL.Services.Items
 {
