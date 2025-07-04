@@ -3,6 +3,7 @@ using Dolphin.Core.Injection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using NextHave.BL.Events.Rooms;
 using NextHave.BL.Events.Rooms.Engine;
 using NextHave.BL.Events.Rooms.Items;
 using NextHave.BL.Localizations;
@@ -74,6 +75,24 @@ namespace NextHave.BL.Services.Rooms
             }
 
             return default;
+        }
+
+        async Task IRoomsService.DisposeRoom(int roomId)
+        {
+            if (Instance.ActiveRooms.TryGetValue(roomId, out var roomInstance))
+            {
+                using var scope = serviceScopeFactory.CreateAsyncScope();
+                var serviceProvider = scope.ServiceProvider;
+
+                serviceProvider.GetRequiredService<RoomFactory>().DestroyRoomInstance(roomId);
+
+                Instance.ActiveRooms.TryRemove(roomId, out _);
+
+                await roomInstance.EventsService.DispatchAsync<DisposeRoomEvent>(new()
+                {
+                    RoomId = roomId
+                });
+            }
         }
 
         async Task<RoomModel?> IRoomsService.GetRoomModel(string modelName, int roomId)

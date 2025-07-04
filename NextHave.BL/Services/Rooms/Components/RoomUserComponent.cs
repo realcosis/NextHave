@@ -15,12 +15,13 @@ using NextHave.BL.Services.Rooms.Instances;
 using NextHave.BL.Services.Rooms.Pathfinders;
 using NextHave.BL.Utils;
 using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using System.Text;
 
 namespace NextHave.BL.Services.Rooms.Components
 {
     [Service(ServiceLifetime.Scoped)]
-    class RoomUserComponent(RoomUserFactory roomUserFactory) : IRoomComponent
+    class RoomUserComponent(RoomUserFactory roomUserFactory, IRoomsService roomsService) : IRoomComponent
     {
         IRoomInstance? _roomInstance;
 
@@ -72,6 +73,9 @@ namespace NextHave.BL.Services.Rooms.Components
                     VirtualId = userId
                 });
             }
+
+            if (users.IsEmpty)
+                await roomsService.DisposeRoom(_roomInstance.Room.Id);
         }
 
         async Task OnGetVirtualIdChatMessage(GetVirtualIdChatMessageEvent @event)

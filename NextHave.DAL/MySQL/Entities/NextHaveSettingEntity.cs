@@ -18,7 +18,6 @@ namespace NextHave.DAL.MySQL.Entities
         [Required]
         public SettingTypes? Type { get; set; }
 
-        [Required]
         [MaxLength(1024)]
         public string? Description { get; set; }
     }

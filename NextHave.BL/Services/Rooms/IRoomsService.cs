@@ -13,5 +13,7 @@ namespace NextHave.BL.Services.Rooms
         Task<RoomModel?> GetRoomModel(string modelName, int roomId);
 
         Task<IRoomInstance?> GetRoomInstance(int roomId);
+
+        Task DisposeRoom(int roomId);
     }
 }
