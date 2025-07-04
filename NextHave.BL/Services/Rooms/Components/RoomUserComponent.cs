@@ -73,9 +73,6 @@ namespace NextHave.BL.Services.Rooms.Components
                     VirtualId = userId
                 });
             }
-
-            if (users.IsEmpty)
-                await roomsService.DisposeRoom(_roomInstance.Room.Id);
         }
 
         async Task OnGetVirtualIdChatMessage(GetVirtualIdChatMessageEvent @event)
@@ -113,6 +110,9 @@ namespace NextHave.BL.Services.Rooms.Components
             _roomInstance.Room.UsersNow--;
             if (_roomInstance.Room.UsersNow <= 0)
                 _roomInstance.Room.UsersNow = 0;
+
+            if (users.IsEmpty)
+                await roomsService.DisposeRoom(_roomInstance.Room.Id);
 
             await Send(new UserRemoveMessageComposer(roomUserInstance.VirutalId));
         }
