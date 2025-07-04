@@ -110,11 +110,30 @@ namespace NextHave.BL.Services.Rooms
                 var cancellationSource = new CancellationTokenSource();
                 _ = Task.Run(async () =>
                 {
-                    using var roomTimer = new PeriodicTimer(TimeSpan.FromMilliseconds(500));
-
-                    while (await roomTimer.WaitForNextTickAsync(cancellationSource.Token))
-                        await Parallel.ForEachAsync(Instance.ActiveRooms.Values, cancellationSource.Token, async (room, ct) => await room.OnRoomTick());
-                }, cancellationSource.Token);
+                    using var gameTimer = new PeriodicTimer(TimeSpan.FromMilliseconds(25));
+                    while (await gameTimer.WaitForNextTickAsync(cancellationSource.Token))
+                    {
+                        await Parallel.ForEachAsync(Instance.ActiveRooms.Values, new ParallelOptions()
+                        {
+                            CancellationToken = cancellationSource.Token,
+                            MaxDegreeOfParallelism = Environment.ProcessorCount
+                        }, async (roomInstance, token) =>
+                        {
+                            using var roomTimer = new PeriodicTimer(TimeSpan.FromMilliseconds(500));
+                            while (await roomTimer.WaitForNextTickAsync(token))
+                            {
+                                try
+                                {
+                                    await roomInstance.OnRoomTick();
+                                }
+                                catch (Exception ex)
+                                {
+                                    logger.LogError("Exception with OnRoomTick for room {RoomId}: {ex}", roomInstance.Room!.Id, ex);
+                                }
+                            }
+                        });
+                    }
+                });
                 await Task.CompletedTask;
             }
             catch (Exception ex)
