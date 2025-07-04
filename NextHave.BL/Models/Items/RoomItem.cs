@@ -2,6 +2,7 @@
 using NextHave.DAL.Enums;
 using NextHave.BL.Messages;
 using NextHave.BL.Services.Rooms.Instances;
+using MongoDB.Driver.GeoJsonObjectModel;
 
 namespace NextHave.BL.Models.Items
 {
@@ -34,6 +35,21 @@ namespace NextHave.BL.Models.Items
         public int CurrentStack { get; set; }
 
         public ItemDefinition? Base { get; set; }
+
+        public List<Point> Tiles
+        {
+            get
+            {
+                var results = new List<Point>
+                {
+                    Point!.ToPoint()
+                };
+
+                results.AddRange(this.GetItemTiles().Values);
+
+                return results;
+            }
+        }
 
         public bool IsWired
             => Base!.InteractionType!.Value.IsWired();

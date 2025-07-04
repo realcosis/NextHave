@@ -39,8 +39,8 @@ namespace NextHave.BL.Models.Rooms
             HeightmapArray = Heightmap.Split(Convert.ToChar(13));
             MapSizeX = HeightmapArray[0].Length;
             MapSizeY = HeightmapArray.Length;
-            Tiles = new ConcurrentDictionary<Point, TileStates>();
-            FloorHeights = new ConcurrentDictionary<Point, short>();
+            Tiles = [];
+            FloorHeights = [];
 
             for (var y = 0; y < MapSizeY; y++)
             {

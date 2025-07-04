@@ -4,6 +4,8 @@ using NextHave.BL.Utils;
 using NextHave.BL.Messages;
 using System.Collections.Concurrent;
 using NextHave.BL.Services.Rooms.Instances;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace NextHave.BL.Models.Rooms
 {
@@ -48,11 +50,11 @@ namespace NextHave.BL.Models.Rooms
             Heightmap = _baseModel.Heightmap.ToLower();
             MapSizeX = _baseModel.HeightmapArray[0].Length;
             MapSizeY = _baseModel.HeightmapArray.Length;
-            Tiles = new ConcurrentDictionary<Point, TileStates>();
-            FloorHeights = new ConcurrentDictionary<Point, short>();
-            Walkables = new ConcurrentDictionary<Point, bool>();
-            Maps = new ConcurrentDictionary<Point, byte>();
-            RoomUsers = new ConcurrentDictionary<Point, List<IRoomUserInstance>>();
+            Tiles = [];
+            FloorHeights = [];
+            Walkables = [];
+            Maps = [];
+            RoomUsers = [];
 
             for (var y = 0; y < MapSizeY; y++)
             {
@@ -159,12 +161,15 @@ namespace NextHave.BL.Models.Rooms
             AddUser(newCoord, roomUserInstance);
         }
 
-        public bool CanWalk(int x, int y, double z, bool lastStep, bool @override)
+        public bool CanWalk(int x, int y, double z, bool lastStep, bool overriding)
         {
             if (!ValidTile(x, y))
                 return false;
 
-            if (!@override && OccupiedTile(x, y, z))
+            if (overriding)
+                return true;
+
+            if (OccupiedTile(x, y, z))
                 return false;
 
             if (Walkables.TryGetValue(new Point(x, y), out var result))
@@ -173,11 +178,11 @@ namespace NextHave.BL.Models.Rooms
             var data = Maps[new Point(x, y)];
             if (!lastStep)
             {
-                if (!@override)
+                if (!overriding)
                     return data == 1 || data == 4;
             }
 
-            if (!@override)
+            if (!overriding)
                 return data switch
                 {
                     3 => true,
@@ -214,7 +219,7 @@ namespace NextHave.BL.Models.Rooms
         #region private methods
 
         bool OccupiedTile(int x, int y, double z)
-            => (!_roomInstance.Room?.AllowWalkthrough ?? true) && GetRoomUsers(new Point(x, y)).Any(p => p.Position!.GetZ == z);
+            => _roomInstance.Room != default && !_roomInstance.Room.AllowWalkthrough && GetRoomUsers(new Point(x, y)).Any(p => p.Position!.GetZ == z);
 
         #endregion
     }
