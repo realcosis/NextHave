@@ -1,5 +1,4 @@
 ﻿using Dolphin.Core.Injection;
-using Dolphin.Core.Validations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NextHave.BL.Events.Rooms;

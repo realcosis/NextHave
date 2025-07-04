@@ -54,8 +54,8 @@ namespace NextHave.BL.Messages.Input.Handlers
         {
             if (client?.UserInstance == default || !client.UserInstance.CurrentRoomId.HasValue || client.UserInstance.CurrentRoomInstance == default)
                 return;
-            
-            await client.UserInstance.CurrentRoomInstance.EventsService.DispatchAsync<ChatMessageEvent>(new()
+
+            await client.UserInstance.CurrentRoomInstance.EventsService.DispatchAsync<GetVirtualIdChatMessageEvent>(new()
             {
                 Color = message.Color,
                 Message = message.Message,

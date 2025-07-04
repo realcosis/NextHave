@@ -1,5 +1,4 @@
-﻿using NextHave.BL.Models.Rooms;
-using NextHave.BL.Services.Rooms.Instances;
+﻿using NextHave.BL.Services.Rooms.Instances;
 
 namespace NextHave.BL.Services.Rooms.Components
 {

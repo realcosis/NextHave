@@ -17,7 +17,6 @@ using NextHave.BL.Services.Rooms.Factories;
 using NextHave.BL.Services.Rooms.Instances;
 using NextHave.BL.Services.Rooms.Pathfinders;
 using NextHave.BL.Utils;
-using System;
 using System.Collections.Concurrent;
 using System.Text;
 
@@ -46,7 +45,7 @@ namespace NextHave.BL.Services.Rooms.Components
             await _roomInstance.EventsService.SubscribeAsync<ProcessMovementEvent>(_roomInstance, OnProcessMovement);
             await _roomInstance.EventsService.SubscribeAsync<ApplyMovementEvent>(_roomInstance, OnApplyMovement);
 
-            await _roomInstance.EventsService.SubscribeAsync<ChatMessageEvent>(_roomInstance, OnChatMessage);
+            await _roomInstance.EventsService.SubscribeAsync<GetVirtualIdChatMessageEvent>(_roomInstance, OnGetVirtualIdChatMessage);
 
             await _roomInstance.EventsService.SubscribeAsync<SendRoomPacketEvent>(_roomInstance, OnSendRoomPacketEvent);
         }
@@ -78,31 +77,23 @@ namespace NextHave.BL.Services.Rooms.Components
             }
         }
 
-        async Task OnChatMessage(ChatMessageEvent @event)
+        async Task OnGetVirtualIdChatMessage(GetVirtualIdChatMessageEvent @event)
         {
             if (_roomInstance?.Room == default)
                 return;
-
-            await using var scope = serviceScopeFactory.CreateAsyncScope();
-
-            var backgroundsService = scope.ServiceProvider.GetRequiredService<IBackgroundsService>();
 
             var roomUserInstance = users.FirstOrDefault(u => u.Value.UserId == @event.UserId).Value;
             if (roomUserInstance == default)
                 return;
 
-            @event.Message = @event.Message!.Length > 100 ? @event.Message[..100] : @event.Message;
-
-            var task = scope.ServiceProvider.GetTask<AddCatalogTask>("AddCatalogTask");
-            if (task == default)
-                return;
-
-            task.Parameters.TryAdd("message", @event.Message);
-            task.Parameters.TryAdd("roomId", _roomInstance.Room.Id);
-            task.Parameters.TryAdd("userId", @event.UserId);
-            backgroundsService.Queue(task);
-
-            await Send(new ChatMessageMessageComposer(roomUserInstance.VirutalId, @event.Message, 0, @event.Color));
+            await _roomInstance!.EventsService.DispatchAsync<ChatMessageEvent>(new()
+            {
+                UserId = @event.UserId,
+                RoomId = _roomInstance.Room.Id,
+                VirtualId = roomUserInstance.VirutalId,
+                Message = @event.Message,
+                Color = @event.Color
+            });
         }
 
         async Task OnUserExit(UserRoomExitEvent @event)

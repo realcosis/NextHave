@@ -2,6 +2,8 @@
 {
     public class Tables
     {
+        public const string RoomEmojis = "room_emojis";
+
         public const string ChatlogRooms = "chatlog_rooms";
 
         public const string Permissions = "permissions";

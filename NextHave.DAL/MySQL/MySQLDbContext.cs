@@ -12,6 +12,8 @@ namespace NextHave.DAL.MySQL
 
         public DbSet<UserEntity> Users { get; set; }
 
+        public DbSet<RoomEmojiEntity> RoomEmojis { get; set; }
+
         public DbSet<ChatlogRoomEntity> ChatlogRooms { get; set; }
 
         public DbSet<UserTicketEntity> UserTickets { get; set; }
