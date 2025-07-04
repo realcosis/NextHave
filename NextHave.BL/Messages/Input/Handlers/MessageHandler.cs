@@ -1,6 +1,7 @@
 ﻿using Dolphin.Core.Events;
 using Dolphin.Core.Injection;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using NextHave.BL.Clients;
 using NextHave.BL.Events.Rooms.Chat;
 using NextHave.BL.Events.Rooms.Engine;
@@ -21,6 +22,7 @@ using NextHave.BL.Messages.Output.Rooms.Session;
 using NextHave.BL.Messages.Output.Users;
 using NextHave.BL.Services.Packets;
 using NextHave.BL.Services.Rooms;
+using NextHave.BL.Services.Rooms.Commands;
 using NextHave.BL.Services.Users;
 using NextHave.DAL.Enums;
 
@@ -54,6 +56,13 @@ namespace NextHave.BL.Messages.Input.Handlers
         {
             if (client?.UserInstance == default || !client.UserInstance.CurrentRoomId.HasValue || client.UserInstance.CurrentRoomInstance == default)
                 return;
+
+            if (message.Message!.Contains(':'))
+            {
+                await using var scope = serviceScopeFactory.CreateAsyncScope();
+                await ChatCommandHandler.InvokeCommand(message.Message, scope.ServiceProvider, client);
+                return;
+            }
 
             await client.UserInstance.CurrentRoomInstance.EventsService.DispatchAsync<GetVirtualIdChatMessageEvent>(new()
             {

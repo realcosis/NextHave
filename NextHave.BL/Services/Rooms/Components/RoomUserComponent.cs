@@ -10,6 +10,7 @@ using NextHave.BL.Messages;
 using NextHave.BL.Messages.Output.Rooms.Engine;
 using NextHave.BL.Messages.Output.Rooms.Permissions;
 using NextHave.BL.Models;
+using NextHave.BL.Services.Rooms.Commands;
 using NextHave.BL.Services.Rooms.Factories;
 using NextHave.BL.Services.Rooms.Instances;
 using NextHave.BL.Services.Rooms.Pathfinders;
@@ -21,7 +22,7 @@ using System.Text;
 namespace NextHave.BL.Services.Rooms.Components
 {
     [Service(ServiceLifetime.Scoped)]
-    class RoomUserComponent(RoomUserFactory roomUserFactory, IRoomsService roomsService) : IRoomComponent
+    class RoomUserComponent(RoomUserFactory roomUserFactory, IRoomsService roomsService, IServiceScopeFactory serviceScopeFactory) : IRoomComponent
     {
         IRoomInstance? _roomInstance;
 
