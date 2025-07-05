@@ -1,15 +1,17 @@
-﻿using System.Text;
+﻿using Dolphin.Core.Injection;
+using Microsoft.Extensions.DependencyInjection;
 using NextHave.BL.Clients;
-using Dolphin.Core.Injection;
+using NextHave.BL.Messages.Output.Rooms.Notifications;
+using NextHave.BL.Services.Items;
 using NextHave.BL.Services.Texts;
 using NextHave.BL.Services.Users;
-using Microsoft.Extensions.DependencyInjection;
-using NextHave.BL.Messages.Output.Rooms.Notifications;
+using System.Diagnostics;
+using System.Text;
 
 namespace NextHave.BL.Services.Rooms.Commands.Users
 {
     [Service(ServiceLifetime.Singleton)]
-    class AboutCommand(ITextsService textsService, IRoomsService roomsService, IUsersService usersService) : ChatCommand
+    class AboutCommand(ITextsService textsService, IRoomsService roomsService, IUsersService usersService, IItemsService itemsService) : ChatCommand
     {
         public override string? Key => "info";
 
@@ -21,19 +23,22 @@ namespace NextHave.BL.Services.Rooms.Commands.Users
 
         protected override async Task Handle(Client client)
         {
-            var uptime = DateTime.Now - ServerInfo.StartDate;
-            var userCount = Sessions.ConnectedClients.Count;
+            var uptime = DateTime.Now - ProjectConstants.StartDate;
+            var userCount = usersService.Users.Count;
             var roomCount = roomsService.ActiveRooms.Count;
+            var itemCount = itemsService.ItemDefinitions.Count;
 
             var text = new StringBuilder();
 
-            text.AppendLine("<b><font size=\"5\" color=\"#71498a\">NextHave<br>Developed by Charlotte</font></b><br/><br/>");
-            text.AppendLine("<b>Statistiche:</b><br/>");
-            text.AppendLine($"<b>Uptime:</b> {uptime.Days} giorni, {uptime.Hours} ore, {uptime.Minutes} minuti<br/>");
-            text.AppendLine($"{userCount} <b>utenti online</b><br/>");
-            text.AppendLine($"{roomCount} <b>stanze attive</b><br/>");
+            text.AppendLine("<b><font size=\"5\" color=\"#0B615E\">NextHave</font><br><font size=\"3\" color=\"#ff5733\">Developed by Charlotte</font></b><br/>");
+            text.AppendLine($"<b>Build:</b> {ProjectConstants.Build}<br/>");
+            text.AppendLine("<b>Statistiche:</b>");
+            text.AppendLine($"Avvio: {uptime.Days} giorni, {uptime.Hours} ore, {uptime.Minutes} minuti e {uptime.Seconds} secondi");
+            text.AppendLine($"{userCount} utenti online");
+            text.AppendLine($"{roomCount} stanze attive");
+            text.AppendLine($"{itemCount} furni caricati<br/>");
 
-            await client.Send(new RoomNotificationMessageComposer("Informaizoni", text.ToString(), "butterflyemulator"));
+            await client.Send(new RoomNotificationMessageComposer("Informazioni", text.ToString(), string.Empty));
         }
     }
 }

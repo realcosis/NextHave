@@ -25,5 +25,7 @@ namespace NextHave.BL.Services.Users.Instances
         public DateTime? MutedUntil { get; set; }
 
         Task Init();
+
+        Task Dispose();
     }
 }

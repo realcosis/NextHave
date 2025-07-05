@@ -24,20 +24,23 @@ namespace NextHave.Nitro.Sockets
         {
             if (Sessions.ConnectedClients.TryGetValue(Context.ConnectionId, out var client))
             {
-                if (client.UserInstance?.CurrentRoomInstance != default)
+                if (client.UserInstance?.User != default)
                 {
-                    await client.UserInstance.CurrentRoomInstance.EventsService.DispatchAsync<UserRoomExitEvent>(new()
+                    if (client.UserInstance.CurrentRoomInstance != default)
                     {
-                        UserId = client.UserInstance!.User!.Id,
-                        RoomId = client.UserInstance.CurrentRoomId!.Value,
+                        await client.UserInstance.CurrentRoomInstance.EventsService.DispatchAsync<UserRoomExitEvent>(new()
+                        {
+                            UserId = client.UserInstance!.User!.Id,
+                            RoomId = client.UserInstance.CurrentRoomId!.Value,
+                        });
+                        client.UserInstance.CurrentRoomInstance = default;
+                        client.UserInstance.CurrentRoomId = default;
+                    }
+                    await client.UserInstance.EventsService.DispatchAsync<UserDisconnectedEvent>(new()
+                    {
+                        UserId = client.UserInstance.User.Id,
                     });
-                    client.UserInstance.CurrentRoomInstance = default;
-                    client.UserInstance.CurrentRoomId = default;
                 }
-                await client.UserInstance!.EventsService.DispatchAsync<UserDisconnectedEvent>(new()
-                {
-                    UserId = client.UserInstance.User!.Id,
-                });
                 Sessions.ConnectedClients.TryRemove(Context.ConnectionId, out _);
             }
 

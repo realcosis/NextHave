@@ -1,33 +1,41 @@
 ﻿using Dolphin.Core.Exceptions;
 using Dolphin.Core.Injection;
 using Dolphin.Core.Validations;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using NextHave.BL.Events.Users.Session;
 using NextHave.BL.Extensions;
 using NextHave.BL.Localizations;
 using NextHave.BL.Mappers;
+using NextHave.BL.Models.Rooms;
 using NextHave.BL.Models.Users;
 using NextHave.BL.Services.Permissions;
+using NextHave.BL.Services.Rooms.Factories;
+using NextHave.BL.Services.Rooms.Instances;
 using NextHave.BL.Services.Settings;
 using NextHave.BL.Services.Users.Factories;
 using NextHave.BL.Services.Users.Instances;
 using NextHave.DAL.MySQL;
 using NextHave.DAL.MySQL.Entities;
 using System.Collections.Concurrent;
+using System.ComponentModel.DataAnnotations;
 
 namespace NextHave.BL.Services.Users
 {
     [Service(ServiceLifetime.Singleton)]
     class UsersService(IServiceScopeFactory serviceScopeFactory, ILogger<IUsersService> logger, ISettingsService settingsService) : IUsersService
     {
+        IUsersService Instance => this;
+
         ConcurrentDictionary<int, IUserInstance> IUsersService.Users { get; } = [];
 
         async Task<User?> IUsersService.GetHabbo(int userId)
         {
             using var scope = serviceScopeFactory.CreateAsyncScope();
             var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
-            
+
             var user = await mysqlDbContext
                                 .Users
                                     .Where(u => u.Id == userId)
@@ -60,7 +68,6 @@ namespace NextHave.BL.Services.Users
                 user.LastOnline = date;
 
                 mysqlDbContext.Users.Update(user);
-                mysqlDbContext.UserTickets.Update(userTicket);
                 await mysqlDbContext.SaveChangesAsync();
 
                 var result = user.MapResult();
@@ -71,6 +78,10 @@ namespace NextHave.BL.Services.Users
                     userInstance.Permission = permissionGroup;
 
                 await userInstance.Init();
+
+                Instance.Users.TryAdd(userInstance.User!.Id, userInstance);
+
+                await userInstance.EventsService.SubscribeAsync<UserDisconnectedEvent>(userInstance, OnUserDisconnected);
 
                 return userInstance;
             }
@@ -169,5 +180,25 @@ namespace NextHave.BL.Services.Users
 
             return ticket.Ticket;
         }
+
+        #region private methods
+
+        async Task OnUserDisconnected(UserDisconnectedEvent @event)
+        {
+            if (Instance.Users.TryGetValue(@event.UserId, out var userInstance) && userInstance.User != default)
+            {
+                using var scope = serviceScopeFactory.CreateAsyncScope();
+
+                await userInstance.EventsService.UnsubscribeAsync<UserDisconnectedEvent>(userInstance, OnUserDisconnected);
+
+                await userInstance.Dispose();
+
+                scope.ServiceProvider.GetRequiredService<UserFactory>().DestroyUserInstance(@event.UserId);
+
+                Instance.Users.TryRemove(@event.UserId, out _);
+            }
+        }
+
+        #endregion
     }
 }

@@ -10,7 +10,6 @@ using NextHave.BL.Messages;
 using NextHave.BL.Messages.Output.Rooms.Engine;
 using NextHave.BL.Messages.Output.Rooms.Permissions;
 using NextHave.BL.Models;
-using NextHave.BL.Services.Rooms.Commands;
 using NextHave.BL.Services.Rooms.Factories;
 using NextHave.BL.Services.Rooms.Instances;
 using NextHave.BL.Services.Rooms.Pathfinders;
@@ -22,7 +21,7 @@ using System.Text;
 namespace NextHave.BL.Services.Rooms.Components
 {
     [Service(ServiceLifetime.Scoped)]
-    class RoomUserComponent(RoomUserFactory roomUserFactory, IRoomsService roomsService, IServiceScopeFactory serviceScopeFactory) : IRoomComponent
+    class RoomUserComponent(RoomUserFactory roomUserFactory, IRoomsService roomsService) : IRoomComponent
     {
         IRoomInstance? _roomInstance;
 
@@ -87,13 +86,11 @@ namespace NextHave.BL.Services.Rooms.Components
             var readyToMove = movementStates.Where(m => m.Value.HasPendingStep).Select(m => m.Key).ToList();
 
             foreach (var userId in readyToMove)
-            {
                 await _roomInstance.EventsService.DispatchAsync<ApplyMovementEvent>(new()
                 {
                     RoomId = _roomInstance.Room.Id,
                     VirtualId = userId
                 });
-            }
         }
 
         async Task OnGetVirtualIdChatMessage(GetVirtualIdChatMessageEvent @event)
@@ -143,11 +140,7 @@ namespace NextHave.BL.Services.Rooms.Components
             if (_roomInstance?.Room == default || _roomInstance?.RoomModel == default || !users.TryGetValue(@event.VirtualId, out var roomUserInstance) || !movementStates.TryGetValue(@event.VirtualId, out var state) || state.NextPoint == default || !state.HasPendingStep)
                 return;
 
-            var oldPosition = roomUserInstance.Position!.ToPoint();
-            var newPosition = state.NextPoint;
-
-            roomUserInstance.SetPosition(new ThreeDPoint(newPosition.GetX, newPosition.GetY, 0.0)); // TODO: calcolare Z
-            _roomInstance.RoomModel.UpdateUser(oldPosition, newPosition, roomUserInstance);
+            roomUserInstance.SetPosition(state.NextPoint.ToThreeDPoint(0.0)); // TODO: calcolare Z
 
             state.HasPendingStep = false;
             state.IsProcessing = false;
@@ -156,7 +149,7 @@ namespace NextHave.BL.Services.Rooms.Components
             {
                 RoomId = _roomInstance.Room.Id,
                 VirtualId = @event.VirtualId,
-                Position = newPosition
+                Position = state.NextPoint
             });
         }
 
@@ -291,7 +284,7 @@ namespace NextHave.BL.Services.Rooms.Components
                 await client!.Send(message);
         }
 
-        static void PrepareMovement(IRoomUserInstance roomUserInstance, ThreeDPoint nextPoint)
+        void PrepareMovement(IRoomUserInstance roomUserInstance, ThreeDPoint nextPoint)
         {
             roomUserInstance.RemoveStatus("mv");
             roomUserInstance.RemoveStatus("lay");
@@ -299,6 +292,7 @@ namespace NextHave.BL.Services.Rooms.Components
             roomUserInstance.AddStatus("mv", $"{nextPoint.GetX},{nextPoint.GetY},{nextPoint.GetZ.GetString()}");
             var rotation = RotationCalculatorUtility.Calculate(roomUserInstance.Position!.GetX, roomUserInstance.Position!.GetY, nextPoint.GetX, nextPoint.GetY);
             roomUserInstance.SetRotation(rotation);
+            _roomInstance!.RoomModel!.UpdateUser(roomUserInstance.Position.ToPoint(), nextPoint.ToPoint(), roomUserInstance);
         }
     }
 }

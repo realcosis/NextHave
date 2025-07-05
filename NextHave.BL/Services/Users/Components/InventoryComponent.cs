@@ -9,6 +9,11 @@ namespace NextHave.BL.Services.Users.Components
     [Service(ServiceLifetime.Scoped)]
     class InventoryComponent(IServiceScopeFactory serviceScopeFactory) : IUserComponent
     {
+        async Task IUserComponent.Dispose()
+        {
+            await Task.CompletedTask;
+        }
+
         async Task IUserComponent.Init(IUserInstance userInstance)
         {
             await using var scope = serviceScopeFactory.CreateAsyncScope();

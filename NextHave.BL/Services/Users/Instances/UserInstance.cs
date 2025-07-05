@@ -33,5 +33,11 @@ namespace NextHave.BL.Services.Users.Instances
             foreach (var userComponent in userComponents)
                 await userComponent.Init(this);
         }
+
+        async Task IUserInstance.Dispose()
+        {
+            foreach (var userComponent in userComponents)
+                await userComponent.Dispose();
+        }
     }
 }

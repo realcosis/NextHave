@@ -198,7 +198,7 @@ namespace NextHave.BL.Models.Rooms
             if (!ValidTile(x, y))
                 return false;
 
-            if (!@override && OccupiedTile(x, y, z))
+            if (!@override && _roomInstance.Room != default && !_roomInstance.Room.AllowWalkthrough && OccupiedTile(x, y, z))
                 return false;
 
             if (Walkables.TryGetValue(new Point(x, y), out var walkableState))
@@ -219,7 +219,7 @@ namespace NextHave.BL.Models.Rooms
         #region private methods
 
         bool OccupiedTile(int x, int y, double z)
-            => _roomInstance.Room != default && !_roomInstance.Room.AllowWalkthrough && GetRoomUsers(new Point(x, y)).Any(p => p.Position!.GetZ == z);
+            => GetRoomUsers(new Point(x, y)).Count > 0;
 
         #endregion
     }
