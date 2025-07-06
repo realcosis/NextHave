@@ -1,6 +1,6 @@
 ﻿namespace NextHave.BL.Messages.Input.Rooms.Chat
 {
-    public record ChatMessage : IInput
+    public record ShoutMessageMessage : IInput
     {
         public string? Message { get; init; }
 

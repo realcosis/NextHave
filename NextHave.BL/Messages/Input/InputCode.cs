@@ -17,6 +17,14 @@
 
         public const short MoveObjectMessageEvent = 248;
 
+        public const short GetGuestRoomMessageEvent = 2230;
+
         public const short ChatMessageEvent = 1314;
+
+        public const short ShoutMessageEvent = 2085;
+
+        public const short StartTypingMessageEvent = 1597;
+
+        public const short StopTypingMessageEvent = 1474;
     }
 }

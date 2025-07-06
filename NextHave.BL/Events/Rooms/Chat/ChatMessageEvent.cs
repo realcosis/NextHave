@@ -8,6 +8,8 @@
 
         public int UserId { get; set; }
 
+        public bool Shout { get; set; }
+
         public int Color { get; set; }
     }
 }

@@ -30,7 +30,7 @@ namespace NextHave.BL.Services.Rooms
 
         async Task<Room?> IRoomsService.GetRoom(int roomId)
         {
-            using var scope = serviceScopeFactory.CreateAsyncScope();
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
             var mongoDbContext = scope.ServiceProvider.GetRequiredService<MongoDbContext>();
             var dbRoom = await mongoDbContext.Rooms.AsNoTracking().FirstOrDefaultAsync(g => g.EntityId == roomId);
             if (dbRoom != default)
@@ -50,15 +50,15 @@ namespace NextHave.BL.Services.Rooms
             if (Instance.ActiveRooms.TryGetValue(roomId, out var roomInstance))
                 return roomInstance;
 
-            using var scope = serviceScopeFactory.CreateAsyncScope();
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
 
             var room = await Instance.GetRoom(roomId);
             if (room != default)
             {
                 (roomInstance, var firstLoad) = scope.ServiceProvider.GetRequiredService<RoomFactory>().GetRoomInstance(roomId, room);
-                await roomInstance.Init();
                 if (firstLoad)
                 {
+                    await roomInstance.Init();
                     await roomInstance.EventsService.DispatchAsync<RequestRoomGameMapEvent>(new()
                     {
                         ModelName = roomInstance.Room!.ModelName,
@@ -80,7 +80,7 @@ namespace NextHave.BL.Services.Rooms
         {
             if (Instance.ActiveRooms.TryGetValue(roomId, out var roomInstance))
             {
-                using var scope = serviceScopeFactory.CreateAsyncScope();
+                await using var scope = serviceScopeFactory.CreateAsyncScope();
 
                 await roomInstance.EventsService.DispatchAsync<DisposeRoomEvent>(new()
                 {

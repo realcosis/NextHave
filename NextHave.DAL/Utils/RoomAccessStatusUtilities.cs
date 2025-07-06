@@ -4,7 +4,7 @@ namespace NextHave.DAL.Utils
 {
     public static class RoomAccessStatusUtilities
     {
-        public static int? ToInt(this RoomAccessStatus accessStatus)
+        public static int ToInt(this RoomAccessStatus accessStatus)
             => accessStatus switch
             {
                 RoomAccessStatus.Invisible => 3,

@@ -30,7 +30,7 @@ namespace NextHave.BL.Models.Rooms
 
         public int Score { get; set; } = 0;
 
-        public string? Tags { get; set; } = "";
+        public List<string> Tags { get; set; } = [];
 
         public int IconBg { get; set; } = 1;
 
@@ -64,9 +64,9 @@ namespace NextHave.BL.Models.Rooms
 
         public int GroupId { get; set; } = 0;
 
-        public int? MuteSettings { get; set; } = 1;
+        public int MuteSettings { get; set; } = 1;
 
-        public int? BanSettings { get; set; } = 1;
+        public int BanSettings { get; set; } = 1;
 
         public int KickSettings { get; set; } = 1;
 
@@ -117,12 +117,9 @@ namespace NextHave.BL.Models.Rooms
             message.AddInt32(0);
             message.AddInt32(Category);
 
-            var tags = Tags?.Split(";").ToList() ?? [];
-            message.AddInt32(tags.Count);
-            foreach (var tag in tags)
-            {
+            message.AddInt32(Tags!.Count);
+            foreach (var tag in Tags)
                 message.AddString(tag);
-            }
 
             int maskBase = 0;
 

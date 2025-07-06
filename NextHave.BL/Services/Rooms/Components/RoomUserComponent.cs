@@ -7,6 +7,8 @@ using NextHave.BL.Events.Rooms.Session;
 using NextHave.BL.Events.Rooms.Users;
 using NextHave.BL.Events.Rooms.Users.Movements;
 using NextHave.BL.Messages;
+using NextHave.BL.Messages.Input.Rooms.Chat;
+using NextHave.BL.Messages.Output.Rooms.Chat;
 using NextHave.BL.Messages.Output.Rooms.Engine;
 using NextHave.BL.Messages.Output.Rooms.Permissions;
 using NextHave.BL.Models;
@@ -44,7 +46,8 @@ namespace NextHave.BL.Services.Rooms.Components
             await _roomInstance.EventsService.UnsubscribeAsync<ProcessMovementEvent>(_roomInstance, OnProcessMovement);
             await _roomInstance.EventsService.UnsubscribeAsync<ApplyMovementEvent>(_roomInstance, OnApplyMovement);
 
-            await _roomInstance.EventsService.UnsubscribeAsync<GetVirtualIdChatMessageEvent>(_roomInstance, OnGetVirtualIdChatMessage);
+            await _roomInstance.EventsService.UnsubscribeAsync<GetVirtualIdForChatEvent>(_roomInstance, OnGetVirtualIdForChat);
+            await _roomInstance.EventsService.UnsubscribeAsync<GetUserVirtualIdEvent>(_roomInstance, OnGetUserVirtualId);
 
             await _roomInstance.EventsService.UnsubscribeAsync<SendRoomPacketEvent>(_roomInstance, OnSendRoomPacketEvent);
 
@@ -63,9 +66,44 @@ namespace NextHave.BL.Services.Rooms.Components
             await _roomInstance.EventsService.SubscribeAsync<ProcessMovementEvent>(_roomInstance, OnProcessMovement);
             await _roomInstance.EventsService.SubscribeAsync<ApplyMovementEvent>(_roomInstance, OnApplyMovement);
 
-            await _roomInstance.EventsService.SubscribeAsync<GetVirtualIdChatMessageEvent>(_roomInstance, OnGetVirtualIdChatMessage);
+            await _roomInstance.EventsService.SubscribeAsync<GetVirtualIdForChatEvent>(_roomInstance, OnGetVirtualIdForChat);
+            await _roomInstance.EventsService.SubscribeAsync<GetUserVirtualIdEvent>(_roomInstance, OnGetUserVirtualId);
 
             await _roomInstance.EventsService.SubscribeAsync<SendRoomPacketEvent>(_roomInstance, OnSendRoomPacketEvent);
+        }
+
+        async Task OnGetUserVirtualId(GetUserVirtualIdEvent @event)
+        {
+            if (_roomInstance?.Room == default)
+                return;
+
+            var roomUserInstance = users.FirstOrDefault(u => u.Value.UserId == @event.UserId).Value;
+            if (roomUserInstance == default)
+                return;
+
+            switch (@event.Type)
+            {
+                case nameof(StartTypingMessage):
+                    {
+                        await _roomInstance!.EventsService.DispatchAsync<SendRoomPacketEvent>(new()
+                        {
+                            RoomId = _roomInstance.Room.Id,
+                            WithRights = false,
+                            Composer = new UserTypingStatusMessageComposer(roomUserInstance.VirutalId, true)
+                        });
+                        break;
+                    }
+                case nameof(StopTypingMessage):
+                    {
+                        await _roomInstance!.EventsService.DispatchAsync<SendRoomPacketEvent>(new()
+                        {
+                            RoomId = _roomInstance.Room.Id,
+                            WithRights = false,
+                            Composer = new UserTypingStatusMessageComposer(roomUserInstance.VirutalId, false)
+                        });
+                        break;
+                    }
+            }
         }
 
         async Task OnRoomTick(RoomTickEvent @event)
@@ -93,7 +131,7 @@ namespace NextHave.BL.Services.Rooms.Components
                 });
         }
 
-        async Task OnGetVirtualIdChatMessage(GetVirtualIdChatMessageEvent @event)
+        async Task OnGetVirtualIdForChat(GetVirtualIdForChatEvent @event)
         {
             if (_roomInstance?.Room == default)
                 return;
@@ -106,6 +144,7 @@ namespace NextHave.BL.Services.Rooms.Components
             {
                 UserId = @event.UserId,
                 RoomId = _roomInstance.Room.Id,
+                Shout = @event.Shout,
                 VirtualId = roomUserInstance.VirutalId,
                 Message = @event.Message,
                 Color = @event.Color
@@ -132,7 +171,12 @@ namespace NextHave.BL.Services.Rooms.Components
             if (users.IsEmpty)
                 await roomsService.DisposeRoom(_roomInstance.Room.Id);
 
-            await Send(new UserRemoveMessageComposer(roomUserInstance.VirutalId));
+            await _roomInstance!.EventsService.DispatchAsync<SendRoomPacketEvent>(new()
+            {
+                RoomId = _roomInstance.Room.Id,
+                WithRights = false,
+                Composer = new UserRemoveMessageComposer(roomUserInstance.VirutalId)
+            });
         }
 
         async Task OnApplyMovement(ApplyMovementEvent @event)
@@ -223,7 +267,12 @@ namespace NextHave.BL.Services.Rooms.Components
 
             users.TryAdd(roomUserInstance.VirutalId, roomUserInstance);
 
-            await Send(new UsersMessageComposer([roomUserInstance]));
+            await _roomInstance!.EventsService.DispatchAsync<SendRoomPacketEvent>(new()
+            {
+                RoomId = _roomInstance.Room!.Id,
+                WithRights = false,
+                Composer = new UsersMessageComposer([roomUserInstance])
+            });
 
             if (_roomInstance.CheckRights(@event.User, true))
             {
@@ -267,7 +316,12 @@ namespace NextHave.BL.Services.Rooms.Components
         }
 
         async Task SendUserUpdate(IRoomUserInstance roomUserInstance)
-            => await Send(new UserUpdateMessageComposer([roomUserInstance]));
+            => await _roomInstance!.EventsService.DispatchAsync<SendRoomPacketEvent>(new()
+            {
+                RoomId = _roomInstance.Room!.Id,
+                WithRights = false,
+                Composer = new UserUpdateMessageComposer([roomUserInstance])
+            });
 
         async Task SendToRights(Composer message)
         {

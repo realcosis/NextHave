@@ -2,7 +2,14 @@
 using Microsoft.Extensions.DependencyInjection;
 using NextHave.BL.Messages;
 using NextHave.BL.Messages.Input;
+using NextHave.BL.Messages.Input.Handshake;
+using NextHave.BL.Messages.Input.Rooms;
+using NextHave.BL.Messages.Input.Rooms.Chat;
+using NextHave.BL.Messages.Input.Rooms.Engine;
+using NextHave.BL.Messages.Output.Rooms.Engine;
+using NextHave.BL.Messages.Parsers;
 using NextHave.BL.Messages.Parsers.Handshake;
+using NextHave.BL.Messages.Parsers.Navigators;
 using NextHave.BL.Messages.Parsers.Rooms.Chat;
 using NextHave.BL.Messages.Parsers.Rooms.Connection;
 using NextHave.BL.Messages.Parsers.Rooms.Rooms;
@@ -46,17 +53,25 @@ namespace NextHave.BL.Services.Parsers
 
             parsers.TryAdd(InputCode.MoveObjectMessageEvent, new MoveObjectParser());
 
-            parsers.TryAdd(InputCode.InfoRetrieveMessageEvent, new InfoRetrieveParser());
+            parsers.TryAdd(InputCode.InfoRetrieveMessageEvent, new BaseParser<InfoRetrieveMessage>());
 
-            parsers.TryAdd(InputCode.GetRoomEntryDataMessageEvent, new GetRoomEntryParser());
+            parsers.TryAdd(InputCode.StartTypingMessageEvent, new BaseParser<StartTypingMessage>());
 
-            parsers.TryAdd(InputCode.GetFurnitureAliasesMessageEvent, new GetFurnitureAliasesParser());
+            parsers.TryAdd(InputCode.StopTypingMessageEvent, new BaseParser<StopTypingMessage>());
+
+            parsers.TryAdd(InputCode.GetRoomEntryDataMessageEvent, new BaseParser<GetRoomEntryDataMessage>());
+
+            parsers.TryAdd(InputCode.GetFurnitureAliasesMessageEvent, new BaseParser<GetFurnitureAliasesMessage>());
 
             parsers.TryAdd(InputCode.MoveAvatarMessageEvent, new MoveAvatarParser());
 
             parsers.TryAdd(InputCode.ChatMessageEvent, new ChatMessageParser());
 
+            parsers.TryAdd(InputCode.ShoutMessageEvent, new ShoutMessageParser());
+
             parsers.TryAdd(InputCode.OpenFlatConnectionMessageEvent, new OpenFlatParser());
+
+            parsers.TryAdd(InputCode.GetGuestRoomMessageEvent, new GetGuestRoomParser());
         }
     }
 }

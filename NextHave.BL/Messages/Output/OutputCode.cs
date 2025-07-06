@@ -54,8 +54,14 @@
 
         public const short ChatMessageComposer = 1446;
 
+        public const short ShoutMessageComposer = 1036;
+
         public const short GenericErrorMessageComposer = 1600;
 
         public const short RoomNotificationMessageComposer = 1992;
+
+        public const short GetGuestRoomResultMessageComposer = 687;
+
+        public const short UserTypingStatusMessageComposer = 1717;
     }
 }

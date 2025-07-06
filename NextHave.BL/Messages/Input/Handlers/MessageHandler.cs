@@ -11,6 +11,7 @@ using NextHave.BL.Events.Rooms.Users;
 using NextHave.BL.Events.Rooms.Users.Movements;
 using NextHave.BL.Events.Users.Session;
 using NextHave.BL.Messages.Input.Handshake;
+using NextHave.BL.Messages.Input.Navigators;
 using NextHave.BL.Messages.Input.Rooms;
 using NextHave.BL.Messages.Input.Rooms.Chat;
 using NextHave.BL.Messages.Input.Rooms.Connection;
@@ -23,6 +24,7 @@ using NextHave.BL.Messages.Output.Users;
 using NextHave.BL.Services.Packets;
 using NextHave.BL.Services.Rooms;
 using NextHave.BL.Services.Rooms.Commands;
+using NextHave.BL.Services.Rooms.Factories;
 using NextHave.BL.Services.Users;
 using NextHave.DAL.Enums;
 
@@ -47,28 +49,85 @@ namespace NextHave.BL.Messages.Input.Handlers
 
             packetsService.Subscribe<MoveObjectMessage>(this, OnMoveObject);
 
-            packetsService.Subscribe<ChatMessage>(this, OnChatMessage);
+            packetsService.Subscribe<ChatMessageMessage>(this, OnChatMessage);
+            
+            packetsService.Subscribe<ShoutMessageMessage>(this, OnShoutMessage);
+
+            packetsService.Subscribe<GetGuestRoomMessage>(this, OnGetGuestRoom);
+
+            packetsService.Subscribe<StartTypingMessage>(this, OnStartTyping);
+
+            packetsService.Subscribe<StopTypingMessage>(this, OnStopTyping);
 
             await Task.CompletedTask;
         }
 
-        public async Task OnChatMessage(ChatMessage message, Client client)
+        public async Task OnStopTyping(StopTypingMessage message, Client client)
+        {
+            if (client?.UserInstance?.User == default || !client.UserInstance.CurrentRoomId.HasValue || client.UserInstance.CurrentRoomInstance == default)
+                return;
+
+            await client.UserInstance.CurrentRoomInstance.EventsService.DispatchAsync<GetUserVirtualIdEvent>(new()
+            {
+                UserId = client.UserInstance.User.Id,
+                Type = nameof(StopTypingMessage),
+                RoomId = client.UserInstance.CurrentRoomId.Value
+            });
+        }
+
+        public async Task OnStartTyping(StartTypingMessage message, Client client)
+        {
+            if (client?.UserInstance?.User == default || !client.UserInstance.CurrentRoomId.HasValue || client.UserInstance.CurrentRoomInstance == default)
+                return;
+
+            await client.UserInstance.CurrentRoomInstance.EventsService.DispatchAsync<GetUserVirtualIdEvent>(new()
+            {
+                UserId = client.UserInstance.User.Id,
+                Type = nameof(StartTypingMessage),
+                RoomId = client.UserInstance.CurrentRoomId.Value
+            });
+        }
+
+        public async Task OnGetGuestRoom(GetGuestRoomMessage message, Client client)
+        {
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+
+            var roomsService = scope.ServiceProvider.GetRequiredService<IRoomsService>();
+
+            var roomInstance = await roomsService.GetRoomInstance(message.RoomId);
+
+            if (roomInstance?.Room == default)
+                return;
+
+            await client.Send(new GetGuestRoomResultMessageComposer(roomInstance.Room, roomInstance.CheckRights(client.UserInstance!, true), message.IsLoading, message.CheckEntry));
+        }
+
+        public async Task OnChatMessage(ChatMessageMessage message, Client client)
         {
             if (client?.UserInstance == default || !client.UserInstance.CurrentRoomId.HasValue || client.UserInstance.CurrentRoomInstance == default)
                 return;
 
-            if (message.Message!.Contains(':'))
-            {
-                await using var scope = serviceScopeFactory.CreateAsyncScope();
-                await ChatCommandHandler.InvokeCommand(message.Message, scope.ServiceProvider, client);
-                return;
-            }
-
-            await client.UserInstance.CurrentRoomInstance.EventsService.DispatchAsync<GetVirtualIdChatMessageEvent>(new()
+            await client.UserInstance.CurrentRoomInstance.EventsService.DispatchAsync<GetVirtualIdForChatEvent>(new()
             {
                 Color = message.Color,
                 Message = message.Message,
                 UserId = client.UserInstance.User!.Id,
+                Shout = false,
+                RoomId = client.UserInstance.CurrentRoomId!.Value
+            });
+        }
+
+        public async Task OnShoutMessage(ShoutMessageMessage message, Client client)
+        {
+            if (client?.UserInstance == default || !client.UserInstance.CurrentRoomId.HasValue || client.UserInstance.CurrentRoomInstance == default)
+                return;
+
+            await client.UserInstance.CurrentRoomInstance.EventsService.DispatchAsync<GetVirtualIdForChatEvent>(new()
+            {
+                Color = message.Color,
+                Message = message.Message,
+                UserId = client.UserInstance.User!.Id,
+                Shout = true,
                 RoomId = client.UserInstance.CurrentRoomId!.Value
             });
         }

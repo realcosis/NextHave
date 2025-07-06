@@ -6,8 +6,6 @@ namespace NextHave.BL.Messages.Parsers
 {
     public abstract class AbstractParser<T> : IParser where T : IInput
     {
-        readonly static ConcurrentDictionary<short, IParser> parsers = [];
-
         public async virtual Task HandleAsync(Client client, ClientMessage message, IPacketsService packetsService)
         {
             var messageEvent = (T)Parse(message);

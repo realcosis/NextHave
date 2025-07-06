@@ -3,10 +3,10 @@ using NextHave.BL.Messages.Input.Rooms.Chat;
 
 namespace NextHave.BL.Messages.Parsers.Rooms.Chat
 {
-    public class ChatMessageParser : AbstractParser<ChatMessageMessage>
+    public class ShoutMessageParser : AbstractParser<ShoutMessageMessage>
     {
         public override IInput Parse(ClientMessage packet)
-            => new ChatMessageMessage()
+            => new ShoutMessageMessage()
             {
                 Message = packet.ReadString().Escape(),
                 Color = packet.ReadInt()
