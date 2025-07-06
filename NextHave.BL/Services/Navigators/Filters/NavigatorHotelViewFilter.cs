@@ -18,7 +18,7 @@ namespace NextHave.BL.Services.Navigators.Filters
 
             var resultLists = new List<SearchResultList>();
 
-            var popularCategory = new SearchResultList(0, "popular", string.Empty, SearchAction.NONE, ListMode.LIST, DisplayMode.VISIBLE, [.. roomsService.ActiveRooms.Values.OrderByDescending(ar => ar.Room.UsersNow).Select(ar => ar.Room)], false, false, DisplayOrder.ACTIVITY, 1);
+            var popularCategory = new SearchResultList(0, "popular", string.Empty, SearchAction.NONE, ListMode.LIST, DisplayMode.VISIBLE, [.. roomsService.ActiveRooms.Values.OrderByDescending(ar => ar.Room!.UsersNow).Select(ar => ar.Room)], false, false, DisplayOrder.ACTIVITY, 1);
             resultLists.Add(popularCategory);
 
             return await Task.FromResult(resultLists);
