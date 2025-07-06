@@ -56,5 +56,9 @@ namespace NextHave.DAL.MySQL.Entities
         public string? CurrentIp { get; set; }
 
         public ICollection<UserTicketEntity> Tickets { get; set; } = [];
+
+        public ICollection<UserFavoriteEntity> Favorites { get; set; } = [];
+
+        public ICollection<GroupMembershipEntity> GroupMemberships { get; set; } = [];
     }
 }

@@ -1,35 +1,42 @@
 ﻿using Dolphin.Core.Injection;
+using Microsoft.Extensions.DependencyInjection;
+using NextHave.BL.Enums;
 using NextHave.BL.Models.Navigators;
 using NextHave.BL.Services.Navigators.Filters;
+using NextHave.BL.Services.Rooms;
 using NextHave.BL.Services.Users.Instances;
 
 namespace Dolphin.HabboHotel.Navigators.Filters
 {
-    [Service(Microsoft.Extensions.DependencyInjection.ServiceLifetime.Singleton)]
-    public class NavigatorMyWorldFilter : IFilter
+    [Service(ServiceLifetime.Singleton)]
+    public class NavigatorMyWorldFilter(IServiceScopeFactory serviceScopeFactory) : IFilter
     {
         string IFilter.Name => "myworld_view";
 
         async Task<List<SearchResultList>> IFilter.GetSearchResults(IUserInstance userInstance, string? _)
         {
-            return await Task.FromResult(new List<SearchResultList>());
-            //var resultLists = new List<SearchResultList>();
+            if (userInstance?.User == default)
+                return [];
 
-            //var myRooms = new SearchResultList(0, "my", string.Empty, SearchAction.NONE, ListMode.LIST, DisplayMode.VISIBLE, [.. habbo.Rooms.OrderByDescending(ar => ar.UsersNow)], false, false, DisplayOrder.ACTIVITY, 1);
-            //resultLists.Add(myRooms);
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+            var roomsService = scope.ServiceProvider.GetRequiredService<IRoomsService>();
+            await scope.DisposeAsync();
 
-            //var favoritesRooms = new SearchResultList(1, "favorites", string.Empty, SearchAction.NONE, ListMode.LIST, DisplayMode.VISIBLE, [.. habbo.FavoriteRooms.OrderByDescending(fr => fr.UsersNow)], false, false, DisplayOrder.ACTIVITY, 2);
-            //resultLists.Add(favoritesRooms);
+            var resultLists = new List<SearchResultList>();
 
-            //var myGroups = new SearchResultList(2, "my_groups", string.Empty, SearchAction.NONE, ListMode.LIST, DisplayMode.VISIBLE, [.. habbo.Groups.Where(g => g.Room != default).Select(g => g.Room!).OrderByDescending(gr => gr.UsersNow)], false, false, DisplayOrder.ACTIVITY, 3);
-            //resultLists.Add(myGroups);
+            userInstance.User!.Rooms.ForEach(r => r.UsersNow = roomsService.ActiveRooms.TryGetValue(r.Id, out var room) ? room.Room!.UsersNow : 0);
+            var myRooms = new SearchResultList(0, "my", string.Empty, SearchAction.NONE, ListMode.LIST, DisplayMode.VISIBLE, [.. userInstance.User!.Rooms.OrderByDescending(ar => ar.UsersNow)], false, false, DisplayOrder.ACTIVITY, 1);
+            resultLists.Add(myRooms);
 
-            //var friendRooms = new SearchResultList(3, "friends_rooms", string.Empty, SearchAction.NONE, ListMode.LIST, DisplayMode.VISIBLE, [], false, false, DisplayOrder.ACTIVITY, 4); // TODO: After room done
-            //resultLists.Add(friendRooms);
+            userInstance.User!.FavoriteRooms.ForEach(r => r.UsersNow = roomsService.ActiveRooms.TryGetValue(r.Id, out var room) ? room.Room!.UsersNow : 0);
+            var favoritesRooms = new SearchResultList(1, "favorites", string.Empty, SearchAction.NONE, ListMode.LIST, DisplayMode.VISIBLE, [.. userInstance.User.FavoriteRooms.OrderByDescending(fr => fr.UsersNow)], false, false, DisplayOrder.ACTIVITY, 2);
+            resultLists.Add(favoritesRooms);
 
-            //// TODO: Room visits
+            userInstance.User!.Groups.Where(g => g.Room != default).Select(g => g.Room!).ToList().ForEach(r => r.UsersNow = roomsService.ActiveRooms.TryGetValue(r.Id, out var room) ? room.Room!.UsersNow : 0);
+            var myGroups = new SearchResultList(2, "my_groups", string.Empty, SearchAction.NONE, ListMode.LIST, DisplayMode.VISIBLE, [.. userInstance.User.Groups.Where(g => g.Room != default).Select(g => g.Room!).OrderByDescending(gr => gr.UsersNow)], false, false, DisplayOrder.ACTIVITY, 3);
+            resultLists.Add(myGroups);
 
-            //return await Task.FromResult(resultLists);
+            return await Task.FromResult(resultLists);
         }
     }
 }

@@ -8,21 +8,21 @@ namespace NextHave.BL.Services.Users.Instances
 {
     public interface IUserInstance
     {
-        public Client? Client { get; set; }
+        Client? Client { get; set; }
 
-        public User? User { get; set; }
+        User? User { get; set; }
 
-        public UserEventsService EventsService { get; }
+        UserEventsService EventsService { get; }
 
-        public int? CurrentRoomId { get; set; }
+        int? CurrentRoomId { get; set; }
 
-        public IRoomInstance? CurrentRoomInstance { get; set; }
+        IRoomInstance? CurrentRoomInstance { get; set; }
 
-        public Permission? Permission { get; set; }
+        Permission? Permission { get; set; }
 
-        public bool IsMuted { get; set; }
+        bool IsMuted { get; set; }
 
-        public DateTime? MutedUntil { get; set; }
+        DateTime? MutedUntil { get; set; }
 
         Task Init();
 

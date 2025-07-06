@@ -44,6 +44,8 @@ namespace NextHave.DAL.MySQL
 
         public DbSet<GroupElementEntity> GroupElements { get; set; }
 
+        public DbSet<UserFavoriteEntity> UserFavorites { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -53,6 +55,8 @@ namespace NextHave.DAL.MySQL
             builder.Entity<GroupMembershipEntity>().HasKey(e => new { e.GroupId, e.UserId });
 
             builder.Entity<RoomTonerEntity>().HasKey(e => new { e.RoomId, e.ItemId });
+
+            builder.Entity<UserFavoriteEntity>().HasKey(e => new { e.UserId, e.RoomId });
 
             builder.Entity<NextHaveSettingEntity>().HasKey(e => new { e.Key, e.Type });
         }

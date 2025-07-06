@@ -18,6 +18,8 @@
 
         public const string UserTickets = "user_tickets";
 
+        public const string UserFavorites = "user_favorites";
+
         public const string CatalogPages = "catalog_pages";
 
         public const string ItemDefinitions = "item_definitions";

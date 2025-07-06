@@ -2,6 +2,7 @@
 using Dolphin.Core.Injection;
 using Dolphin.Core.Validations;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -9,14 +10,17 @@ using NextHave.BL.Events.Users.Session;
 using NextHave.BL.Extensions;
 using NextHave.BL.Localizations;
 using NextHave.BL.Mappers;
+using NextHave.BL.Models.Groups;
 using NextHave.BL.Models.Rooms;
 using NextHave.BL.Models.Users;
 using NextHave.BL.Services.Permissions;
+using NextHave.BL.Services.Rooms;
 using NextHave.BL.Services.Rooms.Factories;
 using NextHave.BL.Services.Rooms.Instances;
 using NextHave.BL.Services.Settings;
 using NextHave.BL.Services.Users.Factories;
 using NextHave.BL.Services.Users.Instances;
+using NextHave.DAL.Mongo;
 using NextHave.DAL.MySQL;
 using NextHave.DAL.MySQL.Entities;
 using System.Collections.Concurrent;
@@ -50,9 +54,11 @@ namespace NextHave.BL.Services.Users
             {
                 var date = DateTime.Now.AddMilliseconds(time);
 
-                using var scope = serviceScopeFactory.CreateAsyncScope();
+                await using var scope = serviceScopeFactory.CreateAsyncScope();
 
                 var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
+
+                var mongoDbContext = scope.ServiceProvider.GetRequiredService<MongoDbContext>();
 
                 var permissionsService = scope.ServiceProvider.GetRequiredService<IPermissionsService>();
 
@@ -61,6 +67,10 @@ namespace NextHave.BL.Services.Users
                 var userTicket = await mysqlDbContext
                                         .UserTickets
                                             .Include(ut => ut.User)
+                                                .ThenInclude(u => u!.Favorites)
+                                            .Include(ut => ut.User)
+                                                .ThenInclude(u => u!.GroupMemberships)
+                                                    .ThenInclude(u => u.Group)
                                             .FirstOrDefaultAsync(ut => ut.Ticket == authTicket) ?? throw new DolphinException(Errors.UserTicketNotFound);
 
                 var user = userTicket.User ?? throw new DolphinException(Errors.UserNotFound);
@@ -70,7 +80,38 @@ namespace NextHave.BL.Services.Users
                 mysqlDbContext.Users.Update(user);
                 await mysqlDbContext.SaveChangesAsync();
 
+                var rooms = await mongoDbContext.Rooms.Where(r => r.Author!.AuthorId == user.Id).AsNoTracking().ToListAsync();
+
+                var groupIds = rooms.Where(r => r.Group != default).Select(r => r.Group!.GroupId).Distinct().ToList();
+                var groups = await mysqlDbContext.Groups.AsNoTracking().Where(g => groupIds.Contains(g.Id)).Select(g => g.Map()).ToListAsync();
+
+                var resultRooms = rooms.Select(r => r.Map(groups.FirstOrDefault(g => g.RoomId == r.EntityId), 0)).ToList();
+
+                var favoriteRooms = new List<Room>();
+                var roomIds = user.Favorites.Select(f => f.RoomId);
+
+                groupIds = [.. rooms.Where(r => r.Group != default).Select(r => r.Group!.GroupId).Distinct()];
+                groups = await mysqlDbContext.Groups.AsNoTracking().Where(g => roomIds.Contains(g.RoomId)).Select(g => g.Map()).ToListAsync();
+
+                var dbFavoritesRooms = await mongoDbContext.Rooms.Where(r => roomIds.Contains(r.EntityId)).AsNoTracking().ToListAsync();
+                foreach (var room in dbFavoritesRooms)
+                {
+                    var group = default(Group?);
+                    if (room.Group != default)
+                        group = groups.FirstOrDefault(g => g.Id == room.Group.GroupId);
+                    favoriteRooms.Add(room.Map(group));
+                }
+
+                groups = [.. user.GroupMemberships.Select(gm => gm.Group).Select(g => g!.Map())];
+                var groupRoomIds = groups.Select(g => g.RoomId).Distinct().ToList();
+                var groupRooms = await mongoDbContext.Rooms.Where(r => groupRoomIds.Contains(r.EntityId)).AsNoTracking().ToListAsync();
+                foreach (var group in groups)
+                    group.Room = groupRooms.FirstOrDefault(gr => gr.EntityId == group.RoomId)?.Map(group);
+
                 var result = user.MapResult();
+                result.Rooms = resultRooms;
+                result.FavoriteRooms = favoriteRooms;
+                result.Groups = groups;
 
                 var userInstance = userFactory.GetUserInstance(result.Id, result);
 
@@ -82,6 +123,8 @@ namespace NextHave.BL.Services.Users
                 Instance.Users.TryAdd(userInstance.User!.Id, userInstance);
 
                 await userInstance.EventsService.SubscribeAsync<UserDisconnectedEvent>(userInstance, OnUserDisconnected);
+
+                await scope.DisposeAsync();
 
                 return userInstance;
             }

@@ -38,6 +38,10 @@ namespace NextHave.BL.Services.Users.Instances
         {
             foreach (var userComponent in userComponents)
                 await userComponent.Dispose();
+            Instance.User = default;
+            Instance.Client = default;
+            Instance.CurrentRoomInstance = default;
+            Instance.Permission = default;
         }
     }
 }
