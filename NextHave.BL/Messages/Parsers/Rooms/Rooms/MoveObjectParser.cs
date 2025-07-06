@@ -4,7 +4,7 @@ namespace NextHave.BL.Messages.Parsers.Rooms.Rooms
 {
     public class MoveObjectParser : AbstractParser<MoveObjectMessage>
     {
-        public override IInput Parse(ClientMessage packet)
+        public sealed override IInput Parse(ClientMessage packet)
             => new MoveObjectMessage()
             {
                 ItemId = packet.ReadInt(),

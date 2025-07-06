@@ -1,7 +1,5 @@
-﻿using Dolphin.Core.Events;
-using Dolphin.Core.Injection;
+﻿using Dolphin.Core.Injection;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using NextHave.BL.Clients;
 using NextHave.BL.Events.Rooms.Chat;
 using NextHave.BL.Events.Rooms.Engine;
@@ -21,17 +19,17 @@ using NextHave.BL.Messages.Output.Navigators;
 using NextHave.BL.Messages.Output.Rooms.Engine;
 using NextHave.BL.Messages.Output.Rooms.Session;
 using NextHave.BL.Messages.Output.Users;
+using NextHave.BL.Messages.Parsers.Navigators;
+using NextHave.BL.Services.Navigators;
 using NextHave.BL.Services.Packets;
 using NextHave.BL.Services.Rooms;
-using NextHave.BL.Services.Rooms.Commands;
-using NextHave.BL.Services.Rooms.Factories;
 using NextHave.BL.Services.Users;
 using NextHave.DAL.Enums;
 
 namespace NextHave.BL.Messages.Input.Handlers
 {
     [Service(ServiceLifetime.Singleton)]
-    class MessageHandler(IPacketsService packetsService, IServiceScopeFactory serviceScopeFactory) : IMessageHandler, IStartableService
+    class MessageHandler(IPacketsService packetsService, IServiceProvider serviceProvider) : IMessageHandler, IStartableService
     {
         public async Task StartAsync()
         {
@@ -50,7 +48,7 @@ namespace NextHave.BL.Messages.Input.Handlers
             packetsService.Subscribe<MoveObjectMessage>(this, OnMoveObject);
 
             packetsService.Subscribe<ChatMessageMessage>(this, OnChatMessage);
-            
+
             packetsService.Subscribe<ShoutMessageMessage>(this, OnShoutMessage);
 
             packetsService.Subscribe<GetGuestRoomMessage>(this, OnGetGuestRoom);
@@ -59,7 +57,72 @@ namespace NextHave.BL.Messages.Input.Handlers
 
             packetsService.Subscribe<StopTypingMessage>(this, OnStopTyping);
 
+            packetsService.Subscribe<NewNavigatorSearchMessage>(this, OnNewNavigatorSearchMessage);
+
+            packetsService.Subscribe<NewNavigatorInitMessage>(this, OnNewNavigatorInitMessage);
+
+            packetsService.Subscribe<GetUserFlatCatsMessage>(this, OnGetUserFlatCatsMessage);
+
+            packetsService.Subscribe<GoToHotelViewMessage>(this, OnGoToHotelViewMessage);
+
             await Task.CompletedTask;
+        }
+
+        public async Task OnGoToHotelViewMessage(GoToHotelViewMessage message, Client client)
+        {
+            if (client?.UserInstance?.CurrentRoomInstance == default || !client.UserInstance.CurrentRoomId.HasValue)
+                return;
+
+            var roomsService = serviceProvider.GetRequiredService<IRoomsService>();
+
+            var roomInstance = await roomsService.GetRoomInstance(client.UserInstance.CurrentRoomId.Value);
+            if (roomInstance == default)
+                return;
+
+            await roomInstance.EventsService.DispatchAsync<UserRoomExitEvent>(new()
+            {
+                UserId = client.UserInstance!.User!.Id,
+                NotifyUser = true,
+                Kick = false,
+                RoomId = client.UserInstance.CurrentRoomId!.Value,
+            });
+            client.UserInstance.CurrentRoomInstance = default;
+            client.UserInstance.CurrentRoomId = default;
+        }
+
+        public async Task OnGetUserFlatCatsMessage(GetUserFlatCatsMessage message, Client client)
+        {
+            if (client?.UserInstance?.User == default)
+                return;
+
+            var navigatorsService = serviceProvider.GetRequiredService<INavigatorsService>();
+
+            var categories = navigatorsService.NavigatorCategories.Select(nc => nc.Value).Where(nc => nc.MinRank <= client.UserInstance.User.Rank).ToList();
+
+            await client.Send(new UserFlatCatsMessageComposer(categories));
+        }
+
+        public async Task OnNewNavigatorInitMessage(NewNavigatorInitMessage message, Client client)
+        {
+            if (client?.UserInstance == default)
+                return;
+
+            await client.Send(new NavigatorMetaDataMessageComposer());
+            await client.Send(new CollapsedCategoriesMessageComposer());
+        }
+
+        public async Task OnNewNavigatorSearchMessage(NewNavigatorSearchMessage message, Client client)
+        {
+            if (client?.UserInstance == default)
+                return;
+            var navigatorsService = serviceProvider.GetRequiredService<INavigatorsService>();
+
+            var filter = navigatorsService.Filters.FirstOrDefault(f => f.Key == message.View).Value;
+            if (filter == default)
+                return;
+
+            var result = await filter.GetSearchResults(client.UserInstance, message.Query);
+            await client.Send(new NavigatorSearchResultBlocksMessageComposer(message.View!, message.Query!, result));
         }
 
         public async Task OnStopTyping(StopTypingMessage message, Client client)
@@ -90,9 +153,7 @@ namespace NextHave.BL.Messages.Input.Handlers
 
         public async Task OnGetGuestRoom(GetGuestRoomMessage message, Client client)
         {
-            await using var scope = serviceScopeFactory.CreateAsyncScope();
-
-            var roomsService = scope.ServiceProvider.GetRequiredService<IRoomsService>();
+            var roomsService = serviceProvider.GetRequiredService<IRoomsService>();
 
             var roomInstance = await roomsService.GetRoomInstance(message.RoomId);
 
@@ -176,8 +237,6 @@ namespace NextHave.BL.Messages.Input.Handlers
             if (!client.UserInstance.CurrentRoomId.HasValue)
                 return;
 
-            using var scope = serviceScopeFactory.CreateAsyncScope();
-            var serviceProvider = scope.ServiceProvider;
             var roomsService = serviceProvider.GetRequiredService<IRoomsService>();
 
             var roomInstance = await roomsService.GetRoomInstance(client.UserInstance.CurrentRoomId.Value);
@@ -210,8 +269,6 @@ namespace NextHave.BL.Messages.Input.Handlers
             if (!client.UserInstance.CurrentRoomId.HasValue)
                 return;
 
-            using var scope = serviceScopeFactory.CreateAsyncScope();
-            var serviceProvider = scope.ServiceProvider;
             var roomsService = serviceProvider.GetRequiredService<IRoomsService>();
 
             var roomInstance = await roomsService.GetRoomInstance(client.UserInstance.CurrentRoomId.Value);
@@ -224,16 +281,15 @@ namespace NextHave.BL.Messages.Input.Handlers
             if (client?.UserInstance == default)
                 return;
 
-            using var scope = serviceScopeFactory.CreateAsyncScope();
-            var serviceProvider = scope.ServiceProvider;
             var roomsService = serviceProvider.GetRequiredService<IRoomsService>();
-            var eventsService = serviceProvider.GetRequiredService<IEventsService>();
 
             if (client.UserInstance.CurrentRoomInstance != default)
             {
                 await client.UserInstance.CurrentRoomInstance.EventsService.DispatchAsync<UserRoomExitEvent>(new()
                 {
                     UserId = client.UserInstance!.User!.Id,
+                    NotifyUser = false,
+                    Kick = false,
                     RoomId = client.UserInstance.CurrentRoomId!.Value,
                 });
                 client.UserInstance.CurrentRoomInstance = default;
@@ -296,8 +352,6 @@ namespace NextHave.BL.Messages.Input.Handlers
 
         public async Task OnSSOTicket(SSOTicketMessage message, Client client)
         {
-            using var scope = serviceScopeFactory.CreateAsyncScope();
-            var serviceProvider = scope.ServiceProvider;
             var usersService = serviceProvider.GetRequiredService<IUsersService>();
             var userInstance = await usersService.LoadHabbo(message.SSO!, message.ElapsedMilliseconds);
 

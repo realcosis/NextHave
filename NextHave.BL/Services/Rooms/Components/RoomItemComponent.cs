@@ -13,7 +13,6 @@ using NextHave.BL.Services.Rooms.Instances;
 using NextHave.DAL.Enums;
 using NextHave.DAL.Mongo;
 using System.Collections.Concurrent;
-using System.ComponentModel;
 
 namespace NextHave.BL.Services.Rooms.Components
 {

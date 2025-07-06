@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using NextHave.BL.Mappers;
 using NextHave.BL.Models.Navigators;
 using NextHave.BL.Models.Rooms.Navigators;
+using NextHave.BL.Services.Navigators.Filters;
 using NextHave.BL.Services.Rooms;
 using NextHave.DAL.MySQL;
 using System.Collections.Concurrent;
@@ -12,9 +13,11 @@ using System.Collections.Concurrent;
 namespace NextHave.BL.Services.Navigators
 {
     [Service(ServiceLifetime.Singleton)]
-    class NavigatorsService(ILogger<INavigatorsService> logger, IServiceScopeFactory serviceScopeFactory, IRoomsService roomsService) : INavigatorsService, IStartableService
+    class NavigatorsService(ILogger<INavigatorsService> logger, IServiceProvider serviceProvider, IRoomsService roomsService) : INavigatorsService, IStartableService
     {
         INavigatorsService Instance => this;
+
+        ConcurrentDictionary<string, IFilter> INavigatorsService.Filters { get; } = [];
 
         ConcurrentDictionary<int, NavigatorCategory> INavigatorsService.NavigatorCategories { get; } = [];
 
@@ -24,11 +27,13 @@ namespace NextHave.BL.Services.Navigators
         {
             Instance.PublicCategories.Clear();
             Instance.NavigatorCategories.Clear();
+            Instance.Filters.Clear();
 
             try
             {
-                using var scope = serviceScopeFactory.CreateAsyncScope();
-                var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
+                var mysqlDbContext = serviceProvider.GetRequiredService<MySQLDbContext>();
+
+                var filters = serviceProvider.GetRequiredService<IEnumerable<IFilter>>().ToList();
 
                 var publicCategories = await mysqlDbContext.NavigatorPublicCategories.AsNoTracking().ToListAsync();
                 publicCategories.ForEach(category => Instance.PublicCategories.TryAdd(category.Id, category.Map()));
@@ -48,6 +53,9 @@ namespace NextHave.BL.Services.Navigators
                     }
                 }
 
+                filters.ForEach(filter => Instance.Filters.TryAdd(filter.Name, filter));
+
+                logger.LogInformation("NavigatorsService started with {count} filters definitions", Instance.Filters.Count);
                 logger.LogInformation("NavigatorsService started with {count} public categories definitions", Instance.PublicCategories.Count);
                 logger.LogInformation("NavigatorsService started with {count} user categories definitions", Instance.NavigatorCategories.Count);
             }

@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace NextHave.BL.Services.Permissions
 {
     [Service(ServiceLifetime.Singleton)]
-    class PermissionsService(ILogger<IPermissionsService> logger, IServiceScopeFactory serviceScopeFactory) : IPermissionsService, IStartableService
+    class PermissionsService(ILogger<IPermissionsService> logger, IServiceProvider serviceProvider) : IPermissionsService, IStartableService
     {
         IPermissionsService Instance => this;
 
@@ -21,9 +21,7 @@ namespace NextHave.BL.Services.Permissions
 
             try
             {
-                await using var scope = serviceScopeFactory.CreateAsyncScope();
-
-                var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
+                var mysqlDbContext = serviceProvider.GetRequiredService<MySQLDbContext>();
 
                 var permissionGroups = await mysqlDbContext
                                             .PermissionGroups

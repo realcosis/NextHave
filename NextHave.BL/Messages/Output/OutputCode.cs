@@ -63,5 +63,13 @@
         public const short GetGuestRoomResultMessageComposer = 687;
 
         public const short UserTypingStatusMessageComposer = 1717;
+
+        public const short NavigatorSearchResultBlocksMessageComposer = 2690;
+
+        public const short NavigatorMetaDataMessageComposer = 3052;
+
+        public const short CollapsedCategoriesMessageComposer = 1543;
+
+        public const short UserFlatCatsMessageComposer = 1562;
     }
 }

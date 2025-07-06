@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace NextHave.BL.Services.Texts
 {
     [Service(ServiceLifetime.Singleton)]
-    public class TextsService(IServiceScopeFactory serviceScopeFactory) : ITextsService, IStartableService
+    public class TextsService(IServiceProvider serviceProvider) : ITextsService, IStartableService
     {
         Dictionary<string, Text> texts = [];
 
@@ -15,8 +15,7 @@ namespace NextHave.BL.Services.Texts
 
         async Task IStartableService.StartAsync()
         {
-            await using var serviceProvider = serviceScopeFactory.CreateAsyncScope();
-            var dbContext = serviceProvider.ServiceProvider.GetRequiredService<MySQLDbContext>();
+            var dbContext = serviceProvider.GetRequiredService<MySQLDbContext>();
 
             texts = await dbContext
                                 .NextHaveTexts

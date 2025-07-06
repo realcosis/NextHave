@@ -5,7 +5,7 @@ namespace NextHave.BL.Messages.Parsers.Rooms.Chat
 {
     public class ChatMessageParser : AbstractParser<ChatMessageMessage>
     {
-        public override IInput Parse(ClientMessage packet)
+        public sealed override IInput Parse(ClientMessage packet)
             => new ChatMessageMessage()
             {
                 Message = packet.ReadString().Escape(),

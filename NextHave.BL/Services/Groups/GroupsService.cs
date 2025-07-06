@@ -10,7 +10,7 @@ using NextHave.BL.Mappers;
 namespace NextHave.BL.Services.Groups
 {
     [Service(ServiceLifetime.Singleton)]
-    class GroupsService(IServiceScopeFactory serviceScopeFactory, ILogger<IGroupsService> logger) : IGroupsService, IStartableService
+    class GroupsService(IServiceProvider serviceProvider, ILogger<IGroupsService> logger) : IGroupsService, IStartableService
     {
         IGroupsService Instance => this;
 
@@ -18,8 +18,7 @@ namespace NextHave.BL.Services.Groups
 
         async Task<Group?> IGroupsService.GetGroup(int groupId)
         {
-            await using var serviceProvider = serviceScopeFactory.CreateAsyncScope();
-            var mysqlDbContext = serviceProvider.ServiceProvider.GetRequiredService<MySQLDbContext>();
+            var mysqlDbContext = serviceProvider.GetRequiredService<MySQLDbContext>();
 
             var groupEntity = await mysqlDbContext
                                         .Groups
@@ -37,8 +36,7 @@ namespace NextHave.BL.Services.Groups
 
             try
             {
-                await using var serviceProvider = serviceScopeFactory.CreateAsyncScope();
-                var mysqlDbContext = serviceProvider.ServiceProvider.GetRequiredService<MySQLDbContext>();
+                var mysqlDbContext = serviceProvider.GetRequiredService<MySQLDbContext>();
 
                 var groupElements = await mysqlDbContext.GroupElements.AsNoTracking().ToListAsync();
                 groupElements.ForEach(groupElement => Instance.GroupElements.TryAdd($"{groupElement.Id}-{groupElement.Type}", groupElement.Map()));

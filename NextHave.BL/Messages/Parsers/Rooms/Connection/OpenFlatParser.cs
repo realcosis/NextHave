@@ -4,7 +4,7 @@ namespace NextHave.BL.Messages.Parsers.Rooms.Connection
 {
     public class OpenFlatParser : AbstractParser<OpenFlatMessage>
     {
-        public override IInput Parse(ClientMessage packet)
+        public sealed override IInput Parse(ClientMessage packet)
             => new OpenFlatMessage()
             {
                 RoomId = packet.ReadInt(),

@@ -31,6 +31,8 @@ namespace NextHave.Nitro.Sockets
                         await client.UserInstance.CurrentRoomInstance.EventsService.DispatchAsync<UserRoomExitEvent>(new()
                         {
                             UserId = client.UserInstance!.User!.Id,
+                            Kick = false,
+                            NotifyUser = false,
                             RoomId = client.UserInstance.CurrentRoomId!.Value,
                         });
                         client.UserInstance.CurrentRoomInstance = default;

@@ -17,19 +17,19 @@ namespace NextHave.BL.Models.Groups
 
         public string? Image { get; set; }
 
-        public int CustomColorPrimary { get; set; }
+        public int CustomPrimaryColor { get; set; }
 
-        public int CustomColorSecondary { get; set; }
+        public int CustomSecondaryColor { get; set; }
 
         public int Base { get; set; }
 
         public int BaseColor { get; set; }
 
-        public string HtmlColorPrimary { get; set; } = "ffffff";
+        public string HtmlPrimaryColor { get; set; } = "ffffff";
 
-        public string? HtmlColorSecondary { get; set; } = "ffffff";
+        public string? HtmlSecondaryColor { get; set; } = "ffffff";
 
-        public string? DateCreate { get; set; }
+        public string? CreationDate { get; set; }
 
         public string Petitions { get; set; } = "";
 

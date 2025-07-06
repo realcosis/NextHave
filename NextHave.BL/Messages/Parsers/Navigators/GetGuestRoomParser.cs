@@ -4,7 +4,7 @@ namespace NextHave.BL.Messages.Parsers.Navigators
 {
     public class GetGuestRoomParser : AbstractParser<GetGuestRoomMessage>
     {
-        public override IInput Parse(ClientMessage packet)
+        public sealed override IInput Parse(ClientMessage packet)
             => new GetGuestRoomMessage()
             {
                 RoomId = packet.ReadInt(),

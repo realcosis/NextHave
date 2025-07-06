@@ -11,7 +11,7 @@ using NextHave.BL.Services.Items.Factories;
 namespace NextHave.BL.Services.Items
 {
     [Service(ServiceLifetime.Singleton)]
-    class ItemsService(IServiceScopeFactory serviceScopeFactory, ILogger<IItemsService> logger) : IItemsService, IStartableService
+    class ItemsService(IServiceProvider serviceProvider, ILogger<IItemsService> logger) : IItemsService, IStartableService
     {
         IItemsService Instance => this;
 
@@ -23,10 +23,9 @@ namespace NextHave.BL.Services.Items
 
             try
             {
-                using var scope = serviceScopeFactory.CreateAsyncScope();
-                var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
+                var mysqlDbContext = serviceProvider.GetRequiredService<MySQLDbContext>();
 
-                var interactionFactory = scope.ServiceProvider.GetRequiredService<InteractorFactory>();
+                var interactionFactory = serviceProvider.GetRequiredService<InteractorFactory>();
 
                 var itemDefinitions = await mysqlDbContext.ItemDefinitions.AsNoTracking().ToListAsync();
 

@@ -24,8 +24,8 @@ builder.Services.AddBlazoredToast();
 builder.Services.AddHttpContextAccessor();
 builder.Services.RegisterDolphinApplication();
 builder.Services.AddSignalR().AddMessagePackProtocol();
-builder.Services.AddDbContext<MySQLDbContext>();
-builder.Services.AddDbContext<MongoDbContext>();
+builder.Services.AddDbContext<MySQLDbContext>(ServiceLifetime.Singleton);
+builder.Services.AddDbContext<MongoDbContext>(ServiceLifetime.Singleton);
 builder.Services.AddNextHaveServices(Assembly.GetExecutingAssembly());
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 builder.Services.AddCors(options =>

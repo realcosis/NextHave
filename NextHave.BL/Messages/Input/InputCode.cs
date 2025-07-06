@@ -26,5 +26,13 @@
         public const short StartTypingMessageEvent = 1597;
 
         public const short StopTypingMessageEvent = 1474;
+
+        public const short NewNavigatorSearchMessageEvent = 249;
+
+        public const short NewNavigatorInitMessageEvent = 2110;
+
+        public const short GetUserFlatCatsMessageEvent = 3027;
+
+        public const short GoToHotelViewMessageEvent = 105;
     }
 }

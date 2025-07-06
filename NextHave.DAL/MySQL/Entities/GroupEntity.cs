@@ -25,10 +25,10 @@ namespace NextHave.DAL.MySQL.Entities
         public string? Image { get; set; }
 
         [Required]
-        public int CustomColorPrimary { get; set; }
+        public int CustomPrimaryColor { get; set; }
 
         [Required]
-        public int CustomColorSecondary { get; set; }
+        public int CustomSecondaryColor { get; set; }
 
         [Required]
         public int Base { get; set; }
@@ -37,13 +37,13 @@ namespace NextHave.DAL.MySQL.Entities
         public int BaseColor { get; set; }
 
         [Required]
-        public string HtmlColorPrimary { get; set; } = "ffffff";
+        public string HtmlPrimaryColor { get; set; } = "ffffff";
 
         [Required]
-        public string? HtmlColorSecondary { get; set; } = "ffffff";
+        public string? HtmlSecondaryColor { get; set; } = "ffffff";
 
         [Required]
-        public string? DateCreate { get; set; }
+        public string? CreationDate { get; set; }
 
         [Required]
         public string Petitions { get; set; } = "";

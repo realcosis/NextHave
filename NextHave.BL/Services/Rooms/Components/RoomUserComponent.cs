@@ -8,9 +8,11 @@ using NextHave.BL.Events.Rooms.Users;
 using NextHave.BL.Events.Rooms.Users.Movements;
 using NextHave.BL.Messages;
 using NextHave.BL.Messages.Input.Rooms.Chat;
+using NextHave.BL.Messages.Output.Handshake;
 using NextHave.BL.Messages.Output.Rooms.Chat;
 using NextHave.BL.Messages.Output.Rooms.Engine;
 using NextHave.BL.Messages.Output.Rooms.Permissions;
+using NextHave.BL.Messages.Output.Rooms.Session;
 using NextHave.BL.Models;
 using NextHave.BL.Services.Rooms.Factories;
 using NextHave.BL.Services.Rooms.Instances;
@@ -157,7 +159,7 @@ namespace NextHave.BL.Services.Rooms.Components
                 return;
 
             var roomUserInstance = users.FirstOrDefault(u => u.Value.UserId == @event.UserId).Value;
-            if (roomUserInstance == default)
+            if (roomUserInstance?.UserInstance?.Client == default)
                 return;
 
             _roomInstance.RoomModel.RemoveUser(roomUserInstance.Position!, roomUserInstance);
@@ -168,8 +170,11 @@ namespace NextHave.BL.Services.Rooms.Components
             if (_roomInstance.Room.UsersNow <= 0)
                 _roomInstance.Room.UsersNow = 0;
 
-            if (users.IsEmpty)
-                await roomsService.DisposeRoom(_roomInstance.Room.Id);
+            if (@event.Kick)
+                await roomUserInstance.UserInstance.Client.Send(new GenericErrorMessageComposer(4008));
+
+            if (@event.NotifyUser)
+                await roomUserInstance.UserInstance.Client.Send(new CloseConnectionMessageComposer());
 
             await _roomInstance!.EventsService.DispatchAsync<SendRoomPacketEvent>(new()
             {
@@ -177,6 +182,9 @@ namespace NextHave.BL.Services.Rooms.Components
                 WithRights = false,
                 Composer = new UserRemoveMessageComposer(roomUserInstance.VirutalId)
             });
+
+            if (users.IsEmpty)
+                await roomsService.DisposeRoom(_roomInstance.Room.Id);
         }
 
         async Task OnApplyMovement(ApplyMovementEvent @event)

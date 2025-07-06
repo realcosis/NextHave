@@ -1,6 +1,7 @@
 ﻿using NextHave.DAL.Enums;
 using NextHave.BL.Messages;
 using NextHave.BL.Models.Groups;
+using NextHave.DAL.Utils;
 
 namespace NextHave.BL.Models.Rooms
 {
@@ -108,7 +109,7 @@ namespace NextHave.BL.Models.Rooms
                 message.AddString(Owner!);
             }
 
-            message.AddInt32(1);
+            message.AddInt32(State!.Value.ToInt());
             message.AddInt32(UsersNow);
             message.AddInt32(UsersMax);
             message.AddString(Description!);

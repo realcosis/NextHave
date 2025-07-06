@@ -7,9 +7,10 @@ namespace NextHave.BL.Mappers
 {
     public static class RoomsMapper
     {
-        public static Room Map(this RoomEntity entity, Group? group = default)
+        public static Room Map(this RoomEntity entity, Group? group = default, int usersNow = 0)
             => entity.GetMap<RoomEntity, Room>((dest => dest.Id, src => src.EntityId),
                                                (dest => dest.Caption!, src => src.Name),
+                                               (dest => dest.UsersNow!, src => usersNow),
                                                (dest => dest.Category, src => src.Category!.CategoryId),
                                                (dest => dest.OwnerId!, src => src.Author!.AuthorId),
                                                (dest => dest.Owner!, src => src.Author!.Name),

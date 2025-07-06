@@ -4,7 +4,7 @@ namespace NextHave.BL.Messages.Parsers.Rooms.Rooms
 {
     public class MoveAvatarParser : AbstractParser<MoveAvatarMessage>
     {
-        public override IInput Parse(ClientMessage packet)
+        public sealed override IInput Parse(ClientMessage packet)
             => new MoveAvatarMessage()
             {
                 NewX = packet.ReadInt(),

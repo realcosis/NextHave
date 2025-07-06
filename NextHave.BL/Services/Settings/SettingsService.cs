@@ -7,7 +7,7 @@ using NextHave.DAL.MySQL;
 namespace NextHave.BL.Services.Settings
 {
     [Service(ServiceLifetime.Singleton)]
-    public class SettingsService(IServiceScopeFactory serviceScopeFactory) : ISettingsService, IStartableService
+    public class SettingsService(IServiceProvider serviceProvider) : ISettingsService, IStartableService
     {
         Dictionary<string, Setting> settings = [];
 
@@ -15,8 +15,7 @@ namespace NextHave.BL.Services.Settings
 
         async Task IStartableService.StartAsync()
         {
-            await using var serviceProvider = serviceScopeFactory.CreateAsyncScope();
-            var dbContext = serviceProvider.ServiceProvider.GetRequiredService<MySQLDbContext>();
+            var dbContext = serviceProvider.GetRequiredService<MySQLDbContext>();
 
             settings = await dbContext
                                 .NextHaveSettings

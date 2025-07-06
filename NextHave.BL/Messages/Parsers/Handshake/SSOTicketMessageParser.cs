@@ -4,7 +4,7 @@ namespace NextHave.BL.Messages.Parsers.Handshake
 {
     public class SSOTicketMessageParser : AbstractParser<SSOTicketMessage>
     {
-        public override IInput Parse(ClientMessage packet)
+        public sealed override IInput Parse(ClientMessage packet)
             => new SSOTicketMessage
             {
                 SSO = packet.ReadString(),

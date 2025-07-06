@@ -20,7 +20,7 @@ using System.Collections.Concurrent;
 namespace NextHave.BL.Services.Rooms
 {
     [Service(ServiceLifetime.Singleton)]
-    class RoomsService(IServiceScopeFactory serviceScopeFactory, ILogger<IRoomsService> logger, IGroupsService groupsService) : IRoomsService, IStartableService
+    class RoomsService(IServiceProvider serviceProvider, IServiceScopeFactory serviceScopeFactory, ILogger<IRoomsService> logger, IGroupsService groupsService) : IRoomsService, IStartableService
     {
         IRoomsService Instance => this;
 
@@ -30,8 +30,7 @@ namespace NextHave.BL.Services.Rooms
 
         async Task<Room?> IRoomsService.GetRoom(int roomId)
         {
-            await using var scope = serviceScopeFactory.CreateAsyncScope();
-            var mongoDbContext = scope.ServiceProvider.GetRequiredService<MongoDbContext>();
+            var mongoDbContext = serviceProvider.GetRequiredService<MongoDbContext>();
             var dbRoom = await mongoDbContext.Rooms.AsNoTracking().FirstOrDefaultAsync(g => g.EntityId == roomId);
             if (dbRoom != default)
             {
@@ -50,12 +49,12 @@ namespace NextHave.BL.Services.Rooms
             if (Instance.ActiveRooms.TryGetValue(roomId, out var roomInstance))
                 return roomInstance;
 
-            await using var scope = serviceScopeFactory.CreateAsyncScope();
-
             var room = await Instance.GetRoom(roomId);
             if (room != default)
             {
+                await using var scope = serviceScopeFactory.CreateAsyncScope();
                 (roomInstance, var firstLoad) = scope.ServiceProvider.GetRequiredService<RoomFactory>().GetRoomInstance(roomId, room);
+                await scope.DisposeAsync();
                 if (firstLoad)
                 {
                     await roomInstance.Init();
@@ -80,8 +79,6 @@ namespace NextHave.BL.Services.Rooms
         {
             if (Instance.ActiveRooms.TryGetValue(roomId, out var roomInstance))
             {
-                await using var scope = serviceScopeFactory.CreateAsyncScope();
-
                 await roomInstance.EventsService.DispatchAsync<DisposeRoomEvent>(new()
                 {
                     RoomId = roomId
@@ -89,7 +86,9 @@ namespace NextHave.BL.Services.Rooms
 
                 await roomInstance.Dispose();
 
+                await using var scope = serviceScopeFactory.CreateAsyncScope();
                 scope.ServiceProvider.GetRequiredService<RoomFactory>().DestroyRoomInstance(roomId);
+                await scope.DisposeAsync();
 
                 Instance.ActiveRooms.TryRemove(roomId, out _);
             }
@@ -146,8 +145,7 @@ namespace NextHave.BL.Services.Rooms
 
         async Task<RoomModel?> GetModelData(string modelName)
         {
-            using var scope = serviceScopeFactory.CreateAsyncScope();
-            var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
+            var mysqlDbContext = serviceProvider.GetRequiredService<MySQLDbContext>();
 
             var roomModelntity = await mysqlDbContext
                                         .RoomModels
@@ -158,8 +156,7 @@ namespace NextHave.BL.Services.Rooms
 
         async Task<RoomModel> GetCustomModelData(int roomId)
         {
-            using var scope = serviceScopeFactory.CreateAsyncScope();
-            var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
+            var mysqlDbContext = serviceProvider.GetRequiredService<MySQLDbContext>();
 
             var roomModelCustomEntity = await mysqlDbContext
                                                 .RoomModelCustoms
