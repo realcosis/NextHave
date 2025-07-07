@@ -7,25 +7,32 @@ using NextHave.BL.Events.Rooms.Items;
 using NextHave.BL.Events.Rooms.Session;
 using NextHave.BL.Events.Rooms.Users;
 using NextHave.BL.Events.Rooms.Users.Movements;
+using NextHave.BL.Events.Users.Friends;
 using NextHave.BL.Events.Users.Messenger;
 using NextHave.BL.Events.Users.Session;
+using NextHave.BL.Messages.Input.Friends;
 using NextHave.BL.Messages.Input.Handshake;
+using NextHave.BL.Messages.Input.Messenger;
 using NextHave.BL.Messages.Input.Navigators;
 using NextHave.BL.Messages.Input.Rooms;
 using NextHave.BL.Messages.Input.Rooms.Chat;
 using NextHave.BL.Messages.Input.Rooms.Connection;
 using NextHave.BL.Messages.Input.Rooms.Engine;
 using NextHave.BL.Messages.Output.Handshake;
+using NextHave.BL.Messages.Output.Messenger;
 using NextHave.BL.Messages.Output.Navigators;
 using NextHave.BL.Messages.Output.Rooms.Engine;
 using NextHave.BL.Messages.Output.Rooms.Session;
 using NextHave.BL.Messages.Output.Users;
 using NextHave.BL.Messages.Parsers.Navigators;
+using NextHave.BL.Models.Users;
 using NextHave.BL.Services.Navigators;
 using NextHave.BL.Services.Packets;
 using NextHave.BL.Services.Rooms;
+using NextHave.BL.Services.Rooms.Instances;
 using NextHave.BL.Services.Users;
 using NextHave.DAL.Enums;
+using ZstdSharp.Unsafe;
 
 namespace NextHave.BL.Messages.Input.Handlers
 {
@@ -66,7 +73,35 @@ namespace NextHave.BL.Messages.Input.Handlers
 
             packetsService.Subscribe<GoToHotelViewMessage>(this, OnGoToHotelViewMessage);
 
+            packetsService.Subscribe<MessengerInitMessage>(this, OnMessengerInitMessage);
+
+            packetsService.Subscribe<SendMessageMessage>(this, OnSendMessageMessage);
+
             await Task.CompletedTask;
+        }
+
+        public async Task OnSendMessageMessage(SendMessageMessage message, Client client)
+        {
+            if (client.UserInstance?.User == default)
+                return;
+
+            await client.UserInstance.EventsService.DispatchAsync<SendMessageEvent>(new()
+            {
+                Message = message.Message,
+                UserToId = message.UserId,
+                UserId = client.UserInstance.User.Id
+            });
+        }
+
+        public async Task OnMessengerInitMessage(MessengerInitMessage message, Client client)
+        {
+            if (client.UserInstance == default)
+                return;
+
+            await client.UserInstance.EventsService.DispatchAsync<MessengerInitMessageEvent>(new()
+            {
+                UserId = client.UserInstance!.User!.Id
+            });
         }
 
         public async Task OnGoToHotelViewMessage(GoToHotelViewMessage message, Client client)
@@ -87,7 +122,6 @@ namespace NextHave.BL.Messages.Input.Handlers
                 Kick = false,
                 RoomId = client.UserInstance.CurrentRoomId!.Value,
             });
-            client.UserInstance.CurrentRoomInstance = default;
             client.UserInstance.CurrentRoomId = default;
         }
 
@@ -293,8 +327,6 @@ namespace NextHave.BL.Messages.Input.Handlers
                     Kick = false,
                     RoomId = client.UserInstance.CurrentRoomId!.Value,
                 });
-                client.UserInstance.CurrentRoomInstance = default;
-                client.UserInstance.CurrentRoomId = default;
             }
 
             var roomInstance = await roomsService.GetRoomInstance(message.RoomId);
@@ -303,6 +335,8 @@ namespace NextHave.BL.Messages.Input.Handlers
                 await client.Send(new CloseConnectionMessageComposer());
                 return;
             }
+
+            client.UserInstance.CurrentRoomId = roomInstance.Room.Id;
 
             await client.Send(new OpenConnectionMessageComposer(roomInstance.Room.Id));
 
@@ -346,9 +380,6 @@ namespace NextHave.BL.Messages.Input.Handlers
                 await client.Send(new RoomPropertyMessageComposer("floor", roomInstance.Room.Floor!));
 
             await client.Send(new RoomPropertyMessageComposer("landscape", roomInstance.Room.Landscape!));
-
-            client.UserInstance.CurrentRoomInstance = roomInstance;
-            client.UserInstance.CurrentRoomId = roomInstance.Room.Id;
         }
 
         public async Task OnSSOTicket(SSOTicketMessage message, Client client)

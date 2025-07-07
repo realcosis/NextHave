@@ -77,7 +77,6 @@ namespace NextHave.BL.Services.Rooms.Components
             var emojis = GetEmojis(message);
             emojis.ForEach(emoji => message = message.Replace(emoji.Key, emoji.Value));
 
-
             if (message.StartsWith(':'))
             {
                 await ChatCommandHandler.InvokeCommand(message, scope.ServiceProvider, userInstance.Client);

@@ -51,7 +51,8 @@ namespace NextHave.BL
             {
                 var userComponents = sp.GetRequiredService<IEnumerable<IUserComponent>>();
                 var userEventsFactory = sp.GetRequiredService<UserEventsFactory>();
-                return new UserInstance(userComponents, userEventsFactory);
+                var roomFactory = sp.GetRequiredService<RoomFactory>();
+                return new UserInstance(userComponents, userEventsFactory, roomFactory);
             });
 
             services.AddKeyedService<IRoomUserInstance, RoomUserInstance>((sp, key) => new RoomUserInstance());

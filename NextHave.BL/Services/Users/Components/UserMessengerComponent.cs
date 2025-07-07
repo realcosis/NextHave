@@ -1,20 +1,22 @@
-﻿using Dolphin.Core.Injection;
+﻿using Dolphin.Core.Backgrounds;
+using Dolphin.Core.Injection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NextHave.BL.Clients;
+using NextHave.BL.Events.Users.Friends;
 using NextHave.BL.Events.Users.Messenger;
 using NextHave.BL.Mappers;
-using NextHave.BL.Messages.Input.Messenger;
+using NextHave.BL.Messages.Output.Friends;
 using NextHave.BL.Messages.Output.Messenger;
 using NextHave.BL.Models.Users.Messenger;
-using NextHave.BL.Services.Packets;
 using NextHave.BL.Services.Users.Instances;
+using NextHave.BL.Tasks.Rooms.Chat;
 using NextHave.DAL.MySQL;
 
 namespace NextHave.BL.Services.Users.Components
 {
     [Service(ServiceLifetime.Scoped)]
-    class UserMessengerComponent(IServiceScopeFactory serviceScopeFactory, IPacketsService packetsService) : IUserComponent
+    class UserMessengerComponent(IServiceScopeFactory serviceScopeFactory) : IUserComponent
     {
         IUserInstance? _userInstance;
 
@@ -22,15 +24,24 @@ namespace NextHave.BL.Services.Users.Components
 
         List<MessengerRequest> Requests { get; set; } = [];
 
+        Dictionary<string, string> Emojis = [];
+
         async Task IUserComponent.Dispose()
         {
             if (_userInstance == default)
                 return;
 
+            await _userInstance.EventsService.UnsubscribeAsync<MessengerInitMessageEvent>(_userInstance, OnMessengerInitMessage);
+
             await _userInstance.EventsService.UnsubscribeAsync<FriendStatusChangedEvent>(_userInstance, OnFriendStatusChanged);
+
+            await _userInstance.EventsService.UnsubscribeAsync<FriendUpdateEvent>(_userInstance, OnFriendUpdate);
+
+            await _userInstance.EventsService.UnsubscribeAsync<SendMessageEvent>(_userInstance, OnSendMessage);
 
             Friends.Clear();
             Requests.Clear();
+
             _userInstance = default;
         }
 
@@ -69,26 +80,73 @@ namespace NextHave.BL.Services.Users.Components
 
             Friends = [.. senderFriendships.Union(receiveriendships)];
 
-            packetsService.Subscribe<MessengerInitMessage>(_userInstance, OnMessengerInitMessage);
+            Emojis = await mysqlDbContext.RoomEmojis.AsNoTracking().ToDictionaryAsync(k => k.Code!, v => v.Emoji!);
+
+            await _userInstance.EventsService.SubscribeAsync<MessengerInitMessageEvent>(_userInstance, OnMessengerInitMessage);
 
             await _userInstance.EventsService.SubscribeAsync<FriendStatusChangedEvent>(_userInstance, OnFriendStatusChanged);
+
+            await _userInstance.EventsService.SubscribeAsync<FriendUpdateEvent>(_userInstance, OnFriendUpdate);
+
+            await _userInstance.EventsService.SubscribeAsync<SendMessageEvent>(_userInstance, OnSendMessage);
         }
 
-        public async Task OnFriendUpdate(FriendUpdateEvent @event)
+        async Task OnSendMessage(SendMessageEvent message)
         {
-            var friend = Friends.FirstOrDefault(f => f.UserId == @event.FriendId);
-            if (friend != default)
-            {
-                friend.CurrentRoom = @event.RoomInstance;
-                friend.Client = @event.Client;
+            if (!Friends.Any(f => f.UserId == message.UserToId) || _userInstance?.User == default)
+                return;
 
-                if (@event.Notification && friend.Client != default && friend.Client.UserInstance != default)
-                    await friend.Client.Send(new FriendListUpdateMessageComposer(friend.Client.UserInstance.User, friend, default));
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+
+            var usersService = scope.ServiceProvider.GetRequiredService<IUsersService>();
+            var backgroundsService = scope.ServiceProvider.GetRequiredService<IBackgroundsService>();
+            var task = scope.ServiceProvider.GetTask<AddPrivateChatlogTask>("AddPrivateChatlogTask");
+
+            await scope.DisposeAsync();
+
+            if (!usersService.Users.TryGetValue(message.UserToId, out var user))
+                return;
+
+            if (user == default)
+                return;
+
+            if (user.Client == default)
+                return;
+
+            if (user.User == default)
+                return;
+
+            var text = message.Message!;
+
+            var emojis = GetEmojis(text);
+            emojis.ForEach(emoji => text = text.Replace(emoji.Key, emoji.Value));
+
+            await user.Client.Send(new NewConsoleMessageMessageComposer(_userInstance.User.Id, text));
+
+            if (task != default)
+            {
+                task.Parameters.TryAdd("fromId", _userInstance.User.Id);
+                task.Parameters.TryAdd("toId", user.User.Id);
+                task.Parameters.TryAdd("message", message.Message!);
+                backgroundsService.Queue(task);
             }
         }
 
+        async Task OnFriendUpdate(FriendUpdateEvent @event)
+        {
+            var friend = Friends.FirstOrDefault(f => f.UserId == @event.FriendId);
+            if (friend != default && @event.Client?.UserInstance?.CurrentRoomInstance != default)
+            {
+                friend.Client = @event.Client;
+                friend.CurrentRoom = @event.Client.UserInstance.CurrentRoomInstance;
 
-        public async Task OnFriendStatusChanged(FriendStatusChangedEvent @event)
+                var client = GetClient();
+                if (@event.Notification && client?.UserInstance?.User != default)
+                    await client.Send(new FriendListUpdateMessageComposer(client.UserInstance.User, friend, default));
+            }
+        }
+
+        async Task OnFriendStatusChanged(FriendStatusChangedEvent @event)
         {
             if (_userInstance?.User == default)
                 return;
@@ -96,62 +154,66 @@ namespace NextHave.BL.Services.Users.Components
             var friendIds = Friends.Select(f => f.UserId).ToList();
 
             var clients = Sessions.ConnectedClients.Values.Where(c => c.UserInstance?.User != default && friendIds.Contains(c.UserInstance.User.Id)).ToList();
-
             if (clients.Count <= 0)
                 return;
 
             var cancellationSource = new CancellationTokenSource();
-            await Parallel.ForEachAsync(clients, new ParallelOptions()
+            await Parallel.ForEachAsync(clients.Where(c => c.UserInstance?.User != default).ToList(), new ParallelOptions()
             {
                 CancellationToken = cancellationSource.Token,
                 MaxDegreeOfParallelism = Environment.ProcessorCount
             }, async (client, token) =>
             {
-                if (client.UserInstance?.User == default)
-                    return;
-                
-                await client.UserInstance.EventsService.DispatchAsync<FriendUpdateEvent>(new()
+                await client.UserInstance!.EventsService.DispatchAsync<FriendUpdateEvent>(new()
                 {
-                    FriendId = @event.UserId,
-                    Notification = true,
                     Client = client,
-                    RoomInstance = client.UserInstance.CurrentRoomInstance,
-                    UserId = client.UserInstance.User.Id
+                    Notification = true,
+                    FriendId = _userInstance.User.Id,
+                    UserId = client.UserInstance.User!.Id
                 });
 
                 await _userInstance.EventsService.DispatchAsync<FriendUpdateEvent>(new()
                 {
-                    FriendId = client.UserInstance.User.Id,
-                    Notification = @event.Notification,
                     Client = client,
-                    RoomInstance = _userInstance.CurrentRoomInstance,
+                    Notification = @event.Notification,
+                    FriendId = client.UserInstance.User!.Id,
                     UserId = _userInstance.User.Id
                 });
             });
         }
 
-        public async Task OnMessengerInitMessage(MessengerInitMessage message, Client client)
+        async Task OnMessengerInitMessage(MessengerInitMessageEvent _)
         {
-            if (_userInstance?.User == default)
+            if (_userInstance?.Client == default || _userInstance?.User == default)
                 return;
 
             var friends = Friends.Where(b => b.Online).ToList();
 
-            await client.Send(new MessengerInitMessageComposer());
+            await _userInstance.Client.Send(new MessengerInitMessageComposer());
 
             var page = 0;
             var pages = (friends.Count - 1) / 500 + 1;
 
             if (friends.Count == 0)
-                await client.Send(new BuddyListMessageComposer(friends, pages, page));
+                await _userInstance.Client.Send(new BuddyListMessageComposer(friends, pages, page));
             else
             {
                 foreach (var batch in friends.Chunk(500))
                 {
-                    await client.Send(new BuddyListMessageComposer([.. batch], pages, page));
+                    await _userInstance.Client.Send(new BuddyListMessageComposer([.. batch], pages, page));
                     page++;
                 }
             }
         }
+
+        #region private methods 
+
+        Client? GetClient()
+            => Sessions.ConnectedClients.Values.FirstOrDefault(cc => cc.UserInstance?.User != default && _userInstance?.User != default && cc.UserInstance.User.Id == _userInstance.User.Id);
+
+        List<KeyValuePair<string, string>> GetEmojis(string text)
+            => [.. Emojis.Where(e => text.Contains(e.Key, StringComparison.InvariantCultureIgnoreCase))];
+
+        #endregion
     }
 }

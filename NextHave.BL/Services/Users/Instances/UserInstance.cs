@@ -1,4 +1,5 @@
-﻿using NextHave.BL.Clients;
+﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using NextHave.BL.Clients;
 using NextHave.BL.Models.Permissions;
 using NextHave.BL.Models.Users;
 using NextHave.BL.Services.Rooms;
@@ -8,7 +9,7 @@ using NextHave.BL.Services.Users.Components;
 
 namespace NextHave.BL.Services.Users.Instances
 {
-    class UserInstance(IEnumerable<IUserComponent> userComponents, UserEventsFactory userEventsFactory) : IUserInstance
+    class UserInstance(IEnumerable<IUserComponent> userComponents, UserEventsFactory userEventsFactory, RoomFactory roomFactory) : IUserInstance
     {
         IUserInstance Instance => this;
 
@@ -20,7 +21,7 @@ namespace NextHave.BL.Services.Users.Instances
 
         int? IUserInstance.CurrentRoomId { get; set; }
 
-        IRoomInstance? IUserInstance.CurrentRoomInstance { get; set; }
+        IRoomInstance? IUserInstance.CurrentRoomInstance => Instance.CurrentRoomId.HasValue ? roomFactory.GetRoomInstance(Instance.CurrentRoomId!.Value) : default;
 
         Permission? IUserInstance.Permission { get; set; }
 
@@ -40,7 +41,7 @@ namespace NextHave.BL.Services.Users.Instances
                 await userComponent.Dispose();
             Instance.User = default;
             Instance.Client = default;
-            Instance.CurrentRoomInstance = default;
+            Instance.CurrentRoomId = default;
             Instance.Permission = default;
         }
     }

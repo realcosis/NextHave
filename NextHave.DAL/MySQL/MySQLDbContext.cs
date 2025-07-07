@@ -16,6 +16,10 @@ namespace NextHave.DAL.MySQL
 
         public DbSet<ChatlogRoomEntity> ChatlogRooms { get; set; }
 
+        public DbSet<ChatlogPrivateEntity> ChatlogPrivates { get; set; }
+
+        public DbSet<ChatlogPrivateDetailEntity> ChatlogPrivateDetails { get; set; }
+
         public DbSet<UserTicketEntity> UserTickets { get; set; }
 
         public DbSet<NextHaveSettingEntity> NextHaveSettings { get; set; }

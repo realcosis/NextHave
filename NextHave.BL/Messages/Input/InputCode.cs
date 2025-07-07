@@ -19,6 +19,8 @@
 
         public const short GetGuestRoomMessageEvent = 2230;
 
+        public const short SendMessageMessageEvent = 3567;
+
         public const short ChatMessageEvent = 1314;
 
         public const short ShoutMessageEvent = 2085;

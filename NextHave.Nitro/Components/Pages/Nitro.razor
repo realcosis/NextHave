@@ -36,7 +36,6 @@
         if (!(user.Identity is { IsAuthenticated: true }))
             navigation.NavigateTo("/login");
 
-
         if (firstRender)
         {
             var userId = await authenticationStateProvider.GetUserIdFromToken();

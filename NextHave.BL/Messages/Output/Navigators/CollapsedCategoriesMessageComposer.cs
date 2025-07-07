@@ -1,6 +1,6 @@
 ﻿using NextHave.BL.Messages.Output;
 
-namespace NextHave.BL.Messages.Input.Navigators
+namespace NextHave.BL.Messages.Output.Navigators
 {
     public class CollapsedCategoriesMessageComposer() : Composer(OutputCode.CollapsedCategoriesMessageComposer)
     {

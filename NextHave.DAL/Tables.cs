@@ -6,6 +6,10 @@
 
         public const string ChatlogRooms = "chatlog_rooms";
 
+        public const string ChatlogPrivates = "chatlogs_privates";
+
+        public const string ChatlogPrivateDetails = "chatlogs_private_details";
+
         public const string Permissions = "permissions";
 
         public const string PermissionGroups = "permission_groups";

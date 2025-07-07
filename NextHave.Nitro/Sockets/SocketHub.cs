@@ -35,7 +35,6 @@ namespace NextHave.Nitro.Sockets
                             NotifyUser = false,
                             RoomId = client.UserInstance.CurrentRoomId!.Value,
                         });
-                        client.UserInstance.CurrentRoomInstance = default;
                         client.UserInstance.CurrentRoomId = default;
                     }
                     await client.UserInstance.EventsService.DispatchAsync<UserDisconnectedEvent>(new()

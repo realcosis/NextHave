@@ -9,6 +9,7 @@ using NextHave.BL.Messages.Input.Rooms;
 using NextHave.BL.Messages.Input.Rooms.Chat;
 using NextHave.BL.Messages.Input.Rooms.Engine;
 using NextHave.BL.Messages.Parsers;
+using NextHave.BL.Messages.Parsers.Friends;
 using NextHave.BL.Messages.Parsers.Handshake;
 using NextHave.BL.Messages.Parsers.Navigators;
 using NextHave.BL.Messages.Parsers.Rooms.Chat;
@@ -65,6 +66,8 @@ namespace NextHave.BL.Services.Parsers
             parsers.TryAdd(InputCode.GetFurnitureAliasesMessageEvent, new BaseParser<GetFurnitureAliasesMessage>());
 
             parsers.TryAdd(InputCode.MoveAvatarMessageEvent, new MoveAvatarParser());
+
+            parsers.TryAdd(InputCode.SendMessageMessageEvent, new SendMessageParser());
 
             parsers.TryAdd(InputCode.ChatMessageEvent, new ChatMessageParser());
 

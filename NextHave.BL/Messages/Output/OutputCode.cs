@@ -77,5 +77,7 @@
         public const short BuddyListMessageComposer = 3130;
 
         public const short FriendListUpdateMessageComposer = 2800;
+
+        public const short NewConsoleMessageMessageComposer = 1587;
     }
 }
