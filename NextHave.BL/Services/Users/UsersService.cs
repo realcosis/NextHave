@@ -1,8 +1,6 @@
 ﻿using Dolphin.Core.Exceptions;
 using Dolphin.Core.Injection;
 using Dolphin.Core.Validations;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -14,9 +12,6 @@ using NextHave.BL.Models.Groups;
 using NextHave.BL.Models.Rooms;
 using NextHave.BL.Models.Users;
 using NextHave.BL.Services.Permissions;
-using NextHave.BL.Services.Rooms;
-using NextHave.BL.Services.Rooms.Factories;
-using NextHave.BL.Services.Rooms.Instances;
 using NextHave.BL.Services.Settings;
 using NextHave.BL.Services.Users.Factories;
 using NextHave.BL.Services.Users.Instances;
@@ -24,7 +19,6 @@ using NextHave.DAL.Mongo;
 using NextHave.DAL.MySQL;
 using NextHave.DAL.MySQL.Entities;
 using System.Collections.Concurrent;
-using System.ComponentModel.DataAnnotations;
 
 namespace NextHave.BL.Services.Users
 {

@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using NextHave.BL.Messages;
 using NextHave.BL.Messages.Input;
 using NextHave.BL.Messages.Input.Handshake;
+using NextHave.BL.Messages.Input.Messenger;
 using NextHave.BL.Messages.Input.Navigators;
 using NextHave.BL.Messages.Input.Rooms;
 using NextHave.BL.Messages.Input.Rooms.Chat;
@@ -80,6 +81,8 @@ namespace NextHave.BL.Services.Parsers
             parsers.TryAdd(InputCode.GetUserFlatCatsMessageEvent, new BaseParser<GetUserFlatCatsMessage>());
 
             parsers.TryAdd(InputCode.GoToHotelViewMessageEvent, new BaseParser<GoToHotelViewMessage>());
+
+            parsers.TryAdd(InputCode.MessengerInitMessageEvent, new BaseParser<MessengerInitMessage>());
         }
     }
 }

@@ -7,6 +7,7 @@ using NextHave.BL.Events.Rooms.Items;
 using NextHave.BL.Events.Rooms.Session;
 using NextHave.BL.Events.Rooms.Users;
 using NextHave.BL.Events.Rooms.Users.Movements;
+using NextHave.BL.Events.Users.Messenger;
 using NextHave.BL.Events.Users.Session;
 using NextHave.BL.Messages.Input.Handshake;
 using NextHave.BL.Messages.Input.Navigators;
@@ -365,6 +366,12 @@ namespace NextHave.BL.Messages.Input.Handlers
             await client.Send(new AvailabilityStatusMessageComposer(true, false, true));
             await client.Send(new UserRightsMessageComposer(2, userInstance.Permission!.SecurityLevel!.Value, true));
             await client.Send(new NavigatorHomeRoomMessageComposer(userInstance.User!.HomeRoom ?? 0, userInstance.User!.HomeRoom ?? 0));
+
+            await userInstance.EventsService.DispatchAsync<FriendStatusChangedEvent>(new()
+            {
+                UserId = userInstance.User!.Id,
+                Notification = true
+            });
 
             await userInstance.EventsService.DispatchAsync<UserConnectedEvent>(new()
             {

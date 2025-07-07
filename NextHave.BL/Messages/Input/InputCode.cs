@@ -34,5 +34,7 @@
         public const short GetUserFlatCatsMessageEvent = 3027;
 
         public const short GoToHotelViewMessageEvent = 105;
+
+        public const short MessengerInitMessageEvent = 2781;
     }
 }

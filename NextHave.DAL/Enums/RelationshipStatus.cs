@@ -1,6 +1,6 @@
 ﻿namespace NextHave.DAL.Enums
 {
-    public enum RelationshipStatus
+    public enum RelationshipStatus : byte
     {
         None,
         InLove,

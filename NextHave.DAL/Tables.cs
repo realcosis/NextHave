@@ -47,5 +47,9 @@
         public const string GroupsMemberships = "group_memberships";
 
         public const string Rooms = "rooms";
+
+        public const string MessengerFriendships = "messenger_friendships";
+
+        public const string MessengerRequests = "messenger_requests";
     }
 }

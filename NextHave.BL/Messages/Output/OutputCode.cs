@@ -71,5 +71,11 @@
         public const short CollapsedCategoriesMessageComposer = 1543;
 
         public const short UserFlatCatsMessageComposer = 1562;
+
+        public const short MessengerInitMessageComposer = 1605;
+
+        public const short BuddyListMessageComposer = 3130;
+
+        public const short FriendListUpdateMessageComposer = 2800;
     }
 }

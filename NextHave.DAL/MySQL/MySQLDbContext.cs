@@ -46,6 +46,10 @@ namespace NextHave.DAL.MySQL
 
         public DbSet<UserFavoriteEntity> UserFavorites { get; set; }
 
+        public DbSet<MessengerFriendshipEntity> MessengerFriendships { get; set; }
+
+        public DbSet<MessengerRequestEntity> MessengerRequests { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -59,6 +63,10 @@ namespace NextHave.DAL.MySQL
             builder.Entity<UserFavoriteEntity>().HasKey(e => new { e.UserId, e.RoomId });
 
             builder.Entity<NextHaveSettingEntity>().HasKey(e => new { e.Key, e.Type });
+
+            builder.Entity<MessengerFriendshipEntity>().HasKey(e => new { e.Sender, e.Receiver });
+
+            builder.Entity<MessengerRequestEntity>().HasKey(e => new { e.Sender, e.Receiver });
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder builder)
