@@ -1,8 +1,21 @@
 ﻿@using NextHave.BL.Services.Settings
+@using NextHave.Nitro.Authentications
+
+@inject ISettingsService settingsService
 
 @inherits LayoutComponentBase
 
 @inject ISettingsService settingsService
+@inject NextHaveAuthenticationStateProvider authenticationStateProvider
+@inject NavigationManager navigation
+
+<HeadContent>
+    <title>@hotelName</title>
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <link rel="stylesheet" href="@Assets["app.css"]" />
+    <link rel="stylesheet" href="@Assets["tailwind.css"]" />
+</HeadContent>
 
 <CascadingValue Value="hotelName">@Body</CascadingValue>
 
