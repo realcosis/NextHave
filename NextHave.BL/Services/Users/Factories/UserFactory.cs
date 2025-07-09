@@ -10,7 +10,7 @@ namespace NextHave.BL.Services.Users.Factories
     {
         public IUserInstance? GetUserInstance(int userId)
         {
-            if (userInstanceProvider.HasServiceRegstered(userId, out var userInstance))
+            if (userInstanceProvider.HasService(userId, out var userInstance))
                 return userInstance;
 
             return default;
@@ -18,16 +18,16 @@ namespace NextHave.BL.Services.Users.Factories
 
         public IUserInstance GetUserInstance(int userId, User user)
         {
-            if (userInstanceProvider.HasServiceRegstered(userId, out var userInstance))
+            if (userInstanceProvider.HasService(userId, out var userInstance))
                 return userInstance!;
 
-            userInstance = userInstanceProvider.GetRequiredKeyedService(userId);
+            userInstance = userInstanceProvider.GetService(userId);
             userInstance.User = user;
 
             return userInstance;
         }
 
         public void DestroyUserInstance(int userId)
-            => userInstanceProvider.Disable(userId);
+            => userInstanceProvider.DestroyService(userId);
     }
 }

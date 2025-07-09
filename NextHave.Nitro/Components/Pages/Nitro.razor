@@ -30,14 +30,14 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        var authState = await authenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-
-        if (!(user.Identity is { IsAuthenticated: true }))
-            navigation.NavigateTo("/login");
-
         if (firstRender)
         {
+            var authState = await authenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            if (user.Identity is { IsAuthenticated: false })
+                navigation.NavigateTo("/login");
+
             var userId = await authenticationStateProvider.GetUserIdFromToken();
             if (!userId.HasValue)
             {

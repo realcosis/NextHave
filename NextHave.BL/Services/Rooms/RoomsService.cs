@@ -3,6 +3,7 @@ using Dolphin.Core.Injection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using NextHave.BL.Clients;
 using NextHave.BL.Events.Rooms;
 using NextHave.BL.Events.Rooms.Engine;
 using NextHave.BL.Events.Rooms.Items;
@@ -10,12 +11,15 @@ using NextHave.BL.Localizations;
 using NextHave.BL.Mappers;
 using NextHave.BL.Models.Groups;
 using NextHave.BL.Models.Rooms;
+using NextHave.BL.Models.Rooms.Navigators;
 using NextHave.BL.Services.Groups;
 using NextHave.BL.Services.Rooms.Factories;
 using NextHave.BL.Services.Rooms.Instances;
+using NextHave.BL.Services.Texts;
 using NextHave.DAL.Mongo;
 using NextHave.DAL.MySQL;
 using System.Collections.Concurrent;
+using System.ComponentModel.DataAnnotations;
 
 namespace NextHave.BL.Services.Rooms
 {
@@ -52,9 +56,7 @@ namespace NextHave.BL.Services.Rooms
             var room = await Instance.GetRoom(roomId);
             if (room != default)
             {
-                await using var scope = serviceScopeFactory.CreateAsyncScope();
-                (roomInstance, var firstLoad) = scope.ServiceProvider.GetRequiredService<RoomFactory>().GetRoomInstance(roomId, room);
-                await scope.DisposeAsync();
+                (roomInstance, var firstLoad) = (await serviceScopeFactory.GetRequiredService<RoomFactory>()).GetRoomInstance(roomId, room);
                 if (firstLoad)
                 {
                     await roomInstance.Init();
@@ -86,9 +88,7 @@ namespace NextHave.BL.Services.Rooms
 
                 await roomInstance.Dispose();
 
-                await using var scope = serviceScopeFactory.CreateAsyncScope();
-                scope.ServiceProvider.GetRequiredService<RoomFactory>().DestroyRoomInstance(roomId);
-                await scope.DisposeAsync();
+                (await serviceScopeFactory.GetRequiredService<RoomFactory>()).DestroyRoomInstance(roomId);
 
                 Instance.ActiveRooms.TryRemove(roomId, out _);
             }
@@ -100,6 +100,28 @@ namespace NextHave.BL.Services.Rooms
                 return await GetCustomModelData(roomId);
 
             return await GetModelData(modelName);
+        }
+
+        async Task IRoomsService.SaveRoom(Room room, Client client, NavigatorCategory category)
+        {
+            var mongoDbContext = await serviceScopeFactory.GetRequiredService<MongoDbContext>();
+            
+            try
+            {
+                var entity = await mongoDbContext.Rooms.FirstOrDefaultAsync(r => r.EntityId == room.Id) ?? throw new DolphinException(Errors.RoomNotFound);
+
+                entity.Map(room, category);
+
+                mongoDbContext.Rooms.Update(entity);
+                await mongoDbContext.SaveChangesAsync();
+            }
+            catch (DolphinException exception)
+            {
+                await client.SendSystemNotification("generic", new()
+                {
+                    ["message"] = string.Join("\n", exception.Messages)
+                });
+            }
         }
 
         async Task IStartableService.StartAsync()

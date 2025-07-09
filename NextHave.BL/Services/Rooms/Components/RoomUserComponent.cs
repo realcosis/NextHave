@@ -271,7 +271,7 @@ namespace NextHave.BL.Services.Rooms.Components
 
             await roomUserInstance.Client!.Send(new UsersMessageComposer([.. users.Values]));
 
-            await roomUserInstance.Client!.Send(new RoomVisualizationSettingsMessageComposer(_roomInstance.Room.AllowHideWall, _roomInstance!.Room.WallThickness, _roomInstance!.Room.FloorThickness));
+            await roomUserInstance.Client!.Send(new RoomVisualizationSettingsMessageComposer(_roomInstance.Room.AllowHidewall, _roomInstance!.Room.WallThickness, _roomInstance!.Room.FloorThickness));
 
             users.TryAdd(roomUserInstance.VirutalId, roomUserInstance);
 

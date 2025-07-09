@@ -16,10 +16,8 @@ namespace NextHave.BL.Services.Navigators.Filters
         {           
             var resultLists = new List<SearchResultList>();
             
-            await using var scope = serviceScopeFactory.CreateAsyncScope();
-            var navigatorsService = scope.ServiceProvider.GetRequiredService<INavigatorsService>();
-            var roomsService = scope.ServiceProvider.GetRequiredService<IRoomsService>();
-            await scope.DisposeAsync();
+            var navigatorsService = await serviceScopeFactory.GetRequiredService<INavigatorsService>();
+            var roomsService = await serviceScopeFactory.GetRequiredService<IRoomsService>();
 
             foreach (var (index, category) in navigatorsService.PublicCategories.Values.Index())
             {

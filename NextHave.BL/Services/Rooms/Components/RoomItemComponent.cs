@@ -65,8 +65,7 @@ namespace NextHave.BL.Services.Rooms.Components
             if (!items.TryGetValue(@event.ItemId, out var item))
                 return;
 
-            await using var scope = serviceScopeFactory.CreateAsyncScope();
-            var mongoDbContext = scope.ServiceProvider.GetRequiredService<MongoDbContext>();
+            var mongoDbContext = await serviceScopeFactory.GetRequiredService<MongoDbContext>();
 
             if (!item.Base!.AllowWalk)
                 _roomInstance.RoomModel.SetWalkable(item.Point!.GetX, item.Point!.GetY, true);
@@ -89,9 +88,8 @@ namespace NextHave.BL.Services.Rooms.Components
             if (_roomInstance?.Room == default || _roomInstance?.RoomModel == default || !items.IsEmpty)
                 return;
 
-            await using var scope = serviceScopeFactory.CreateAsyncScope();
-            var itemsService = scope.ServiceProvider.GetRequiredService<IItemsService>();
-            var mongoDbContext = scope.ServiceProvider.GetRequiredService<MongoDbContext>();
+            var itemsService = await serviceScopeFactory.GetRequiredService<IItemsService>();
+            var mongoDbContext = await serviceScopeFactory.GetRequiredService<MongoDbContext>();
 
             var roomItems = await mongoDbContext.RoomItems.AsNoTracking().Where(i => i.RoomId == @event.RoomId).ToListAsync();
 

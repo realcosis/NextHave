@@ -1,4 +1,6 @@
-﻿using Dolphin.Core.Injection;
+﻿using Dolphin.Core.Backgrounds;
+using Dolphin.Core.Extensions;
+using Dolphin.Core.Injection;
 using Microsoft.Extensions.DependencyInjection;
 using NextHave.BL.Clients;
 using NextHave.BL.Events.Rooms.Chat;
@@ -18,26 +20,27 @@ using NextHave.BL.Messages.Input.Rooms;
 using NextHave.BL.Messages.Input.Rooms.Chat;
 using NextHave.BL.Messages.Input.Rooms.Connection;
 using NextHave.BL.Messages.Input.Rooms.Engine;
+using NextHave.BL.Messages.Input.Rooms.Settings;
 using NextHave.BL.Messages.Output.Handshake;
-using NextHave.BL.Messages.Output.Messenger;
 using NextHave.BL.Messages.Output.Navigators;
+using NextHave.BL.Messages.Output.roomInstances.Settings;
 using NextHave.BL.Messages.Output.Rooms.Engine;
 using NextHave.BL.Messages.Output.Rooms.Session;
+using NextHave.BL.Messages.Output.Rooms.Settings;
 using NextHave.BL.Messages.Output.Users;
 using NextHave.BL.Messages.Parsers.Navigators;
-using NextHave.BL.Models.Users;
 using NextHave.BL.Services.Navigators;
 using NextHave.BL.Services.Packets;
 using NextHave.BL.Services.Rooms;
-using NextHave.BL.Services.Rooms.Instances;
+using NextHave.BL.Services.Texts;
 using NextHave.BL.Services.Users;
+using NextHave.BL.Tasks.Rooms.Settings;
 using NextHave.DAL.Enums;
-using ZstdSharp.Unsafe;
 
 namespace NextHave.BL.Messages.Input.Handlers
 {
     [Service(ServiceLifetime.Singleton)]
-    class MessageHandler(IPacketsService packetsService, IServiceProvider serviceProvider) : IMessageHandler, IStartableService
+    class MessageHandler(IPacketsService packetsService, IServiceProvider serviceProvider, IServiceScopeFactory serviceScopeFactory) : IMessageHandler, IStartableService
     {
         public async Task StartAsync()
         {
@@ -77,7 +80,80 @@ namespace NextHave.BL.Messages.Input.Handlers
 
             packetsService.Subscribe<SendMessageMessage>(this, OnSendMessageMessage);
 
+            packetsService.Subscribe<SaveRoomSettingsMessage>(this, OnSaveRoomSettingsMessage);
+
+            packetsService.Subscribe<GetRoomSettingsMessage>(this, OnGetRoomSettingsMessage);
+
             await Task.CompletedTask;
+        }
+
+        public async Task OnSaveRoomSettingsMessage(SaveRoomSettingsMessage message, Client client)
+        {
+            if (client?.UserInstance?.User == default)
+                return;
+
+            var roomsService = serviceProvider.GetRequiredService<IRoomsService>();
+
+            var navigatorsService = serviceProvider.GetRequiredService<INavigatorsService>();
+
+            var textsService = serviceProvider.GetRequiredService<ITextsService>();
+
+            var backgroundsService = serviceProvider.GetRequiredService<IBackgroundsService>();
+
+            var task = await serviceScopeFactory.GetRequiredKeyedService<SaveRoomSettingsTask>("SaveRoomSettingsTask");
+
+            var roomInstance = await roomsService.GetRoomInstance(message.RoomId);
+            if (roomInstance?.Room == default)
+                return;
+
+            if (!navigatorsService.NavigatorCategories.TryGetValue(message.CategoryId, out var category))
+            {
+                await client.SendSystemNotification("generic", new()
+                {
+                    ["message"] = textsService.GetText("nexthave_room_category_not_found", "Room category not found.")
+                });
+                return;
+            }
+
+            if (category.MinRank > client.UserInstance.User.Rank || (!roomInstance.CheckRights(client.UserInstance, true) && client.UserInstance.User.Rank >= category.MinRank))
+            {
+                await client.SendSystemNotification("generic", new()
+                {
+                    ["message"] = textsService.FormatText("nexthave_room_category_not_valid", "Room category not valid.", category.Name!)
+                });
+                return;
+            }
+
+            if (!roomInstance.CheckRights(client.UserInstance!, true))
+                return;
+
+            roomInstance.Room.UpdateCache(message);
+
+            if (task != default)
+            {
+                task.Parameters.TryAdd("room", roomInstance.Room.JsonSerialize(false)!);
+                task.Parameters.TryAdd("client", client.ConnectionId!);
+                task.Parameters.TryAdd("category", category.JsonSerialize(false)!);
+                backgroundsService.Queue(task);
+            }
+
+            await client.Send(new RoomSettingsSavedMessageComposer(message.RoomId));
+            await client.Send(new RoomInfoUpdatedMessageComposer(message.RoomId));
+            await client.Send(new RoomVisualizationSettingsMessageComposer(roomInstance.Room.AllowHidewall, roomInstance.Room.WallThickness, roomInstance.Room.FloorThickness));
+        }
+
+        public async Task OnGetRoomSettingsMessage(GetRoomSettingsMessage message, Client client)
+        {
+            var roomsService = serviceProvider.GetRequiredService<IRoomsService>();
+
+            var roomInstance = await roomsService.GetRoomInstance(message.RoomId);
+            if (roomInstance == default)
+                return;
+
+            if (!roomInstance.CheckRights(client.UserInstance!, true))
+                return;
+
+            await client.Send(new RoomSettingsDataMessageComposer(roomInstance));
         }
 
         public async Task OnSendMessageMessage(SendMessageMessage message, Client client)

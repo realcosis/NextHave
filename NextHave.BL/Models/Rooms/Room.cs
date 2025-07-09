@@ -1,7 +1,8 @@
-﻿using NextHave.DAL.Enums;
+﻿using NextHave.DAL.Utils;
+using NextHave.DAL.Enums;
 using NextHave.BL.Messages;
 using NextHave.BL.Models.Groups;
-using NextHave.DAL.Utils;
+using NextHave.BL.Messages.Input.Rooms.Settings;
 
 namespace NextHave.BL.Models.Rooms
 {
@@ -11,7 +12,7 @@ namespace NextHave.BL.Models.Rooms
 
         public string? RoomType { get; set; } = "private";
 
-        public string? Caption { get; set; } = "Room";
+        public string? Name { get; set; } = "Room";
 
         public int? OwnerId { get; set; }
 
@@ -53,7 +54,7 @@ namespace NextHave.BL.Models.Rooms
 
         public bool AllowWalkthrough { get; set; }
 
-        public bool AllowHideWall { get; set; }
+        public bool AllowHidewall { get; set; }
 
         public bool AllowRightsOverride { get; set; }
 
@@ -93,10 +94,22 @@ namespace NextHave.BL.Models.Rooms
 
         public Group? Group { get; set; }
 
+        public int ChatMode { get; set; }
+
+        public int ChatWeight { get; set; }
+
+        public int ChatSpeed { get; set; }
+
+        public int ChatDistance { get; set; }
+
+        public int ChatProtection { get; set; }
+
+        public bool AllowNavigatorDynamicCategories { get; set; }
+
         public void Serialize(ServerMessage message)
         {
             message.AddInt32(Id);
-            message.AddString(Caption!);
+            message.AddString(Name!);
 
             if (RoomType == "public")
             {
@@ -147,6 +160,33 @@ namespace NextHave.BL.Models.Rooms
                 message.AddString(Group.Name!);
                 message.AddString(Group.Image!);
             }
+        }
+
+        public void UpdateCache(SaveRoomSettingsMessage message)
+        {
+            AllowPets = message.AllowPets;
+            AllowPetsEat = message.AllowPetsEat;
+            AllowWalkthrough = message.AllowWalkthrough;
+            AllowHidewall = message.AllowHideWall;
+            Name = message.Name;
+            State = message.State;
+            Description = message.Description;
+            Category = message.CategoryId;
+            Password = message.Password;
+            BanSettings = message.BanType;
+            KickSettings = message.KickType;
+            MuteSettings = message.MuteType;
+            Tags.Clear();
+            Tags.AddRange(message.Tags);
+            UsersMax = message.UsersMax;
+            WallThickness = message.WallThickness;
+            FloorThickness = message.FloorThickness;
+            ChatMode = message.ChatModeType;
+            ChatWeight = message.ChatWeightType;
+            ChatSpeed = message.ChatSpeed;
+            ChatDistance = message.ChatDistance;
+            ChatProtection = message.ChatProtectionType;
+            TradeSettings = message.TradeType;
         }
     }
 }

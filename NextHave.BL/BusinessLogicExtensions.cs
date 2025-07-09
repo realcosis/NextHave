@@ -9,6 +9,8 @@ using NextHave.BL.Services.Rooms.Factories;
 using NextHave.BL.Services.Users.Components;
 using NextHave.BL.Services.Rooms.Components;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
+using System.Reflection.Metadata;
 
 namespace NextHave.BL
 {
@@ -45,7 +47,7 @@ namespace NextHave.BL
                 var roomEventsFactory = sp.GetRequiredService<RoomEventsFactory>();
                 var serviceScopeFactory = sp.GetRequiredService<IServiceScopeFactory>();
                 return new RoomInstance(roomComponents, roomEventsFactory, serviceScopeFactory);
-            });
+            }, ServiceLifetime.Singleton);
 
             services.AddKeyedService<IUserInstance, UserInstance>((sp, key) =>
             {
@@ -53,11 +55,44 @@ namespace NextHave.BL
                 var userEventsFactory = sp.GetRequiredService<UserEventsFactory>();
                 var roomFactory = sp.GetRequiredService<RoomFactory>();
                 return new UserInstance(userComponents, userEventsFactory, roomFactory);
-            });
+            }, ServiceLifetime.Singleton);
 
-            services.AddKeyedService<IRoomUserInstance, RoomUserInstance>((sp, key) => new RoomUserInstance());
+            services.AddKeyedService<IRoomUserInstance, RoomUserInstance>((sp, key) => new RoomUserInstance(), ServiceLifetime.Singleton);
 
             services.AddKeyedServices();
+        }
+
+        public static async Task<T> GetRequiredService<T>(this IServiceScopeFactory serviceScopeFactory) where T : class
+        {
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+
+            var service = scope.ServiceProvider.GetRequiredService<T>();
+
+            await scope.DisposeAsync();
+
+            return service;
+        }
+
+        public static async Task<T> GetRequiredKeyedService<T>(this IServiceScopeFactory serviceScopeFactory, Type type, string serviceKey) where T : class
+        {
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+
+            var service = scope.ServiceProvider.GetRequiredKeyedService(type, serviceKey) as T;
+
+            await scope.DisposeAsync();
+
+            return service!;
+        }
+
+        public static async Task<T> GetRequiredKeyedService<T>(this IServiceScopeFactory serviceScopeFactory, string serviceKey) where T : class
+        {
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+
+            var service = scope.ServiceProvider.GetRequiredKeyedService<T>(serviceKey);
+
+            await scope.DisposeAsync();
+
+            return service;
         }
 
         static IMappingExpression<E, R> MapProperties<E, R>(this IMappingExpression<E, R> mappingExpression, params (Expression<Func<R, object>> destinationMember, Expression<Func<E, object?>> sourceMember)[] properties)

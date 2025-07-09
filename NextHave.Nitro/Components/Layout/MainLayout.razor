@@ -1,8 +1,13 @@
 ﻿@using NextHave.BL.Services.Settings
+@using NextHave.Nitro.Authentications
 
 @inject ISettingsService settingsService
 
 @inherits LayoutComponentBase
+
+@inject ISettingsService settingsService
+@inject NextHaveAuthenticationStateProvider authenticationStateProvider
+@inject NavigationManager navigation
 
 <HeadContent>
     <title>@hotelName</title>
@@ -29,6 +34,12 @@
 @code {
     string? hotelName => settingsService.GetSetting("hotel_name");
 
-    [Parameter]
-    public string? title { get; set; }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        var authState = await authenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity is { IsAuthenticated: true })
+            navigation.NavigateTo("/game/nitro");
+    }
 }

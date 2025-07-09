@@ -9,7 +9,7 @@ namespace NextHave.BL.Messages.Output.Navigators
         {
             message.AddBoolean(isLoading);
             message.AddInt32(room.Id);
-            message.AddString(room.Caption!);
+            message.AddString(room.Name!);
             message.AddInt32(room.OwnerId ?? 0);
             message.AddString(room.Owner ?? string.Empty);
             message.AddInt32(room.State!.Value.ToInt());

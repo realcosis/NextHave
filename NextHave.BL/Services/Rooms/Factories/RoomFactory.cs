@@ -10,7 +10,7 @@ namespace NextHave.BL.Services.Rooms.Factories
     {
         public IRoomInstance? GetRoomInstance(int roomId)
         {
-            if (roomInstanceProvider.HasServiceRegstered(roomId, out var roomInstance))
+            if (roomInstanceProvider.HasService(roomId, out var roomInstance))
                 return roomInstance;
 
             return default;
@@ -18,16 +18,16 @@ namespace NextHave.BL.Services.Rooms.Factories
 
         public (IRoomInstance roomInstance, bool firstLoad) GetRoomInstance(int roomId, Room room)
         {
-            if (roomInstanceProvider.HasServiceRegstered(roomId, out var roomInstance))
+            if (roomInstanceProvider.HasService(roomId, out var roomInstance))
                 return (roomInstance!, false);
 
-            roomInstance = roomInstanceProvider.GetRequiredKeyedService(roomId);
+            roomInstance = roomInstanceProvider.GetService(roomId);
             roomInstance.Room = room;
 
             return (roomInstance, true);
         }
 
         public void DestroyRoomInstance(int userId)
-            => roomInstanceProvider.Disable(userId);
+            => roomInstanceProvider.DestroyService(userId);
     }
 }

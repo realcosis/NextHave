@@ -31,8 +31,7 @@ namespace NextHave.BL.Services.Users
 
         async Task<User?> IUsersService.GetHabbo(int userId)
         {
-            using var scope = serviceScopeFactory.CreateAsyncScope();
-            var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
+            var mysqlDbContext = await serviceScopeFactory.GetRequiredService<MySQLDbContext>();
 
             var user = await mysqlDbContext
                                 .Users
@@ -48,15 +47,13 @@ namespace NextHave.BL.Services.Users
             {
                 var date = DateTime.Now.AddMilliseconds(time);
 
-                await using var scope = serviceScopeFactory.CreateAsyncScope();
+                var mysqlDbContext = await serviceScopeFactory.GetRequiredService<MySQLDbContext>();
 
-                var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
+                var mongoDbContext = await serviceScopeFactory.GetRequiredService<MongoDbContext>();
 
-                var mongoDbContext = scope.ServiceProvider.GetRequiredService<MongoDbContext>();
+                var permissionsService = await serviceScopeFactory.GetRequiredService<IPermissionsService>();
 
-                var permissionsService = scope.ServiceProvider.GetRequiredService<IPermissionsService>();
-
-                var userFactory = scope.ServiceProvider.GetRequiredService<UserFactory>();
+                var userFactory = await serviceScopeFactory.GetRequiredService<UserFactory>();
 
                 var userTicket = await mysqlDbContext
                                         .UserTickets
@@ -118,8 +115,6 @@ namespace NextHave.BL.Services.Users
 
                 await userInstance.EventsService.SubscribeAsync<UserDisconnectedEvent>(userInstance, OnUserDisconnected);
 
-                await scope.DisposeAsync();
-
                 return userInstance;
             }
             catch (Exception ex)
@@ -133,11 +128,10 @@ namespace NextHave.BL.Services.Users
         {
             userLogin?.Validate();
 
-            using var scope = serviceScopeFactory.CreateAsyncScope();
-            var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
+            var mysqlDbContext = await serviceScopeFactory.GetRequiredService<MySQLDbContext>();
             var user = await mysqlDbContext
                                     .Users
-                                        .FirstOrDefaultAsync(u => u.Username == userLogin!.Username || u.Mail == userLogin!.Username) ?? throw new DolphinException(Errors.UserNotFound);
+                                        .FirstOrDefaultAsync(u => u.Username!.ToLower() == userLogin!.Username!.ToLower() || u.Mail! == userLogin!.Username!.ToLower()) ?? throw new DolphinException(Errors.UserNotFound);
 
             if (!userLogin!.Password!.VerifyPassword(user.Password!))
                 throw new DolphinException(Errors.InvalidPassword);
@@ -149,8 +143,7 @@ namespace NextHave.BL.Services.Users
         {
             userRegistration?.Validate();
 
-            using var scope = serviceScopeFactory.CreateAsyncScope();
-            var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
+            var mysqlDbContext = await serviceScopeFactory.GetRequiredService<MySQLDbContext>();
 
             var hotelName = settingsService.GetSetting("hotel_name");
             var defaultLook = settingsService.GetSetting("default_look");
@@ -177,8 +170,7 @@ namespace NextHave.BL.Services.Users
 
         async Task<User?> IUsersService.GetFromToken(int userId)
         {
-            using var scope = serviceScopeFactory.CreateAsyncScope();
-            var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
+            var mysqlDbContext = await serviceScopeFactory.GetRequiredService<MySQLDbContext>();
 
             var user = await mysqlDbContext
                                     .Users
@@ -189,8 +181,7 @@ namespace NextHave.BL.Services.Users
 
         async Task<string?> IUsersService.GetAndSetAuthToken(int userId)
         {
-            using var scope = serviceScopeFactory.CreateAsyncScope();
-            var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
+            var mysqlDbContext = await serviceScopeFactory.GetRequiredService<MySQLDbContext>();
 
             var newticket = Guid.NewGuid().ToString("N");
 
@@ -224,13 +215,11 @@ namespace NextHave.BL.Services.Users
         {
             if (Instance.Users.TryGetValue(@event.UserId, out var userInstance) && userInstance.User != default)
             {
-                using var scope = serviceScopeFactory.CreateAsyncScope();
-
                 await userInstance.EventsService.UnsubscribeAsync<UserDisconnectedEvent>(userInstance, OnUserDisconnected);
 
                 await userInstance.Dispose();
 
-                scope.ServiceProvider.GetRequiredService<UserFactory>().DestroyUserInstance(@event.UserId);
+                (await serviceScopeFactory.GetRequiredService<UserFactory>()).DestroyUserInstance(@event.UserId);
 
                 Instance.Users.TryRemove(@event.UserId, out _);
             }

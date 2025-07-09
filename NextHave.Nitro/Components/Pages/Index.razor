@@ -1,22 +1,24 @@
 ﻿@page "/"
 
-@using Microsoft.AspNetCore.Authentication;
-@using System.Security.Claims
-@using Microsoft.AspNetCore.Components.Authorization
+@using NextHave.BL.Services.Users
 @using NextHave.Nitro.Authentications
 
-@inject NextHaveAuthenticationStateProvider authenticationStateProvider
 @inject NavigationManager navigation
+@inject IUsersService usersService
+@inject NextHaveAuthenticationStateProvider authenticationStateProvider
 
 @code {
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        var authState = await authenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
+        if (firstRender)
+        {
+            var authState = await authenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
 
-        if (user.Identity is { IsAuthenticated: true })
-            navigation.NavigateTo("/game/nitro");
-        else
-            navigation.NavigateTo("/login");
+            if (user.Identity is { IsAuthenticated: true })
+                navigation.NavigateTo("/game/nitro");
+            else
+                navigation.NavigateTo("/login");
+        }
     }
 }

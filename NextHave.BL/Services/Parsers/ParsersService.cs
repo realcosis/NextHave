@@ -15,6 +15,7 @@ using NextHave.BL.Messages.Parsers.Navigators;
 using NextHave.BL.Messages.Parsers.Rooms.Chat;
 using NextHave.BL.Messages.Parsers.Rooms.Connection;
 using NextHave.BL.Messages.Parsers.Rooms.Rooms;
+using NextHave.BL.Messages.Parsers.Rooms.Settings;
 using System.Collections.Concurrent;
 
 namespace NextHave.BL.Services.Parsers
@@ -86,6 +87,10 @@ namespace NextHave.BL.Services.Parsers
             parsers.TryAdd(InputCode.GoToHotelViewMessageEvent, new BaseParser<GoToHotelViewMessage>());
 
             parsers.TryAdd(InputCode.MessengerInitMessageEvent, new BaseParser<MessengerInitMessage>());
+
+            parsers.TryAdd(InputCode.SaveRoomSettingsMessageEvent, new SaveRoomSettingsParser());
+
+            parsers.TryAdd(InputCode.GetRoomSettingsMessageEvent, new GetRoomSettingsParser());
         }
     }
 }

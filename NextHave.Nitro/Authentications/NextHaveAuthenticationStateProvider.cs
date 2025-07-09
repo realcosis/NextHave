@@ -17,9 +17,7 @@ namespace NextHave.Nitro.Authentications
 
         public override async Task<AuthenticationState> GetAuthenticationStateAsync()
         {
-            currentUser = default;
-
-            var token = await jsRuntime.InvokeAsync<string>("localStorage.getItem", "sessiontoken");
+            var token = await jsRuntime.InvokeAsync<string>("localStorage.getItem", "sessiontoken") ?? string.Empty;
 
             var userIsAuthenticated = !string.IsNullOrWhiteSpace(token);
 

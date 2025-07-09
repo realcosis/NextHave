@@ -38,5 +38,9 @@
         public const short GoToHotelViewMessageEvent = 105;
 
         public const short MessengerInitMessageEvent = 2781;
+
+        public const short SaveRoomSettingsMessageEvent = 1969;
+
+        public const short GetRoomSettingsMessageEvent = 3129;
     }
 }

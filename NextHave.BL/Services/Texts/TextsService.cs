@@ -25,6 +25,9 @@ namespace NextHave.BL.Services.Texts
         string ITextsService.GetText(string key, string defaultValue)
             => Instance.TryGetText(key, defaultValue, out var value) ? value! : defaultValue!;
 
+        string ITextsService.FormatText(string key, string defaultValue, params object[] objects)
+            => Instance.TryGetText(key, defaultValue, out var value) ? string.Format(value!, objects) : defaultValue!;
+
         bool ITextsService.TryGetText(string key, string defaultValue, out string? value)
         {
             var resut = false;

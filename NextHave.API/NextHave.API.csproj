@@ -7,12 +7,12 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.1" />
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.3" />
 		<ProjectReference Include="..\NextHave.BL\NextHave.BL.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="RealCosis.Dolphin.Core.API" Version="2025.705.1023" />
+		<PackageReference Include="RealCosis.Dolphin.Core.API" Version="2025.709.430" />
 	</ItemGroup>
 
 </Project>

@@ -10,10 +10,10 @@ namespace NextHave.BL.Services.Rooms.Factories
     {
         public IRoomUserInstance GetRoomUserInstance(int userId, string username, int virtualId, IUserInstance userInstance, IRoomInstance roomInstance)
         {
-            if (roomUserInstanceProvider.HasServiceRegstered(userId, out var roomUserInstance))
+            if (roomUserInstanceProvider.HasService(userId, out var roomUserInstance))
                 return roomUserInstance!;
 
-            roomUserInstance = roomUserInstanceProvider.GetRequiredKeyedService(userId);
+            roomUserInstance = roomUserInstanceProvider.GetService(userId);
             roomUserInstance.SetData(userId, username, virtualId, roomInstance);
             roomUserInstance.UserInstance = userInstance;
             roomUserInstance.Client = userInstance.Client;
@@ -22,6 +22,6 @@ namespace NextHave.BL.Services.Rooms.Factories
         }
 
         public void DestroyRoomUserInstance(int userId)
-            => roomUserInstanceProvider.Disable(userId);
+            => roomUserInstanceProvider.DestroyService(userId);
     }
 }

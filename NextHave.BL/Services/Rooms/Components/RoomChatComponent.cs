@@ -1,6 +1,7 @@
 ﻿using Dolphin.Backgrounds.Tasks;
 using Dolphin.Core.Backgrounds;
 using Dolphin.Core.Injection;
+using Dolphin.Core.Validations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NextHave.BL.Events.Rooms.Chat;
@@ -19,7 +20,7 @@ namespace NextHave.BL.Services.Rooms.Components
     {
         IRoomInstance? _roomInstance;
 
-        readonly Dictionary<string, string> emojis = [];
+        Dictionary<string, string> Emojis = [];
 
         async Task IRoomComponent.Dispose()
         {
@@ -34,12 +35,9 @@ namespace NextHave.BL.Services.Rooms.Components
         {
             _roomInstance = roomInstance;
 
-            await using var scope = serviceScopeFactory.CreateAsyncScope();
+            var mysqlDbContext = await serviceScopeFactory.GetRequiredService<MySQLDbContext>();
 
-            var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
-
-            var dbEmojis = await mysqlDbContext.RoomEmojis.AsNoTracking().ToListAsync();
-            dbEmojis.ForEach(emoji => emojis.TryAdd(emoji.Code!, emoji.Emoji!));
+            Emojis = await mysqlDbContext.RoomEmojis.AsNoTracking().ToDictionaryAsync(k => k.Code!, v => v.Emoji!);
 
             await _roomInstance.EventsService.SubscribeAsync<ChatMessageEvent>(_roomInstance, OnChatMessage);
         }
@@ -49,10 +47,8 @@ namespace NextHave.BL.Services.Rooms.Components
             if (_roomInstance?.Room == default)
                 return;
 
-            await using var scope = serviceScopeFactory.CreateAsyncScope();
-
-            var backgroundsService = scope.ServiceProvider.GetRequiredService<IBackgroundsService>();
-            var textsService = scope.ServiceProvider.GetRequiredService<ITextsService>();
+            var backgroundsService = await serviceScopeFactory.GetRequiredService<IBackgroundsService>();
+            var textsService = await serviceScopeFactory.GetRequiredService<ITextsService>();
 
             var userInstance = userFactory.GetUserInstance(@event.UserId);
 
@@ -68,7 +64,7 @@ namespace NextHave.BL.Services.Rooms.Components
                 return;
             }
 
-            var task = scope.ServiceProvider.GetTask<AddCatalogTask>("AddCatalogTask");
+            var task = await serviceScopeFactory.GetRequiredKeyedService<AddCatalogTask>("AddCatalogTask");
             if (task == default)
                 return;
 
@@ -79,7 +75,7 @@ namespace NextHave.BL.Services.Rooms.Components
 
             if (message.StartsWith(':'))
             {
-                await ChatCommandHandler.InvokeCommand(message, scope.ServiceProvider, userInstance.Client);
+                await ChatCommandHandler.InvokeCommand(message, serviceScopeFactory, userInstance.Client);
                 return;
             }
 
@@ -107,7 +103,7 @@ namespace NextHave.BL.Services.Rooms.Components
         #region private methods 
 
         List<KeyValuePair<string, string>> GetEmojis(string text)
-            => [.. emojis.Where(e => text.Contains(e.Key, StringComparison.InvariantCultureIgnoreCase))];
+            => [.. Emojis.Where(e => text.Contains(e.Key, StringComparison.InvariantCultureIgnoreCase))];
 
         #endregion
     }

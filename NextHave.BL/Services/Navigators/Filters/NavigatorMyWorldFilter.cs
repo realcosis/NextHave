@@ -1,5 +1,6 @@
 ﻿using Dolphin.Core.Injection;
 using Microsoft.Extensions.DependencyInjection;
+using NextHave.BL;
 using NextHave.BL.Enums;
 using NextHave.BL.Models.Navigators;
 using NextHave.BL.Services.Navigators.Filters;
@@ -18,9 +19,7 @@ namespace Dolphin.HabboHotel.Navigators.Filters
             if (userInstance?.User == default)
                 return [];
 
-            await using var scope = serviceScopeFactory.CreateAsyncScope();
-            var roomsService = scope.ServiceProvider.GetRequiredService<IRoomsService>();
-            await scope.DisposeAsync();
+            var roomsService = await serviceScopeFactory.GetRequiredService<IRoomsService>();
 
             var resultLists = new List<SearchResultList>();
 

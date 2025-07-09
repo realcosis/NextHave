@@ -21,11 +21,9 @@ namespace NextHave.BL.Services.Navigators.Filters
             if (string.IsNullOrWhiteSpace(query))
                 return [];
 
-            await using var scope = serviceScopeFactory.CreateAsyncScope();
-            var mongoDbContext = scope.ServiceProvider.GetRequiredService<MongoDbContext>();
-            var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
-            var roomsService = scope.ServiceProvider.GetRequiredService<IRoomsService>();
-            await scope.DisposeAsync();
+            var mongoDbContext = await serviceScopeFactory.GetRequiredService<MongoDbContext>();
+            var mysqlDbContext = await serviceScopeFactory.GetRequiredService<MySQLDbContext>();
+            var roomsService = await serviceScopeFactory.GetRequiredService<IRoomsService>();
 
             var resultLists = new List<SearchResultList>();
 

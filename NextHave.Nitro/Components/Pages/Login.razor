@@ -290,8 +290,9 @@
     {
         try
         {
-            using var scope = serviceScopeFactory.CreateScope();
-            var usersService = scope.ServiceProvider.GetRequiredService<IUsersService>();
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+            var usersService =  scope.ServiceProvider.GetRequiredService<IUsersService>();
+            await scope.DisposeAsync();
 
             var user = await usersService.Login(loginModel);
 
@@ -332,8 +333,9 @@
     {
         try
         {
-            using var scope = serviceScopeFactory.CreateScope();
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
             var usersService = scope.ServiceProvider.GetRequiredService<IUsersService>();
+            await scope.DisposeAsync();
 
             var user = await usersService.Register(registrationModel, httpContextAccessor.GetUserIp());
 

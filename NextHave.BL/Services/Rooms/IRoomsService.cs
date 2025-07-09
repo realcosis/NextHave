@@ -1,5 +1,7 @@
-﻿using NextHave.BL.Models.Rooms;
+﻿using NextHave.BL.Clients;
+using NextHave.BL.Models.Rooms;
 using System.Collections.Concurrent;
+using NextHave.BL.Models.Rooms.Navigators;
 using NextHave.BL.Services.Rooms.Instances;
 
 namespace NextHave.BL.Services.Rooms
@@ -15,5 +17,7 @@ namespace NextHave.BL.Services.Rooms
         Task<IRoomInstance?> GetRoomInstance(int roomId);
 
         Task DisposeRoom(int roomId);
+        
+        Task SaveRoom(Room room, Client client, NavigatorCategory category);
     }
 }

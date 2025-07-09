@@ -1,18 +1,18 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using NextHave.BL.Clients;
+﻿using NextHave.BL.Clients;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace NextHave.BL.Services.Rooms.Commands
 {
     public static class ChatCommandHandler
     {
-        public static async Task InvokeCommand(this string? inputData, IServiceProvider serviceProvider, Client client)
+        public static async Task InvokeCommand(this string? inputData, IServiceScopeFactory serviceScopeFactory, Client client)
         {
             if (string.IsNullOrWhiteSpace(inputData))
                 return;
 
             var parameters = inputData.Replace(":", string.Empty).Split(' ');
             
-            var commands = serviceProvider.GetRequiredService<IEnumerable<IChatCommand>>();
+            var commands = await serviceScopeFactory.GetRequiredService<IEnumerable<IChatCommand>>();
 
             var command = commands.FirstOrDefault(c => c.Key!.ToLower().Equals(parameters[0].ToLower(), StringComparison.InvariantCultureIgnoreCase) || c.OtherKeys.Any(k => k.Equals(parameters[0].ToLower(), StringComparison.InvariantCultureIgnoreCase)));
 

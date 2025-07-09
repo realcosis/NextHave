@@ -88,6 +88,15 @@ namespace NextHave.BL.Localizations {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Stanza non trovata..
+        /// </summary>
+        public static string RoomNotFound {
+            get {
+                return ResourceManager.GetString("RoomNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Username già registrato..
         /// </summary>
         public static string UsernameAlreadyTaked {

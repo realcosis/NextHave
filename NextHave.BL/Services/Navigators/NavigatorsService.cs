@@ -35,10 +35,10 @@ namespace NextHave.BL.Services.Navigators
 
                 var filters = serviceProvider.GetRequiredService<IEnumerable<IFilter>>().ToList();
 
-                var publicCategories = await mysqlDbContext.NavigatorPublicCategories.AsNoTracking().ToListAsync();
+                var publicCategories = await mysqlDbContext.NavigatorPublicCategories.Where(npc => npc.Visible).AsNoTracking().ToListAsync();
                 publicCategories.ForEach(category => Instance.PublicCategories.TryAdd(category.Id, category.Map()));
 
-                var userCategories = await mysqlDbContext.NavigatorUserCategories.AsNoTracking().ToListAsync();
+                var userCategories = await mysqlDbContext.NavigatorUserCategories.Where(nca => nca.Enabled).AsNoTracking().ToListAsync();
                 userCategories.ForEach(category => Instance.NavigatorCategories.TryAdd(category.Id, category.Map()));
 
                 var publicRooms = await mysqlDbContext.NavigatorPublicRooms.AsNoTracking().ToListAsync();

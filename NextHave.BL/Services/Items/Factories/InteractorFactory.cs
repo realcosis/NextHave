@@ -15,8 +15,7 @@ namespace NextHave.BL.Services.Items.Factories
 
         public async Task<IInteractor?> GetInteractor(InteractionTypes interactionType)
         {
-            await using var scope = serviceScopeFactory.CreateAsyncScope();
-            var pluginsService = scope.ServiceProvider.GetRequiredService<IPluginsService>();
+            var pluginsService = await serviceScopeFactory.GetRequiredService<IPluginsService>();
 
             var plugins = pluginsService.GetPluginDirectory();
 
@@ -54,7 +53,7 @@ namespace NextHave.BL.Services.Items.Factories
                 Type = t
             }).FirstOrDefault();
 
-            return interactor != default ? scope.ServiceProvider.GetRequiredKeyedService(interactor.Type, interactor.Name) as IInteractor : default;
+            return interactor != default ? await serviceScopeFactory.GetRequiredKeyedService<IInteractor>(interactor.Type, interactor.Name) : default;
         }
     }
 }

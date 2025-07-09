@@ -43,9 +43,7 @@ namespace NextHave.BL.Services.Rooms.Instances
 
         async Task IRoomInstance.Init()
         {
-            await using var scope = serviceScopeFactory.CreateAsyncScope();
-
-            var mysqlDbontext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
+            var mysqlDbontext = await serviceScopeFactory.GetRequiredService<MySQLDbContext>();
 
             var dbToner = await mysqlDbontext.RoomToners.AsNoTracking().FirstOrDefaultAsync(t => t.RoomId == Instance.Room!.Id);
 

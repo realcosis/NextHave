@@ -79,5 +79,11 @@
         public const short FriendListUpdateMessageComposer = 2800;
 
         public const short NewConsoleMessageMessageComposer = 1587;
+
+        public const short RoomSettingsDataMessageComposer = 1498;
+
+        public const short RoomSettingsSavedMessageComposer = 948;
+
+        public const short RoomInfoUpdatedMessageComposer = 3297;
     }
 }

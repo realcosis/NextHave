@@ -12,5 +12,14 @@ namespace NextHave.DAL.Utils
                 RoomAccessStatus.Locked => 1,
                 _ => 0
             };
+
+        public static RoomAccessStatus ToRoomAccessStatus(this int status)
+            => status switch
+            {
+                3 => RoomAccessStatus.Invisible,
+                2 => RoomAccessStatus.Password,
+                1 => RoomAccessStatus.Locked,
+                _ => RoomAccessStatus.Open
+            };
     }
 }

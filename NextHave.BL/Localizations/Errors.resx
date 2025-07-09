@@ -126,6 +126,9 @@
   <data name="RoomModelNotFound" xml:space="preserve">
     <value>Modello stanza non trovato.</value>
   </data>
+  <data name="RoomNotFound" xml:space="preserve">
+    <value>Stanza non trovata.</value>
+  </data>
   <data name="UsernameAlreadyTaked" xml:space="preserve">
     <value>Username già registrato.</value>
   </data>

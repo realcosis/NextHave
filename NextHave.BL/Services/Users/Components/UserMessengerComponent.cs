@@ -52,11 +52,7 @@ namespace NextHave.BL.Services.Users.Components
 
             _userInstance = userInstance;
 
-            await using var scope = serviceScopeFactory.CreateAsyncScope();
-
-            var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
-
-            await scope.DisposeAsync();
+            var mysqlDbContext = await serviceScopeFactory.GetRequiredService<MySQLDbContext>();
 
             var senderFriendships = (await mysqlDbContext
                                                    .MessengerFriendships
@@ -96,13 +92,9 @@ namespace NextHave.BL.Services.Users.Components
             if (!Friends.Any(f => f.UserId == message.UserToId) || _userInstance?.User == default)
                 return;
 
-            await using var scope = serviceScopeFactory.CreateAsyncScope();
-
-            var usersService = scope.ServiceProvider.GetRequiredService<IUsersService>();
-            var backgroundsService = scope.ServiceProvider.GetRequiredService<IBackgroundsService>();
-            var task = scope.ServiceProvider.GetTask<AddPrivateChatlogTask>("AddPrivateChatlogTask");
-
-            await scope.DisposeAsync();
+            var usersService = await serviceScopeFactory.GetRequiredService<IUsersService>();
+            var backgroundsService = await serviceScopeFactory.GetRequiredService<IBackgroundsService>();
+            var task = await serviceScopeFactory.GetRequiredKeyedService<AddPrivateChatlogTask>("AddPrivateChatlogTask");
 
             if (!usersService.Users.TryGetValue(message.UserToId, out var user))
                 return;
