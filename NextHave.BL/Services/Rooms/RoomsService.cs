@@ -15,11 +15,9 @@ using NextHave.BL.Models.Rooms.Navigators;
 using NextHave.BL.Services.Groups;
 using NextHave.BL.Services.Rooms.Factories;
 using NextHave.BL.Services.Rooms.Instances;
-using NextHave.BL.Services.Texts;
 using NextHave.DAL.Mongo;
 using NextHave.DAL.MySQL;
 using System.Collections.Concurrent;
-using System.ComponentModel.DataAnnotations;
 
 namespace NextHave.BL.Services.Rooms
 {
