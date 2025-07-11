@@ -34,8 +34,8 @@ namespace NextHave.BL.Services.Rooms.Commands.Users
             text.AppendLine($"<b>Build:</b> {ProjectConstants.Build}<br/>");
             text.AppendLine("<b>Statistiche:</b>");
             text.AppendLine($"Avvio - {uptime.Days} giorni, {uptime.Hours} ore e {uptime.Minutes} minuti");
-            text.AppendLine($"Utenti online - {userCount} utenti online");
-            text.AppendLine($"Stanze attive - {roomCount} stanze attive");
+            text.AppendLine($"Utenti online - {userCount}");
+            text.AppendLine($"Stanze attive - {roomCount}");
             text.AppendLine($"Furni caricati - {itemCount}<br/>");
             text.AppendLine("<b>Perfomance:</b>");
             text.AppendLine($"Processori logici - {Environment.ProcessorCount}");
