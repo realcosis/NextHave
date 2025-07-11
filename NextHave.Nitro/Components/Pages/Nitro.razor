@@ -1,39 +1,40 @@
 ﻿@page "/game/nitro"
 
+@using NextHave.BL.Services.Users
+@using NextHave.Nitro.Authentications
+@using NextHave.Nitro.Components.Layout
+
 @layout NitroLayout
 
-@using System.Text
-@using NextHave.BL.Clients
-@using NextHave.BL.Services.Users
-@using NextHave.Nitro.Components.Layout
-@using NextHave.BL.Utils
-@using NextHave.Nitro.Authentications
-@using System.Diagnostics
-
-@inject NavigationManager navigation
 @inject IJSRuntime jsRuntime
 @inject IUsersService usersService
+@inject NavigationManager navigation
 @inject NextHaveAuthenticationStateProvider authenticationStateProvider
 
-<script src="/nitro/loader.js"></script>
-<link rel="modulepreload" crossorigin href="/nitro/vendor-C03uLZeS.js" as="script" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+<link rel="stylesheet" href="@Assets["tailwind.css"]" />
 <link rel="stylesheet" href="/nitro/index.css" />
 
-<PageTitle>@hotelName ~ Hotel</PageTitle>
+<script type="text/javascript" src="/nitro/loader.js"></script>
+<link rel="modulepreload" crossorigin href="/nitro/vendor-C03uLZeS.js" as="script" />
+
+<script type="text/javascript">
+    
+</script>
 
 <noscript>You need to enable JavaScript to run this app.</noscript>
 <div class="relative w-full h-screen overflow-hidden bg-gray-900">
-   
+
     <div id="root" class="absolute inset-0 w-full h-full bg-gradient-to-br from-blue-900 via-purple-900 to-pink-900 z-10"></div>
 
     <div class="absolute top-2 md:top-4 left-2 md:left-4 z-50 flex flex-col gap-1 md:gap-2 z-20">
-    
+
         <button class="p-2 md:p-3 bg-black/50 backdrop-blur-xl border border-white/20 rounded-lg md:rounded-xl text-white hover:bg-black/70 transition-all duration-200" title="Nascondi UI (Ctrl+M)">
             <span class="text-xs md:text-sm">👁️</span>
         </button>
 
         <div class="grid !grid-cols-2 md:!grid-cols-4 lg:!grid-cols-3 xl:!grid-cols-4 gap-1 md:gap-2 max-w-[120px] md:max-w-[200px]">
-        
+
             <button class="relative p-1.5 md:p-2.5 bg-white/10 backdrop-blur-xl border border-white/20 rounded-md md:rounded-lg text-white hover:bg-white/20 transition-all duration-200 shadow-lg" title="News">
 
                 <span class="material-symbols-outlined text-white md:w-4 md:h-4" style="font-size: 16px;">newspaper</span>
@@ -105,19 +106,15 @@
 </div>
 
 @code {
-    [CascadingParameter]
-    public string? hotelName { get; set; }
+    bool isFirstRender = true;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (firstRender && isFirstRender)
         {
+            isFirstRender = false;
+
             var authState = await authenticationStateProvider.GetAuthenticationStateAsync();
-            var user = authState.User;
-
-            if (user.Identity is { IsAuthenticated: false })
-                navigation.NavigateTo("/login");
-
             var userId = await authenticationStateProvider.GetUserIdFromToken();
             if (!userId.HasValue)
             {
@@ -125,9 +122,8 @@
                 return;
             }
             var token = await usersService.GetAndSetAuthToken(userId.Value);
-            await jsRuntime.InvokeVoidAsync("localStorage.setItem", "nitro.sso_ticket", token);
+            await jsRuntime.InvokeVoidAsync("localStorage.setItem", "nitro.sso.ticket", token);
             await jsRuntime.InvokeVoidAsync("loadNitro");
-            await jsRuntime.InvokeVoidAsync("waitForNitro");
         }
     }
 }

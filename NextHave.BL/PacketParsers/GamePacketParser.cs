@@ -1,123 +1,221 @@
-﻿using DnsClient.Internal;
-using Dolphin.Core.Injection;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using NextHave.BL.Messages;
+﻿using System.Buffers;
 using NextHave.BL.Utils;
+using NextHave.BL.Messages;
+using Dolphin.Core.Injection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace NextHave.BL.PacketParsers
 {
     [Service(ServiceLifetime.Scoped)]
-    class GamePacketParser : IPacketParser
+    public class GamePacketParser : IPacketParser
     {
         readonly ILogger<GamePacketParser> _logger;
+        readonly ArrayPool<byte> _arrayPool = ArrayPool<byte>.Shared;
 
-        static readonly int INT_SIZE = 4;
+        const int INT_SIZE = 4;
+        const int SHORT_SIZE = 2;
+        const int MIN_PACKET_SIZE = 2;
+        const int MAX_PACKET_SIZE = 417792;
+        const int INITIAL_BUFFER_SIZE = 4096;
 
-        int currentPacketLength;
+        int _currentPacketLength = -1;
+        int _bufferPosition = 0;
 
-        int bufferPos;
+        byte[] _rentedBuffer = [];
 
-        readonly byte[] bufferedData;
+        private Memory<byte> _activeBuffer;
 
         public GamePacketParser(ILogger<GamePacketParser> logger)
         {
-            ResetState();
             _logger = logger;
-            bufferedData = new byte[4096];
+            RentNewBuffer(INITIAL_BUFFER_SIZE);
         }
 
         public ClientMessage? HandlePacket(byte[] data, int bytes, string sessionId)
         {
-            var clientMessage = default(ClientMessage?);
+            if (data == null || bytes <= 0)
+                return null;
 
             try
             {
-                clientMessage = ProcessData(data, bytes);
+                return ProcessData(data.AsMemory(0, bytes));
             }
             catch (Exception ex)
             {
-                _logger.LogError("Error processing packet data for session {sessionId}: {ex}", sessionId, ex);
+                _logger.LogError(ex, "Error processing packet data for session {SessionId}", sessionId);
+                ResetState();
+                return null;
             }
-
-            return clientMessage;
-        }
-
-        private ClientMessage? ProcessData(byte[] data, int bytes)
-        {
-            var position = 0;
-
-            while (position < bytes)
-            {
-                if (currentPacketLength == -1 && bytes >= INT_SIZE)
-                    currentPacketLength = data.ToInt32(ref position);
-
-                if (!IsValidPacketLength(currentPacketLength))
-                {
-                    ResetState();
-                    return default;
-                }
-
-                if (EnoughDataReceived(bytes - position))
-                    return ProcessCompletePacket(data, ref position);
-                else
-                {
-                    StoreIncompleteData(data, bytes, position);
-                    return default;
-                }
-            }
-
-            return default;
-        }
-
-        private bool EnoughDataReceived(int remainingBytes)
-            => currentPacketLength <= remainingBytes + bufferPos;
-
-        private static bool IsValidPacketLength(int length)
-            => length is >= 2 and <= 417792;
-
-        private ClientMessage? ProcessCompletePacket(byte[] data, ref int position)
-        {
-            if (bufferPos > 0)
-            {
-                Buffer.BlockCopy(data, position, bufferedData, bufferPos, currentPacketLength - bufferPos);
-                position += currentPacketLength - bufferPos;
-            }
-
-            var packetData = bufferPos > 0 ? bufferedData : data;
-            var packetStart = bufferPos > 0 ? 0 : position;
-            var header = packetData.ToInt16(ref packetStart);
-
-            var message = ClientMessageFactory.GetClientMessage(packetData, packetStart, header);
-
-            position += currentPacketLength;
-
-            ResetState();
-
-            return message;
-        }
-
-        private void StoreIncompleteData(byte[] data, int bytes, int position)
-        {
-            int lengthToCopy = bytes - position;
-
-            if (bufferPos + lengthToCopy > bufferedData.Length)
-                throw new OverflowException("Buffer overflow detected in StoreIncompleteData");
-
-            Buffer.BlockCopy(data, position, bufferedData, bufferPos, lengthToCopy);
-
-            bufferPos += lengthToCopy;
-        }
-
-        private void ResetState()
-        {
-            bufferPos = 0;
-            currentPacketLength = -1;
         }
 
         public void Dispose()
         {
+            if (_rentedBuffer != null)
+            {
+                _arrayPool.Return(_rentedBuffer, clearArray: true);
+                _rentedBuffer = null!;
+                _activeBuffer = Memory<byte>.Empty;
+            }
+
             GC.SuppressFinalize(this);
         }
+
+        ClientMessage? ProcessData(ReadOnlyMemory<byte> data)
+        {
+            var dataSpan = data.Span;
+            var position = 0;
+
+            while (position < dataSpan.Length)
+            {
+                if (_currentPacketLength == -1)
+                {
+                    var remainingBytes = dataSpan.Length - position;
+
+                    if (_bufferPosition > 0 || remainingBytes < INT_SIZE)
+                    {
+                        var bytesNeeded = INT_SIZE - _bufferPosition;
+                        var bytesToCopy = Math.Min(bytesNeeded, remainingBytes);
+
+                        StoreInBuffer(dataSpan.Slice(position, bytesToCopy));
+                        position += bytesToCopy;
+
+                        if (_bufferPosition >= INT_SIZE)
+                        {
+                            var bufferSpan = _activeBuffer.Span;
+                            _currentPacketLength = bufferSpan[..INT_SIZE].ToInt32(position);
+
+                            if (!IsValidPacketLength(_currentPacketLength))
+                            {
+                                _logger.LogWarning("Invalid packet length: {Length}", _currentPacketLength);
+                                ResetState();
+                                return null;
+                            }
+
+                            _bufferPosition = INT_SIZE;
+                        }
+                        continue;
+                    }
+                    else
+                    {
+                        _currentPacketLength = dataSpan.Slice(position, INT_SIZE).ToInt32(position);
+                        position += INT_SIZE;
+
+                        if (!IsValidPacketLength(_currentPacketLength))
+                        {
+                            _logger.LogWarning("Invalid packet length: {Length}", _currentPacketLength);
+                            ResetState();
+                            return null;
+                        }
+                    }
+                }
+
+                var remainingPacketBytes = _currentPacketLength - _bufferPosition;
+                var availableBytes = dataSpan.Length - position;
+
+                if (availableBytes >= remainingPacketBytes)
+                    return CompletePacket(dataSpan, ref position, remainingPacketBytes);
+                else
+                {
+                    StoreInBuffer(dataSpan.Slice(position, availableBytes));
+                    position += availableBytes;
+                }
+            }
+
+            return null;
+        }
+
+        ClientMessage? CompletePacket(ReadOnlySpan<byte> dataSpan, ref int position, int remainingBytes)
+        {
+            byte[] completePacket;
+            if (_bufferPosition > 0)
+            {
+                completePacket = new byte[_currentPacketLength];
+                var bufferSpan = _activeBuffer.Span;
+
+                bufferSpan[.._bufferPosition].CopyTo(completePacket);
+
+                dataSpan.Slice(position, remainingBytes).CopyTo(completePacket.AsSpan(_bufferPosition));
+                position += remainingBytes;
+            }
+            else
+            {
+                completePacket = new byte[_currentPacketLength];
+                dataSpan.Slice(INT_SIZE, _currentPacketLength).CopyTo(completePacket);
+                position += remainingBytes;
+            }
+
+            var header = completePacket.ToInt16(0);
+
+            var message = ClientMessageFactory.GetClientMessage(completePacket, SHORT_SIZE, header);
+
+            ResetState();
+            return message;
+        }
+
+        void StoreInBuffer(ReadOnlySpan<byte> data)
+        {
+            if (data.Length == 0)
+                return;
+
+            if (_bufferPosition + data.Length > _activeBuffer.Length)
+                ExpandBuffer(_bufferPosition + data.Length);
+
+            data.CopyTo(_activeBuffer.Span[_bufferPosition..]);
+            _bufferPosition += data.Length;
+        }
+
+        void ExpandBuffer(int requiredSize)
+        {
+            var newSize = Math.Max(_activeBuffer.Length * 2, requiredSize);
+
+            newSize = Math.Min(newSize, MAX_PACKET_SIZE);
+
+            _logger.LogDebug("Expanding buffer from {OldSize} to {NewSize}", _activeBuffer.Length, newSize);
+
+            var newBuffer = _arrayPool.Rent(newSize);
+
+            try
+            {
+                if (_bufferPosition > 0)
+                    _activeBuffer[.._bufferPosition].CopyTo(newBuffer);
+
+                if (_rentedBuffer != null)
+                    _arrayPool.Return(_rentedBuffer, clearArray: true);
+
+                _rentedBuffer = newBuffer;
+                _activeBuffer = _rentedBuffer.AsMemory(0, newSize);
+            }
+            catch
+            {
+                _arrayPool.Return(newBuffer, clearArray: true);
+                throw;
+            }
+        }
+
+        void RentNewBuffer(int size)
+        {
+            _rentedBuffer = _arrayPool.Rent(size);
+            _activeBuffer = _rentedBuffer.AsMemory(0, size);
+            _bufferPosition = 0;
+        }
+
+        void ResetState()
+        {
+            _currentPacketLength = -1;
+            _bufferPosition = 0;
+
+            if (_activeBuffer.Length > INITIAL_BUFFER_SIZE * 4)
+            {
+                if (_rentedBuffer != null)
+                {
+                    _arrayPool.Return(_rentedBuffer, clearArray: true);
+                }
+                RentNewBuffer(INITIAL_BUFFER_SIZE);
+            }
+        }
+
+        static bool IsValidPacketLength(int length)
+            => length is >= MIN_PACKET_SIZE and <= MAX_PACKET_SIZE;
     }
 }
