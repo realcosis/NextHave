@@ -1,6 +1,6 @@
 ﻿using NextHave.BL.Models;
 
-namespace NextHave.BL.Context
+namespace NextHave.BL.Contexts
 {
     public class UserMovementContext
     {

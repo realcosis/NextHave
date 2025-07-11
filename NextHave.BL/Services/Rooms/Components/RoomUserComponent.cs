@@ -1,6 +1,6 @@
 ﻿using Dolphin.Core.Injection;
 using Microsoft.Extensions.DependencyInjection;
-using NextHave.BL.Context;
+using NextHave.BL.Contexts;
 using NextHave.BL.Events.Rooms;
 using NextHave.BL.Events.Rooms.Chat;
 using NextHave.BL.Events.Rooms.Session;
