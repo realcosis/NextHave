@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace NextHave.BL.PacketParsers
 {
     [Service(ServiceLifetime.Scoped)]
-    public class GamePacketParser : IPacketParser
+    class GamePacketParser : IPacketParser
     {
         readonly ILogger<GamePacketParser> _logger;
         readonly ArrayPool<byte> _arrayPool = ArrayPool<byte>.Shared;

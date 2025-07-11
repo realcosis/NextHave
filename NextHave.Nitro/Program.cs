@@ -13,6 +13,8 @@ using NextHave.Nitro.Components;
 using NextHave.Nitro.Sockets;
 using System.Reflection;
 
+ProjectConstants.StartDate = DateTime.Now;
+
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions()
 {
     Args = args,
