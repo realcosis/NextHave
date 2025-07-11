@@ -1,4 +1,6 @@
-﻿namespace NextHave.BL
+﻿using Hardware.Info;
+
+namespace NextHave.BL
 {
     public static class ProjectConstants
     {
@@ -10,6 +12,8 @@
 
         public readonly static string Build = $"{GitMinor}.{GitMinor}.{GitPatch}";
 
+        public static HardwareInfo? HardwareInfo { get; set; }
+        
         public static DateTime StartDate { get; set; }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Blazored.Toast;
 using Dolphin.Core.Configurations;
 using Dolphin.Core.Injection;
+using Hardware.Info;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Hosting.StaticWebAssets;
 using Microsoft.AspNetCore.RateLimiting;
@@ -12,6 +13,9 @@ using NextHave.Nitro.Authentications;
 using NextHave.Nitro.Components;
 using NextHave.Nitro.Sockets;
 using System.Reflection;
+
+ProjectConstants.HardwareInfo = new HardwareInfo();
+ProjectConstants.HardwareInfo.RefreshAll();
 
 ProjectConstants.StartDate = DateTime.Now;
 
