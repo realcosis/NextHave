@@ -1,7 +1,6 @@
 ﻿using Dolphin.Backgrounds.Tasks;
 using Dolphin.Core.Backgrounds;
 using Dolphin.Core.Injection;
-using Dolphin.Core.Validations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NextHave.BL.Events.Rooms.Chat;
@@ -16,7 +15,7 @@ using NextHave.DAL.MySQL;
 namespace NextHave.BL.Services.Rooms.Components
 {
     [Service(ServiceLifetime.Scoped)]
-    class RoomChatComponent(IServiceScopeFactory serviceScopeFactory, UserFactory userFactory) : IRoomComponent
+    class RoomChatComponent(IServiceScopeFactory serviceScopeFactory) : IRoomComponent
     {
         IRoomInstance? _roomInstance;
 
@@ -50,7 +49,7 @@ namespace NextHave.BL.Services.Rooms.Components
             var backgroundsService = await serviceScopeFactory.GetRequiredService<IBackgroundsService>();
             var textsService = await serviceScopeFactory.GetRequiredService<ITextsService>();
 
-            var userInstance = userFactory.GetUserInstance(@event.UserId);
+            var userInstance = (await serviceScopeFactory.GetRequiredService<UserFactory>()).GetUserInstance(@event.UserId);
 
             if (userInstance?.Client == default)
                 return;

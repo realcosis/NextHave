@@ -19,6 +19,8 @@ namespace NextHave.BL.Services.Rooms.Instances
 
         Task Init();
 
+        Task Tick();
+
         Task Dispose();
 
         bool CheckRights(IUserInstance userInstance, bool isOwner);

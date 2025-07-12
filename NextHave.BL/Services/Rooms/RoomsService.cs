@@ -1,4 +1,5 @@
-﻿using Dolphin.Core.Exceptions;
+﻿using Dolphin.Core.Backgrounds;
+using Dolphin.Core.Exceptions;
 using Dolphin.Core.Injection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,9 +16,11 @@ using NextHave.BL.Models.Rooms.Navigators;
 using NextHave.BL.Services.Groups;
 using NextHave.BL.Services.Rooms.Factories;
 using NextHave.BL.Services.Rooms.Instances;
+using NextHave.BL.Tasks.Rooms;
 using NextHave.DAL.Mongo;
 using NextHave.DAL.MySQL;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 
 namespace NextHave.BL.Services.Rooms
 {
@@ -88,6 +91,8 @@ namespace NextHave.BL.Services.Rooms
 
                 (await serviceScopeFactory.GetRequiredService<RoomFactory>()).DestroyRoomInstance(roomId);
 
+                (await serviceScopeFactory.GetRequiredService<RoomEventsFactory>()).CleanupRoom(roomId);
+
                 Instance.ActiveRooms.TryRemove(roomId, out _);
             }
         }
@@ -103,7 +108,7 @@ namespace NextHave.BL.Services.Rooms
         async Task IRoomsService.SaveRoom(Room room, Client client, NavigatorCategory category)
         {
             var mongoDbContext = await serviceScopeFactory.GetRequiredService<MongoDbContext>();
-            
+
             try
             {
                 var entity = await mongoDbContext.Rooms.FirstOrDefaultAsync(r => r.EntityId == room.Id) ?? throw new DolphinException(Errors.RoomNotFound);
@@ -126,34 +131,15 @@ namespace NextHave.BL.Services.Rooms
         {
             try
             {
+                var backgroundsService = await serviceScopeFactory.GetRequiredService<IBackgroundsService>();
+                var task = await serviceScopeFactory.GetRequiredKeyedService<RoomTickTask>("RoomTickTask");
                 var cancellationSource = new CancellationTokenSource();
                 _ = Task.Run(async () =>
                 {
                     using var gameTimer = new PeriodicTimer(TimeSpan.FromMilliseconds(25));
                     while (await gameTimer.WaitForNextTickAsync(cancellationSource.Token))
-                    {
-                        await Parallel.ForEachAsync(Instance.ActiveRooms.Values, new ParallelOptions()
-                        {
-                            CancellationToken = cancellationSource.Token,
-                            MaxDegreeOfParallelism = Environment.ProcessorCount
-                        }, async (roomInstance, token) =>
-                        {
-                            using var roomTimer = new PeriodicTimer(TimeSpan.FromMilliseconds(500));
-                            while (await roomTimer.WaitForNextTickAsync(token))
-                            {
-                                try
-                                {
-                                    await roomInstance.OnRoomTick();
-                                }
-                                catch (Exception ex)
-                                {
-                                    logger.LogError("Exception with OnRoomTick for room {RoomId}: {ex}", roomInstance.Room!.Id, ex);
-                                }
-                            }
-                        });
-                    }
+                        backgroundsService.Queue(task);
                 });
-                await Task.CompletedTask;
             }
             catch (Exception ex)
             {

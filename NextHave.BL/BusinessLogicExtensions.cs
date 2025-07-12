@@ -46,8 +46,9 @@ namespace NextHave.BL
                 var roomComponents = sp.GetRequiredService<IEnumerable<IRoomComponent>>();
                 var roomEventsFactory = sp.GetRequiredService<RoomEventsFactory>();
                 var serviceScopeFactory = sp.GetRequiredService<IServiceScopeFactory>();
-                return new RoomInstance(roomComponents, roomEventsFactory, serviceScopeFactory);
-            }, ServiceLifetime.Singleton);
+                var logger = sp.GetRequiredService<ILogger<IRoomInstance>>();
+                return new RoomInstance(roomComponents, roomEventsFactory, serviceScopeFactory, logger);
+            });
 
             services.AddKeyedService<IUserInstance, UserInstance>((sp, key) =>
             {
@@ -55,9 +56,9 @@ namespace NextHave.BL
                 var userEventsFactory = sp.GetRequiredService<UserEventsFactory>();
                 var roomFactory = sp.GetRequiredService<RoomFactory>();
                 return new UserInstance(userComponents, userEventsFactory, roomFactory);
-            }, ServiceLifetime.Singleton);
+            });
 
-            services.AddKeyedService<IRoomUserInstance, RoomUserInstance>((sp, key) => new RoomUserInstance(), ServiceLifetime.Singleton);
+            services.AddKeyedService<IRoomUserInstance, RoomUserInstance>((sp, key) => new RoomUserInstance());
 
             services.AddKeyedServices();
         }

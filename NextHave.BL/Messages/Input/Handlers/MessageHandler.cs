@@ -394,16 +394,14 @@ namespace NextHave.BL.Messages.Input.Handlers
 
             var roomsService = serviceProvider.GetRequiredService<IRoomsService>();
 
-            if (client.UserInstance.CurrentRoomInstance != default)
-            {
+            if (client.UserInstance.CurrentRoomInstance?.Room != default)
                 await client.UserInstance.CurrentRoomInstance.EventsService.DispatchAsync<UserRoomExitEvent>(new()
                 {
                     UserId = client.UserInstance!.User!.Id,
                     NotifyUser = false,
                     Kick = false,
-                    RoomId = client.UserInstance.CurrentRoomId!.Value,
+                    RoomId = client.UserInstance.CurrentRoomInstance.Room.Id,
                 });
-            }
 
             var roomInstance = await roomsService.GetRoomInstance(message.RoomId);
             if (roomInstance?.Room == default)

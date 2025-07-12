@@ -1,24 +1,30 @@
-﻿using NextHave.BL.Events.Rooms;
-using NextHave.BL.Models.Rooms;
-using NextHave.BL.Services.Rooms.Factories;
-using NextHave.BL.Services.Rooms.Components;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using NextHave.DAL.MySQL;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using NextHave.BL.Events.Rooms;
 using NextHave.BL.Mappers;
+using NextHave.BL.Models.Rooms;
+using NextHave.BL.Services.Rooms.Components;
+using NextHave.BL.Services.Rooms.Factories;
 using NextHave.BL.Services.Users.Instances;
+using NextHave.DAL.MySQL;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 
 namespace NextHave.BL.Services.Rooms.Instances
 {
-    class RoomInstance(IEnumerable<IRoomComponent> roomComponents, RoomEventsFactory roomEventsFactory, IServiceScopeFactory serviceScopeFactory) : IRoomInstance
+    class RoomInstance(IEnumerable<IRoomComponent> roomComponents, RoomEventsFactory roomEventsFactory, IServiceScopeFactory serviceScopeFactory, ILogger<IRoomInstance> logger) : IRoomInstance
     {
         readonly ConcurrentDictionary<int, DateTime> mutedUsers = [];
+
+        readonly List<IRoomComponent> Components = [];
 
         IRoomInstance Instance => this;
 
         bool hasRoom = false;
         Room? room;
+
+        readonly Stopwatch Tick = new();
 
         Room? IRoomInstance.Room
         {
@@ -52,12 +58,33 @@ namespace NextHave.BL.Services.Rooms.Instances
 
             foreach (var roomComponent in roomComponents)
                 await roomComponent.Init(this);
+
+            Components.AddRange(roomComponents);
+
+            Tick.Start();
+        }
+
+        async Task IRoomInstance.Tick()
+        {
+            if (Tick.ElapsedMilliseconds >= 500)
+            {
+                Tick.Restart();
+                try
+                {
+                    await Instance.OnRoomTick();
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError("Exception with OnRoomTick for room {RoomId}: {ex}", Instance.Room!.Id, ex);
+                }
+            }
         }
 
         async Task IRoomInstance.Dispose()
         {
-            foreach (var roomComponent in roomComponents)
+            foreach (var roomComponent in Components)
                 await roomComponent.Dispose();
+            Components.Clear();
         }
 
         async Task IRoomInstance.OnRoomTick()

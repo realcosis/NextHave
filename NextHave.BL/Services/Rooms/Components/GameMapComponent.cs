@@ -7,7 +7,7 @@ using NextHave.BL.Events.Rooms.Engine;
 namespace NextHave.BL.Services.Rooms.Components
 {
     [Service(ServiceLifetime.Scoped)]
-    class GameMapComponent(IRoomsService roomsService) : IRoomComponent
+    class GameMapComponent(IServiceScopeFactory serviceScopeFactory) : IRoomComponent
     {
         IRoomInstance? _roomInstance;
 
@@ -31,6 +31,7 @@ namespace NextHave.BL.Services.Rooms.Components
             if (_roomInstance?.Room == default)
                 return;
 
+            var roomsService = await serviceScopeFactory.GetRequiredService<IRoomsService>();
             var roomModel = await roomsService.GetRoomModel(_roomInstance.Room.ModelName!, _roomInstance.Room.Id);
             if (roomModel != default)
             {

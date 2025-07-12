@@ -4,8 +4,6 @@ using NextHave.BL.Utils;
 using NextHave.BL.Messages;
 using System.Collections.Concurrent;
 using NextHave.BL.Services.Rooms.Instances;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace NextHave.BL.Models.Rooms
 {
@@ -146,7 +144,11 @@ namespace NextHave.BL.Models.Rooms
         public void RemoveUser(Point point, IRoomUserInstance roomUserInstance)
         {
             if (RoomUsers.TryGetValue(point, out var users))
+            {
                 users.Remove(roomUserInstance);
+                if (users.Count <= 0)
+                    RoomUsers.TryRemove(point, out _);
+            }
         }
 
         public void SetWalkable(int x, int y, bool walkable)
