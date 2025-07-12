@@ -125,6 +125,10 @@ namespace NextHave.BL.Services.Rooms.Pathfinders
                                 cost++;
 
                             var tileCost = currentNode.Cost + cost + pathNode.Position.GetDistance(end);
+
+                            if (currentNode.Position.GetX == pathNode.Position.GetX || currentNode.Position.GetY == pathNode.Position.GetY)
+                                tileCost++;
+
                             if (tileCost < pathNode.Cost)
                             {
                                 pathNode.Cost = tileCost;

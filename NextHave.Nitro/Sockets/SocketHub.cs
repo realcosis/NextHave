@@ -10,11 +10,8 @@ namespace NextHave.Nitro.Sockets
     {
         public override async Task OnConnectedAsync()
         {
-            if (!Sessions.ConnectedClients.TryGetValue(Context.ConnectionId, out var client))
-            {
-                client = new Client();
-                client.Init(Context.ConnectionId, Clients.Client(Context.ConnectionId));
-            }
+            var client = new Client();
+            client.Init(Context.ConnectionId, Clients.Client(Context.ConnectionId));
             Sessions.ConnectedClients.TryAdd(Context.ConnectionId, client);
 
             await base.OnConnectedAsync();

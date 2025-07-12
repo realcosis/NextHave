@@ -96,7 +96,7 @@ namespace NextHave.BL.Services.Rooms
                 Instance.ActiveRooms.TryRemove(roomId, out _);
             }
         }
-
+        
         async Task<RoomModel?> IRoomsService.GetRoomModel(string modelName, int roomId)
         {
             if (modelName.Equals("custom", StringComparison.InvariantCultureIgnoreCase))
@@ -126,7 +126,7 @@ namespace NextHave.BL.Services.Rooms
                 });
             }
         }
-
+        
         async Task IStartableService.StartAsync()
         {
             try

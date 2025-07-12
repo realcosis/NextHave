@@ -12,6 +12,7 @@ using NextHave.BL.Models.Groups;
 using NextHave.BL.Models.Rooms;
 using NextHave.BL.Models.Users;
 using NextHave.BL.Services.Permissions;
+using NextHave.BL.Services.Rooms.Factories;
 using NextHave.BL.Services.Settings;
 using NextHave.BL.Services.Users.Factories;
 using NextHave.BL.Services.Users.Instances;
@@ -220,6 +221,8 @@ namespace NextHave.BL.Services.Users
                 await userInstance.Dispose();
 
                 (await serviceScopeFactory.GetRequiredService<UserFactory>()).DestroyUserInstance(@event.UserId);
+
+                (await serviceScopeFactory.GetRequiredService<UserEventsFactory>()).CleanupUser(@event.UserId);
 
                 Instance.Users.TryRemove(@event.UserId, out _);
             }

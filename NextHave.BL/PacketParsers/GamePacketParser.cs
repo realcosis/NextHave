@@ -34,7 +34,7 @@ namespace NextHave.BL.PacketParsers
 
         public ClientMessage? HandlePacket(byte[] data, int bytes, string sessionId)
         {
-            if (data == null || bytes <= 0)
+            if (data == default || bytes <= 0)
                 return null;
 
             try
@@ -51,10 +51,10 @@ namespace NextHave.BL.PacketParsers
 
         public void Dispose()
         {
-            if (_rentedBuffer != null)
+            if (_rentedBuffer != default)
             {
                 _arrayPool.Return(_rentedBuffer, clearArray: true);
-                _rentedBuffer = null!;
+                _rentedBuffer = [];
                 _activeBuffer = Memory<byte>.Empty;
             }
 
@@ -122,7 +122,7 @@ namespace NextHave.BL.PacketParsers
                 }
             }
 
-            return null;
+            return default;
         }
 
         ClientMessage? CompletePacket(ReadOnlySpan<byte> dataSpan, ref int position, int remainingBytes)
@@ -180,7 +180,7 @@ namespace NextHave.BL.PacketParsers
                 if (_bufferPosition > 0)
                     _activeBuffer[.._bufferPosition].CopyTo(newBuffer);
 
-                if (_rentedBuffer != null)
+                if (_rentedBuffer != default)
                     _arrayPool.Return(_rentedBuffer, clearArray: true);
 
                 _rentedBuffer = newBuffer;

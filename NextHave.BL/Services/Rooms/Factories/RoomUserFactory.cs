@@ -8,6 +8,14 @@ namespace NextHave.BL.Services.Rooms.Factories
     [Service(ServiceLifetime.Scoped)]
     class RoomUserFactory(IKeyedServicesProvider<IRoomUserInstance> roomUserInstanceProvider)
     {
+        public IRoomUserInstance? GetRoomUserInstance(int userId)
+        {
+            if (roomUserInstanceProvider.HasService(userId, out var roomUserInstance))
+                return roomUserInstance!;
+
+            return default;
+        }
+
         public IRoomUserInstance GetRoomUserInstance(int userId, string username, int virtualId, IUserInstance userInstance, IRoomInstance roomInstance)
         {
             if (roomUserInstanceProvider.HasService(userId, out var roomUserInstance))

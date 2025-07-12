@@ -10,8 +10,7 @@ namespace NextHave.BL.Services.Rooms.Instances
 {
     class RoomUserInstance : IRoomUserInstance
     {
-        IRoomUserInstance Instance
-            => this;
+        IRoomUserInstance Instance => this;
 
         int IRoomUserInstance.UserId { get; set; }
 

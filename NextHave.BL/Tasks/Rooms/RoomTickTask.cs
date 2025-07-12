@@ -1,6 +1,5 @@
 ﻿using Dolphin.Core.Injection;
 using NextHave.BL.Services.Rooms;
-using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using Dolphin.Core.Backgrounds.Tasks;
 using Microsoft.Extensions.DependencyInjection;
