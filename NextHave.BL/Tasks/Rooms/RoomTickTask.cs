@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace NextHave.BL.Tasks.Rooms
 {
     [Service(ServiceLifetime.Scoped, Keyed = true, Key = "RoomTickTask")]
-    class RoomTickTask(IServiceScopeFactory serviceScopeFactory, ILogger<RoomTickTask> logger) : ITask
+    class RoomTickTask(IServiceScopeFactory serviceScopeFactory) : ITask
     {
         public ConcurrentDictionary<string, object> Parameters { get; set; } = [];
 
