@@ -91,6 +91,8 @@ namespace NextHave.BL.Services.Parsers
             parsers.TryAdd(InputCode.SaveRoomSettingsMessageEvent, new SaveRoomSettingsParser());
 
             parsers.TryAdd(InputCode.GetRoomSettingsMessageEvent, new GetRoomSettingsParser());
+
+            parsers.TryAdd(InputCode.CreateFlatMessageEvent, new CreateFlatParser());
         }
     }
 }

@@ -10,7 +10,7 @@ namespace NextHave.Gateway.Services
             var cancellationSource = new CancellationTokenSource();
             _ = Task.Run(async () =>
             {
-                using var timer = new PeriodicTimer(TimeSpan.FromMinutes(1));
+                using var timer = new PeriodicTimer(TimeSpan.FromMinutes(5));
                 while (await timer.WaitForNextTickAsync(cancellationSource.Token))
                     connectionThrottler.CleanupConnections();
             });

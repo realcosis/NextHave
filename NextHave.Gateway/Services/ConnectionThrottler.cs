@@ -3,46 +3,84 @@ using System.Collections.Concurrent;
 
 namespace NextHave.Gateway.Services
 {
-    public class ConnectionThrottler : IConnectionThrottler
+    class ConnectionThrottler : IConnectionThrottler
     {
         IConnectionThrottler Instance => this;
 
-        readonly ConcurrentDictionary<string, Connection> connections = [];
+        readonly ConcurrentDictionary<string, List<string>> keys = [];
 
-        readonly int maxConnectionsPerIp = 10;
+        readonly ConcurrentDictionary<string, ConnectionContext> connections = [];
 
-        readonly TimeSpan connectionTimeout = TimeSpan.FromMinutes(20);
+        readonly int maxConnectionsPerIp = 20;
 
-        bool IConnectionThrottler.ShouldAllowConnection(string ip)
+        readonly int maxRefreshForSession = 100;
+
+        readonly TimeSpan connectionTimeout = TimeSpan.FromMinutes(10);
+
+        bool IConnectionThrottler.ShouldAllowConnection(string ip, string sessionId)
         {
-            var info = connections.GetOrAdd(ip, _ => new Connection());
-            return info.ActiveConnections < maxConnectionsPerIp;
+            var connectionkey = $"{ip}_{sessionId}";
+
+            if (!connections.TryGetValue(connectionkey, out var connection))
+                return true;
+
+            return connection.ActiveConnections < maxConnectionsPerIp && connection.RefreshCount < maxRefreshForSession;
         }
 
-        void IConnectionThrottler.RegisterConnection(string ip)
+        void IConnectionThrottler.RegisterConnection(string ip, string sessionId)
         {
-            var info = connections.GetOrAdd(ip, _ => new Connection());
-            Interlocked.Increment(ref info.ActiveConnections);
-            info.LastActivity = DateTime.UtcNow;
-        }
+            var connectionkey = $"{ip}_{sessionId}";
 
-        void IConnectionThrottler.ReleaseConnection(string ip)
-        {
-            if (connections.TryGetValue(ip, out var info))
+            if (connections.TryGetValue(connectionkey, out var connection))
             {
-                if (info.ActiveConnections <= 0)
-                    info.ActiveConnections = 1;
-                if (info.ActiveConnections > 0)
-                    Interlocked.Decrement(ref info.ActiveConnections);
+                connection.RefreshCount++;
+                connection.LastActivity = DateTime.Now;
+                return;
+            }
+
+            connection = new ConnectionContext
+            {
+                Key = connectionkey,
+                ActiveConnections = keys.TryGetValue(ip, out var connectionIds) ? connectionIds.Count : 1,
+                SessionId = sessionId,
+                LastActivity = DateTime.Now,
+                RefreshCount = 0
+            };
+            UpdateKeys(ip, sessionId);
+            connections.TryAdd(connectionkey, connection);
+        }
+
+        void IConnectionThrottler.ReleaseConnection(string ip, ConnectionContext connection)
+        {
+            if (connection.ActiveConnections > 0)
+                connection.ActiveConnections--;
+            if (connection.ActiveConnections <= 0)
+            {
+                connection.ActiveConnections = 0;
+                if (keys.TryGetValue(ip, out var connectionIds))
+                    connectionIds.Remove(connection.SessionId!);
+                connections.TryRemove(connection.Key!, out var _);
             }
         }
 
         void IConnectionThrottler.CleanupConnections()
         {
-            var cutoff = DateTime.UtcNow - connectionTimeout;
-            var staleIps = connections.Where(kvp => kvp.Value.LastActivity < cutoff).Select(kvp => kvp.Key).ToList();
+            var cutoff = DateTime.Now - connectionTimeout;
+            var staleIps = connections.Where(kvp => kvp.Value.LastActivity < cutoff).ToList();
             foreach (var ip in staleIps)
-                Instance.ReleaseConnection(ip);
+                Instance.ReleaseConnection(ip.Key, ip.Value);
         }
+
+        #region private methods
+
+        void UpdateKeys(string ip, string connectionId)
+        {
+            if (keys.TryGetValue(ip, out var connections))
+                connections.Add(connectionId);
+            else
+                keys.TryAdd(ip, [connectionId]);
+        }
+
+        #endregion
     }
 }

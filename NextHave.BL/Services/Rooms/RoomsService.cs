@@ -97,10 +97,10 @@ namespace NextHave.BL.Services.Rooms
             }
         }
         
-        async Task<RoomModel?> IRoomsService.GetRoomModel(string modelName, int roomId)
+        async Task<RoomModel?> IRoomsService.GetRoomModel(string modelName, int? roomId)
         {
-            if (modelName.Equals("custom", StringComparison.InvariantCultureIgnoreCase))
-                return await GetCustomModelData(roomId);
+            if (roomId.HasValue && modelName.Equals("custom", StringComparison.InvariantCultureIgnoreCase))
+                return await GetCustomModelData(roomId.Value);
 
             return await GetModelData(modelName);
         }

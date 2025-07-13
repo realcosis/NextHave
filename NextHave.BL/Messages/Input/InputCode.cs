@@ -42,5 +42,7 @@
         public const short SaveRoomSettingsMessageEvent = 1969;
 
         public const short GetRoomSettingsMessageEvent = 3129;
+
+        public const short CreateFlatMessageEvent = 2752;
     }
 }

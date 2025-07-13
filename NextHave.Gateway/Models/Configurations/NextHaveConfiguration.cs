@@ -8,5 +8,7 @@ namespace NextHave.Gateway.Models.Configurations
         public OriginConfiguration? Origin { get; set; }
 
         public JObject? ReverseProxy { get; set; }
+
+        public bool SSL { get; set; }
     }
 }

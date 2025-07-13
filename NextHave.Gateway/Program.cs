@@ -20,11 +20,12 @@ builder.Host.ConfigureDolphinApplication<NextHaveConfiguration>("NextHave", "1")
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
     serverOptions.Listen(System.Net.IPAddress.Any, 80);
-    serverOptions.Listen(System.Net.IPAddress.Any, 443, listenOptions =>
-    {
-        var cert = X509Certificate2.CreateFromPemFile("/etc/ssl/certs/server/cert.pem", "/etc/ssl/certs/server/key.pem");
-        listenOptions.UseHttps(cert);
-    });
+    if (builder.Configuration.GetSection("SSL").Get<bool>())
+        serverOptions.Listen(System.Net.IPAddress.Any, 443, listenOptions =>
+        {
+            var cert = X509Certificate2.CreateFromPemFile("/etc/ssl/certs/server/cert.pem", "/etc/ssl/certs/server/key.pem");
+            listenOptions.UseHttps(cert);
+        });
     serverOptions.Limits.MaxConcurrentConnections = 1050;
     serverOptions.Limits.MaxConcurrentUpgradedConnections = 100;
     serverOptions.Limits.MaxRequestBodySize = 10 * 1024 * 1024;

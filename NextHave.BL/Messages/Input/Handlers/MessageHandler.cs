@@ -32,6 +32,7 @@ using NextHave.BL.Messages.Parsers.Navigators;
 using NextHave.BL.Services.Navigators;
 using NextHave.BL.Services.Packets;
 using NextHave.BL.Services.Rooms;
+using NextHave.BL.Services.Rooms.Instances;
 using NextHave.BL.Services.Texts;
 using NextHave.BL.Services.Users;
 using NextHave.BL.Tasks.Rooms.Settings;
@@ -42,7 +43,7 @@ namespace NextHave.BL.Messages.Input.Handlers
     [Service(ServiceLifetime.Singleton)]
     class MessageHandler(IPacketsService packetsService, IServiceProvider serviceProvider, IServiceScopeFactory serviceScopeFactory) : IMessageHandler, IStartableService
     {
-        public async Task StartAsync()
+        async Task IStartableService.StartAsync()
         {
             packetsService.Subscribe<SSOTicketMessage>(this, OnSSOTicket);
 
@@ -84,10 +85,62 @@ namespace NextHave.BL.Messages.Input.Handlers
 
             packetsService.Subscribe<GetRoomSettingsMessage>(this, OnGetRoomSettingsMessage);
 
+            packetsService.Subscribe<CreateFlatMessage>(this, OnCreateFlatMessage);
+
             await Task.CompletedTask;
         }
 
-        public async Task OnSaveRoomSettingsMessage(SaveRoomSettingsMessage message, Client client)
+        async Task OnCreateFlatMessage(CreateFlatMessage message, Client client)
+        {
+            if (client?.UserInstance?.User == default)
+                return;
+
+            var textsService = await serviceScopeFactory.GetRequiredService<ITextsService>();
+
+            var roomsService = await serviceScopeFactory.GetRequiredService<IRoomsService>();
+
+            var navigatorsService = await serviceScopeFactory.GetRequiredService<INavigatorsService>();
+
+            if (string.IsNullOrWhiteSpace(message.ModelName))
+                return;
+
+            if (string.IsNullOrWhiteSpace(message.Name) || (!string.IsNullOrWhiteSpace(message.Name) && message.Name.Length < 3) || (!string.IsNullOrWhiteSpace(message.Name) && message.Name.Length > 25))
+            {
+                await client.SendSystemNotification("generic", new()
+                {
+                    ["message"] = textsService.GetText("nexthave_room_name_not_valid", "Room name not valid.")
+                });
+                return;
+            }
+
+            var model = await roomsService.GetRoomModel(message.ModelName!);
+
+            if (!navigatorsService.NavigatorCategories.TryGetValue(message.CategoryId, out var navigatorCategory))
+            {
+                await client.SendSystemNotification("generic", new()
+                {
+                    ["message"] = textsService.GetText("nexthave_room_category_not_found", "Room category not found.")
+                });
+                return;
+            }
+
+            if (navigatorCategory.MinRank > client.UserInstance.User.Rank)
+            {
+                await client.SendSystemNotification("generic", new()
+                {
+                    ["message"] = textsService.FormatText("nexthave_room_category_not_valid", "Room category not valid.", navigatorCategory.Name!)
+                });
+                return;
+            }
+
+            var tradeType = message.TradeType;
+            if (tradeType < 0 || tradeType > 2)
+                tradeType = 0;
+
+            
+        }
+
+        async Task OnSaveRoomSettingsMessage(SaveRoomSettingsMessage message, Client client)
         {
             if (client?.UserInstance?.User == default)
                 return;
@@ -142,7 +195,7 @@ namespace NextHave.BL.Messages.Input.Handlers
             await client.Send(new RoomVisualizationSettingsMessageComposer(roomInstance.Room.AllowHidewall, roomInstance.Room.WallThickness, roomInstance.Room.FloorThickness));
         }
 
-        public async Task OnGetRoomSettingsMessage(GetRoomSettingsMessage message, Client client)
+        async Task OnGetRoomSettingsMessage(GetRoomSettingsMessage message, Client client)
         {
             var roomsService = serviceProvider.GetRequiredService<IRoomsService>();
 
@@ -156,7 +209,7 @@ namespace NextHave.BL.Messages.Input.Handlers
             await client.Send(new RoomSettingsDataMessageComposer(roomInstance));
         }
 
-        public async Task OnSendMessageMessage(SendMessageMessage message, Client client)
+        async Task OnSendMessageMessage(SendMessageMessage message, Client client)
         {
             if (client.UserInstance?.User == default)
                 return;
@@ -169,7 +222,7 @@ namespace NextHave.BL.Messages.Input.Handlers
             });
         }
 
-        public async Task OnMessengerInitMessage(MessengerInitMessage message, Client client)
+        async Task OnMessengerInitMessage(MessengerInitMessage message, Client client)
         {
             if (client.UserInstance == default)
                 return;
@@ -180,7 +233,7 @@ namespace NextHave.BL.Messages.Input.Handlers
             });
         }
 
-        public async Task OnGoToHotelViewMessage(GoToHotelViewMessage message, Client client)
+        async Task OnGoToHotelViewMessage(GoToHotelViewMessage message, Client client)
         {
             if (client?.UserInstance?.CurrentRoomInstance == default || !client.UserInstance.CurrentRoomId.HasValue)
                 return;
@@ -201,7 +254,7 @@ namespace NextHave.BL.Messages.Input.Handlers
             client.UserInstance.CurrentRoomId = default;
         }
 
-        public async Task OnGetUserFlatCatsMessage(GetUserFlatCatsMessage message, Client client)
+        async Task OnGetUserFlatCatsMessage(GetUserFlatCatsMessage message, Client client)
         {
             if (client?.UserInstance?.User == default)
                 return;
@@ -213,7 +266,7 @@ namespace NextHave.BL.Messages.Input.Handlers
             await client.Send(new UserFlatCatsMessageComposer(categories));
         }
 
-        public async Task OnNewNavigatorInitMessage(NewNavigatorInitMessage message, Client client)
+        async Task OnNewNavigatorInitMessage(NewNavigatorInitMessage message, Client client)
         {
             if (client?.UserInstance == default)
                 return;
@@ -222,7 +275,7 @@ namespace NextHave.BL.Messages.Input.Handlers
             await client.Send(new CollapsedCategoriesMessageComposer());
         }
 
-        public async Task OnNewNavigatorSearchMessage(NewNavigatorSearchMessage message, Client client)
+        async Task OnNewNavigatorSearchMessage(NewNavigatorSearchMessage message, Client client)
         {
             if (client?.UserInstance == default)
                 return;
@@ -236,7 +289,7 @@ namespace NextHave.BL.Messages.Input.Handlers
             await client.Send(new NavigatorSearchResultBlocksMessageComposer(message.View!, message.Query!, result));
         }
 
-        public async Task OnStopTyping(StopTypingMessage message, Client client)
+        async Task OnStopTyping(StopTypingMessage message, Client client)
         {
             if (client?.UserInstance?.User == default || !client.UserInstance.CurrentRoomId.HasValue || client.UserInstance.CurrentRoomInstance == default)
                 return;
@@ -249,7 +302,7 @@ namespace NextHave.BL.Messages.Input.Handlers
             });
         }
 
-        public async Task OnStartTyping(StartTypingMessage message, Client client)
+        async Task OnStartTyping(StartTypingMessage message, Client client)
         {
             if (client?.UserInstance?.User == default || !client.UserInstance.CurrentRoomId.HasValue || client.UserInstance.CurrentRoomInstance == default)
                 return;
@@ -262,7 +315,7 @@ namespace NextHave.BL.Messages.Input.Handlers
             });
         }
 
-        public async Task OnGetGuestRoom(GetGuestRoomMessage message, Client client)
+        async Task OnGetGuestRoom(GetGuestRoomMessage message, Client client)
         {
             var roomsService = serviceProvider.GetRequiredService<IRoomsService>();
 
@@ -274,7 +327,7 @@ namespace NextHave.BL.Messages.Input.Handlers
             await client.Send(new GetGuestRoomResultMessageComposer(roomInstance.Room, roomInstance.CheckRights(client.UserInstance!, true), message.IsLoading, message.CheckEntry));
         }
 
-        public async Task OnChatMessage(ChatMessageMessage message, Client client)
+        async Task OnChatMessage(ChatMessageMessage message, Client client)
         {
             if (client?.UserInstance == default || !client.UserInstance.CurrentRoomId.HasValue || client.UserInstance.CurrentRoomInstance == default)
                 return;
@@ -289,7 +342,7 @@ namespace NextHave.BL.Messages.Input.Handlers
             });
         }
 
-        public async Task OnShoutMessage(ShoutMessageMessage message, Client client)
+        async Task OnShoutMessage(ShoutMessageMessage message, Client client)
         {
             if (client?.UserInstance == default || !client.UserInstance.CurrentRoomId.HasValue || client.UserInstance.CurrentRoomInstance == default)
                 return;
@@ -304,7 +357,7 @@ namespace NextHave.BL.Messages.Input.Handlers
             });
         }
 
-        public async Task OnMoveObject(MoveObjectMessage message, Client client)
+        async Task OnMoveObject(MoveObjectMessage message, Client client)
         {
             if (client?.UserInstance == default || !client.UserInstance.CurrentRoomId.HasValue || client.UserInstance.CurrentRoomInstance == default)
                 return;
@@ -319,7 +372,7 @@ namespace NextHave.BL.Messages.Input.Handlers
             });
         }
 
-        public async Task OnMoveAvatar(MoveAvatarMessage message, Client client)
+        async Task OnMoveAvatar(MoveAvatarMessage message, Client client)
         {
             if (client?.UserInstance == default)
                 return;
@@ -340,7 +393,7 @@ namespace NextHave.BL.Messages.Input.Handlers
             });
         }
 
-        public async Task OnGetRoomEntryDataMessage(GetRoomEntryDataMessage message, Client client)
+        async Task OnGetRoomEntryDataMessage(GetRoomEntryDataMessage message, Client client)
         {
             if (client?.UserInstance == default)
                 return;
@@ -372,7 +425,7 @@ namespace NextHave.BL.Messages.Input.Handlers
             }
         }
 
-        public async Task OnGetFurnitureAliasesMessage(GetFurnitureAliasesMessage message, Client client)
+        async Task OnGetFurnitureAliasesMessage(GetFurnitureAliasesMessage message, Client client)
         {
             if (client?.UserInstance == default)
                 return;
@@ -387,7 +440,7 @@ namespace NextHave.BL.Messages.Input.Handlers
                 await client.Send(new FurnitureAliasesMessageComposer());
         }
 
-        public async Task OnOpenFlatMessage(OpenFlatMessage message, Client client)
+        async Task OnOpenFlatMessage(OpenFlatMessage message, Client client)
         {
             if (client?.UserInstance == default)
                 return;
@@ -456,7 +509,7 @@ namespace NextHave.BL.Messages.Input.Handlers
             await client.Send(new RoomPropertyMessageComposer("landscape", roomInstance.Room.Landscape!));
         }
 
-        public async Task OnSSOTicket(SSOTicketMessage message, Client client)
+        async Task OnSSOTicket(SSOTicketMessage message, Client client)
         {
             var usersService = serviceProvider.GetRequiredService<IUsersService>();
             var userInstance = await usersService.LoadHabbo(message.SSO!, message.ElapsedMilliseconds);
@@ -484,7 +537,7 @@ namespace NextHave.BL.Messages.Input.Handlers
             });
         }
 
-        public async Task OnInfoRetrieve(InfoRetrieveMessage message, Client client)
+        async Task OnInfoRetrieve(InfoRetrieveMessage message, Client client)
         {
             if (client?.UserInstance == default)
                 return;

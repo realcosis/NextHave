@@ -24,7 +24,7 @@
     "Audience": "nexthave"
   },
   "Origin": {
-    "Hosts": ["https://localhost:50281", "http://localhost:50282"],
-	"BlazorApp": "http://localhost:50282"
-  }
+    "Hosts": ["https://localhost:50281", "http://localhost:50282"]
+  },
+  "SSL": false
 }
