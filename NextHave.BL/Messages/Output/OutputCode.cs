@@ -85,5 +85,7 @@
         public const short RoomSettingsSavedMessageComposer = 948;
 
         public const short RoomInfoUpdatedMessageComposer = 3297;
+
+        public const short FlatCreatedMessageComposer = 1304;
     }
 }

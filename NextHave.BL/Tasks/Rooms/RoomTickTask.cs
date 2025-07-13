@@ -13,14 +13,18 @@ namespace NextHave.BL.Tasks.Rooms
 
         public async Task Execute()
         {
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+
             var cancellationSource = new CancellationTokenSource();
-            var roomsService = await serviceScopeFactory.GetRequiredService<IRoomsService>();
+            var roomsService = scope.ServiceProvider.GetRequiredService<IRoomsService>();
 
             await Parallel.ForEachAsync(roomsService.ActiveRooms.Values, new ParallelOptions()
             {
                 CancellationToken = cancellationSource.Token,
                 MaxDegreeOfParallelism = Environment.ProcessorCount
             }, async (roomInstance, token) => await roomInstance.Tick());
+
+            await scope.DisposeAsync();
         }
     }
 }

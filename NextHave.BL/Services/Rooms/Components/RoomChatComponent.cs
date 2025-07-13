@@ -34,11 +34,15 @@ namespace NextHave.BL.Services.Rooms.Components
         {
             _roomInstance = roomInstance;
 
-            var mysqlDbContext = await serviceScopeFactory.GetRequiredService<MySQLDbContext>();
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+
+            var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
 
             Emojis = await mysqlDbContext.RoomEmojis.AsNoTracking().ToDictionaryAsync(k => k.Code!, v => v.Emoji!);
 
             await _roomInstance.EventsService.SubscribeAsync<ChatMessageEvent>(_roomInstance, OnChatMessage);
+
+            await scope.DisposeAsync();
         }
 
         async Task OnChatMessage(ChatMessageEvent @event)
@@ -46,10 +50,12 @@ namespace NextHave.BL.Services.Rooms.Components
             if (_roomInstance?.Room == default)
                 return;
 
-            var backgroundsService = await serviceScopeFactory.GetRequiredService<IBackgroundsService>();
-            var textsService = await serviceScopeFactory.GetRequiredService<ITextsService>();
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
 
-            var userInstance = (await serviceScopeFactory.GetRequiredService<UserFactory>()).GetUserInstance(@event.UserId);
+            var backgroundsService = scope.ServiceProvider.GetRequiredService<IBackgroundsService>();
+            var textsService = scope.ServiceProvider.GetRequiredService<ITextsService>();
+
+            var userInstance = scope.ServiceProvider.GetRequiredService<UserFactory>().GetUserInstance(@event.UserId);
 
             if (userInstance?.Client == default)
                 return;
@@ -63,7 +69,7 @@ namespace NextHave.BL.Services.Rooms.Components
                 return;
             }
 
-            var task = await serviceScopeFactory.GetRequiredKeyedService<AddCatalogTask>("AddCatalogTask");
+            var task = scope.ServiceProvider.GetRequiredKeyedService<AddCatalogTask>("AddCatalogTask");
             if (task == default)
                 return;
 
@@ -97,6 +103,8 @@ namespace NextHave.BL.Services.Rooms.Components
                     WithRights = false,
                     RoomId = _roomInstance.Room.Id,
                 });
+
+            await scope.DisposeAsync();
         }
 
         #region private methods 

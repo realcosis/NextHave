@@ -1,6 +1,5 @@
 ﻿using Dolphin.Core.Injection;
 using Microsoft.Extensions.DependencyInjection;
-using NextHave.BL;
 using NextHave.BL.Enums;
 using NextHave.BL.Models.Navigators;
 using NextHave.BL.Services.Navigators.Filters;
@@ -19,7 +18,9 @@ namespace Dolphin.HabboHotel.Navigators.Filters
             if (userInstance?.User == default)
                 return [];
 
-            var roomsService = await serviceScopeFactory.GetRequiredService<IRoomsService>();
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+
+            var roomsService = scope.ServiceProvider.GetRequiredService<IRoomsService>();
 
             var resultLists = new List<SearchResultList>();
 
@@ -34,6 +35,8 @@ namespace Dolphin.HabboHotel.Navigators.Filters
             userInstance.User!.Groups.Where(g => g.Room != default).Select(g => g.Room!).ToList().ForEach(r => r.UsersNow = roomsService.ActiveRooms.TryGetValue(r.Id, out var room) ? room.Room!.UsersNow : 0);
             var myGroups = new SearchResultList(2, "my_groups", string.Empty, SearchAction.NONE, ListMode.LIST, DisplayMode.VISIBLE, [.. userInstance.User.Groups.Where(g => g.Room != default).Select(g => g.Room!).OrderByDescending(gr => gr.UsersNow)], false, false, DisplayOrder.ACTIVITY, 3);
             resultLists.Add(myGroups);
+
+            await scope.DisposeAsync();
 
             return await Task.FromResult(resultLists);
         }

@@ -15,9 +15,11 @@ namespace NextHave.BL.Services.Navigators.Filters
         async Task<List<SearchResultList>> IFilter.GetSearchResults(IUserInstance userInstance, string? _)
         {           
             var resultLists = new List<SearchResultList>();
-            
-            var navigatorsService = await serviceScopeFactory.GetRequiredService<INavigatorsService>();
-            var roomsService = await serviceScopeFactory.GetRequiredService<IRoomsService>();
+
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+
+            var navigatorsService = scope.ServiceProvider.GetRequiredService<INavigatorsService>();
+            var roomsService = scope.ServiceProvider.GetRequiredService<IRoomsService>();
 
             foreach (var (index, category) in navigatorsService.PublicCategories.Values.Index())
             {
@@ -27,6 +29,8 @@ namespace NextHave.BL.Services.Navigators.Filters
                     resultLists.Add(new SearchResultList(index, string.Empty, category.Name!, SearchAction.NONE, ListMode.THUMBNAILS, DisplayMode.VISIBLE, category.Rooms, true, false, DisplayOrder.ORDER_NUM, category.OrderNumber));
                 }
             }
+
+            await scope.DisposeAsync();
 
             return await Task.FromResult(resultLists);
         }

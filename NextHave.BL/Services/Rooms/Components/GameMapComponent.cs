@@ -31,13 +31,14 @@ namespace NextHave.BL.Services.Rooms.Components
             if (_roomInstance?.Room == default)
                 return;
 
-            var roomsService = await serviceScopeFactory.GetRequiredService<IRoomsService>();
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+
+            var roomsService = scope.ServiceProvider.GetRequiredService<IRoomsService>();
             var roomModel = await roomsService.GetRoomModel(_roomInstance.Room.ModelName!, _roomInstance.Room.Id);
             if (roomModel != default)
-            {
-                roomModel.RoomInstance = _roomInstance;
                 _roomInstance.RoomModel = new WorkRoomModel(_roomInstance, roomModel);
-            }
+
+            await scope.DisposeAsync();
         }
     }
 }

@@ -23,7 +23,9 @@ namespace NextHave.BL.Services.Rooms.Commands.Users
         {
             var text = new StringBuilder();
 
-            var roomUserFactory = await serviceScopeFactory.GetRequiredService<RoomUserFactory>();
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+
+            var roomUserFactory = scope.ServiceProvider.GetRequiredService<RoomUserFactory>();
             var roomUserInstance = roomUserFactory.GetRoomUserInstance(client.UserInstance!.User!.Id);
             if (roomUserInstance == default)
                 return;
@@ -33,6 +35,8 @@ namespace NextHave.BL.Services.Rooms.Commands.Users
             text.AppendLine($"<b>Z</b>: {roomUserInstance.Position!.GetZ}");
 
             await client.Send(new RoomNotificationMessageComposer($"Le tue coorindate", text.ToString(), string.Empty));
+
+            await scope.DisposeAsync();
         }
     }
 }

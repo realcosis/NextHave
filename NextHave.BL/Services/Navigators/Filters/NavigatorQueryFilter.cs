@@ -21,9 +21,11 @@ namespace NextHave.BL.Services.Navigators.Filters
             if (string.IsNullOrWhiteSpace(query))
                 return [];
 
-            var mongoDbContext = await serviceScopeFactory.GetRequiredService<MongoDbContext>();
-            var mysqlDbContext = await serviceScopeFactory.GetRequiredService<MySQLDbContext>();
-            var roomsService = await serviceScopeFactory.GetRequiredService<IRoomsService>();
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+
+            var mongoDbContext = scope.ServiceProvider.GetRequiredService<MongoDbContext>();
+            var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
+            var roomsService = scope.ServiceProvider.GetRequiredService<IRoomsService>();
 
             var resultLists = new List<SearchResultList>();
 
@@ -78,6 +80,8 @@ namespace NextHave.BL.Services.Navigators.Filters
                 var result = new SearchResultList(0, "query", string.Empty, SearchAction.NONE, ListMode.LIST, DisplayMode.VISIBLE, resultRooms, false, false, DisplayOrder.ACTIVITY, 1);
                 resultLists.Add(result);
             }
+
+            await scope.DisposeAsync();
 
             return resultLists;
         }

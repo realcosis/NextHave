@@ -21,6 +21,8 @@ namespace NextHave.BL.Tasks.Rooms.Settings
             if (Parameters.IsEmpty)
                 return;
 
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+
             var room = Parameters.GetParameter<Room>("room", DolphinTypeCode.Custom);
             var clientId = Parameters.GetParameter<string>("client", DolphinTypeCode.String);
             var category = Parameters.GetParameter<NavigatorCategory>("category", DolphinTypeCode.Custom);
@@ -31,9 +33,11 @@ namespace NextHave.BL.Tasks.Rooms.Settings
             if (room == default || client == default || category == default)
                 return;
 
-            var roomsService = await serviceScopeFactory.GetRequiredService<IRoomsService>();
+            var roomsService = scope.ServiceProvider.GetRequiredService<IRoomsService>();
 
             await roomsService.SaveRoom(room, client, category);
+
+            await scope.DisposeAsync();
         }
     }
 }

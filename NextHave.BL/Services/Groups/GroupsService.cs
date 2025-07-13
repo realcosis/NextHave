@@ -10,7 +10,7 @@ using NextHave.BL.Mappers;
 namespace NextHave.BL.Services.Groups
 {
     [Service(ServiceLifetime.Singleton)]
-    class GroupsService(IServiceProvider serviceProvider, ILogger<IGroupsService> logger) : IGroupsService, IStartableService
+    class GroupsService(IServiceScopeFactory serviceScopeFactory, ILogger<IGroupsService> logger) : IGroupsService, IStartableService
     {
         IGroupsService Instance => this;
 
@@ -18,7 +18,9 @@ namespace NextHave.BL.Services.Groups
 
         async Task<Group?> IGroupsService.GetGroup(int groupId)
         {
-            var mysqlDbContext = serviceProvider.GetRequiredService<MySQLDbContext>();
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+
+            var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
 
             var groupEntity = await mysqlDbContext
                                         .Groups
@@ -27,6 +29,8 @@ namespace NextHave.BL.Services.Groups
                                                 .ThenInclude(m => m.User)
                                             .FirstOrDefaultAsync(g => g.Id == groupId);
 
+            await scope.DisposeAsync();
+
             return groupEntity?.Map();
         }
 
@@ -34,9 +38,12 @@ namespace NextHave.BL.Services.Groups
         {
             Instance.GroupElements.Clear();
 
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+
             try
             {
-                var mysqlDbContext = serviceProvider.GetRequiredService<MySQLDbContext>();
+
+                var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
 
                 var groupElements = await mysqlDbContext.GroupElements.AsNoTracking().ToListAsync();
                 groupElements.ForEach(groupElement => Instance.GroupElements.TryAdd($"{groupElement.Id}-{groupElement.Type}", groupElement.Map()));
@@ -46,6 +53,10 @@ namespace NextHave.BL.Services.Groups
             catch (Exception ex)
             {
                 logger.LogWarning("Exception during starting of GroupsService: {ex}", ex);
+            }
+            finally
+            {
+                await scope.DisposeAsync();
             }
         }
     }

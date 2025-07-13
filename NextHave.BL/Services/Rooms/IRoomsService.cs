@@ -1,4 +1,5 @@
 ﻿using NextHave.BL.Clients;
+using NextHave.BL.Models.Users;
 using NextHave.BL.Models.Rooms;
 using System.Collections.Concurrent;
 using NextHave.BL.Models.Rooms.Navigators;
@@ -19,5 +20,7 @@ namespace NextHave.BL.Services.Rooms
         Task DisposeRoom(int roomId);
         
         Task SaveRoom(Room room, Client client, NavigatorCategory category);
+
+        Task<Room?> CreateRoom(string name, string description, string modelId, RoomModel model, NavigatorCategory category, User user, int maxPlayers, int tradeType);
     }
 }

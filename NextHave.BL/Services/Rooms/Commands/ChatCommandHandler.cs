@@ -11,8 +11,10 @@ namespace NextHave.BL.Services.Rooms.Commands
                 return;
 
             var parameters = inputData.Replace(":", string.Empty).Split(' ');
-            
-            var commands = await serviceScopeFactory.GetRequiredService<IEnumerable<IChatCommand>>();
+
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+
+            var commands = scope.ServiceProvider.GetRequiredService<IEnumerable<IChatCommand>>();
 
             var command = commands.FirstOrDefault(c => c.Key!.ToLower().Equals(parameters[0].ToLower(), StringComparison.InvariantCultureIgnoreCase) || c.OtherKeys.Any(k => k.Equals(parameters[0].ToLower(), StringComparison.InvariantCultureIgnoreCase)));
 
@@ -21,6 +23,8 @@ namespace NextHave.BL.Services.Rooms.Commands
                 command.Parameters = [.. parameters.Skip(1)];
                 await command.Execute(client);
             }
+
+            await scope.DisposeAsync();
         }
     }
 }

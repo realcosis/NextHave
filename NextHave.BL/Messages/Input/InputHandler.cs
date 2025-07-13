@@ -14,11 +14,15 @@ namespace NextHave.BL.Messages.Input
             if (Client == default || header < 0 || header >= 4095)
                 return;
 
-            var packetsService = await serviceScopeFactory.GetRequiredService<IPacketsService>();
-            var parsersService = await serviceScopeFactory.GetRequiredService<IParsersService>();
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+
+            var packetsService = scope.ServiceProvider.GetRequiredService<IPacketsService>();
+            var parsersService = scope.ServiceProvider.GetRequiredService<IParsersService>();
 
             if (parsersService.TryGetParser(header, out var parser))
                 await parser!.HandleAsync(Client!, message, packetsService);
+
+            await scope.DisposeAsync();
         }
     }
 }

@@ -13,7 +13,7 @@ using System.Collections.Concurrent;
 namespace NextHave.BL.Services.Navigators
 {
     [Service(ServiceLifetime.Singleton)]
-    class NavigatorsService(ILogger<INavigatorsService> logger, IServiceProvider serviceProvider, IRoomsService roomsService) : INavigatorsService, IStartableService
+    class NavigatorsService(ILogger<INavigatorsService> logger, IServiceScopeFactory serviceScopeFactory, IRoomsService roomsService) : INavigatorsService, IStartableService
     {
         INavigatorsService Instance => this;
 
@@ -29,11 +29,13 @@ namespace NextHave.BL.Services.Navigators
             Instance.NavigatorCategories.Clear();
             Instance.Filters.Clear();
 
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+
             try
             {
-                var mysqlDbContext = serviceProvider.GetRequiredService<MySQLDbContext>();
+                var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
 
-                var filters = serviceProvider.GetRequiredService<IEnumerable<IFilter>>().ToList();
+                var filters = scope.ServiceProvider.GetRequiredService<IEnumerable<IFilter>>().ToList();
 
                 var publicCategories = await mysqlDbContext.NavigatorPublicCategories.Where(npc => npc.Visible).AsNoTracking().ToListAsync();
                 publicCategories.ForEach(category => Instance.PublicCategories.TryAdd(category.Id, category.Map()));
@@ -62,6 +64,10 @@ namespace NextHave.BL.Services.Navigators
             catch (Exception ex)
             {
                 logger.LogWarning("Exception during starting of NavigatorsService: {ex}", ex);
+            }
+            finally
+            {
+                await scope.DisposeAsync();
             }
         }
     }

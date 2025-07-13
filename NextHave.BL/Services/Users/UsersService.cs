@@ -31,202 +31,210 @@ namespace NextHave.BL.Services.Users
         ConcurrentDictionary<int, IUserInstance> IUsersService.Users { get; } = [];
 
         async Task<User?> IUsersService.GetHabbo(int userId)
-        {
-            var mysqlDbContext = await serviceScopeFactory.GetRequiredService<MySQLDbContext>();
+            => await serviceScopeFactory.Execute(async (serviceProvider) =>
+            {
+                var mysqlDbContext = serviceProvider.GetRequiredService<MySQLDbContext>();
 
-            var user = await mysqlDbContext
-                                .Users
-                                    .Where(u => u.Id == userId)
-                                    .FirstOrDefaultAsync() ?? throw new DolphinException(Errors.UserNotFound);
+                var user = await mysqlDbContext
+                                    .Users
+                                        .Where(u => u.Id == userId)
+                                        .FirstOrDefaultAsync() ?? throw new DolphinException(Errors.UserNotFound);
 
-            return user.MapResult();
-        }
+                return user.MapResult();
+            });
 
         async Task<IUserInstance?> IUsersService.LoadHabbo(string authTicket, int time)
-        {
-            try
+            => await serviceScopeFactory.Execute(async (serviceProvider) =>
             {
-                var date = DateTime.Now.AddMilliseconds(time);
-
-                var mysqlDbContext = await serviceScopeFactory.GetRequiredService<MySQLDbContext>();
-
-                var mongoDbContext = await serviceScopeFactory.GetRequiredService<MongoDbContext>();
-
-                var permissionsService = await serviceScopeFactory.GetRequiredService<IPermissionsService>();
-
-                var userFactory = await serviceScopeFactory.GetRequiredService<UserFactory>();
-
-                var userTicket = await mysqlDbContext
-                                        .UserTickets
-                                            .Include(ut => ut.User)
-                                                .ThenInclude(u => u!.Favorites)
-                                            .Include(ut => ut.User)
-                                                .ThenInclude(u => u!.GroupMemberships)
-                                                    .ThenInclude(u => u.Group)
-                                            .FirstOrDefaultAsync(ut => ut.Ticket == authTicket) ?? throw new DolphinException(Errors.UserTicketNotFound);
-
-                var user = userTicket.User ?? throw new DolphinException(Errors.UserNotFound);
-
-                user.LastOnline = date;
-
-                mysqlDbContext.Users.Update(user);
-                await mysqlDbContext.SaveChangesAsync();
-
-                var rooms = await mongoDbContext.Rooms.Where(r => r.Author!.AuthorId == user.Id).AsNoTracking().ToListAsync();
-
-                var groupIds = rooms.Where(r => r.Group != default).Select(r => r.Group!.GroupId).Distinct().ToList();
-                var groups = await mysqlDbContext.Groups.AsNoTracking().Where(g => groupIds.Contains(g.Id)).Select(g => g.Map()).ToListAsync();
-
-                var resultRooms = rooms.Select(r => r.Map(groups.FirstOrDefault(g => g.RoomId == r.EntityId), 0)).ToList();
-
-                var favoriteRooms = new List<Room>();
-                var roomIds = user.Favorites.Select(f => f.RoomId);
-
-                groupIds = [.. rooms.Where(r => r.Group != default).Select(r => r.Group!.GroupId).Distinct()];
-                groups = await mysqlDbContext.Groups.AsNoTracking().Where(g => roomIds.Contains(g.RoomId)).Select(g => g.Map()).ToListAsync();
-
-                var dbFavoritesRooms = await mongoDbContext.Rooms.Where(r => roomIds.Contains(r.EntityId)).AsNoTracking().ToListAsync();
-                foreach (var room in dbFavoritesRooms)
+                try
                 {
-                    var group = default(Group?);
-                    if (room.Group != default)
-                        group = groups.FirstOrDefault(g => g.Id == room.Group.GroupId);
-                    favoriteRooms.Add(room.Map(group));
+                    var date = DateTime.Now.AddMilliseconds(time);
+
+                    var mysqlDbContext = serviceProvider.GetRequiredService<MySQLDbContext>();
+
+                    var mongoDbContext = serviceProvider.GetRequiredService<MongoDbContext>();
+
+                    var permissionsService = serviceProvider.GetRequiredService<IPermissionsService>();
+
+                    var userFactory = serviceProvider.GetRequiredService<UserFactory>();
+
+                    var userTicket = await mysqlDbContext
+                                            .UserTickets
+                                                .Include(ut => ut.User)
+                                                    .ThenInclude(u => u!.Favorites)
+                                                .Include(ut => ut.User)
+                                                    .ThenInclude(u => u!.GroupMemberships)
+                                                        .ThenInclude(u => u.Group)
+                                                .FirstOrDefaultAsync(ut => ut.Ticket == authTicket) ?? throw new DolphinException(Errors.UserTicketNotFound);
+
+                    var user = userTicket.User ?? throw new DolphinException(Errors.UserNotFound);
+
+                    user.LastOnline = date;
+
+                    mysqlDbContext.Users.Update(user);
+                    await mysqlDbContext.SaveChangesAsync();
+
+                    var rooms = await mongoDbContext.Rooms.Where(r => r.Author!.AuthorId == user.Id).AsNoTracking().ToListAsync();
+
+                    var groupIds = rooms.Where(r => r.Group != default).Select(r => r.Group!.GroupId).Distinct().ToList();
+                    var groups = await mysqlDbContext.Groups.AsNoTracking().Where(g => groupIds.Contains(g.Id)).Select(g => g.Map()).ToListAsync();
+
+                    var resultRooms = rooms.Select(r => r.Map(groups.FirstOrDefault(g => g.RoomId == r.EntityId), 0)).ToList();
+
+                    var favoriteRooms = new List<Room>();
+                    var roomIds = user.Favorites.Select(f => f.RoomId);
+
+                    groupIds = [.. rooms.Where(r => r.Group != default).Select(r => r.Group!.GroupId).Distinct()];
+                    groups = await mysqlDbContext.Groups.AsNoTracking().Where(g => roomIds.Contains(g.RoomId)).Select(g => g.Map()).ToListAsync();
+
+                    var dbFavoritesRooms = await mongoDbContext.Rooms.Where(r => roomIds.Contains(r.EntityId)).AsNoTracking().ToListAsync();
+                    foreach (var room in dbFavoritesRooms)
+                    {
+                        var group = default(Group?);
+                        if (room.Group != default)
+                            group = groups.FirstOrDefault(g => g.Id == room.Group.GroupId);
+                        favoriteRooms.Add(room.Map(group));
+                    }
+
+                    groups = [.. user.GroupMemberships.Select(gm => gm.Group).Select(g => g!.Map())];
+                    var groupRoomIds = groups.Select(g => g.RoomId).Distinct().ToList();
+                    var groupRooms = await mongoDbContext.Rooms.Where(r => groupRoomIds.Contains(r.EntityId)).AsNoTracking().ToListAsync();
+                    foreach (var group in groups)
+                        group.Room = groupRooms.FirstOrDefault(gr => gr.EntityId == group.RoomId)?.Map(group);
+
+                    var result = user.MapResult();
+                    result.Rooms = resultRooms;
+                    result.FavoriteRooms = favoriteRooms;
+                    result.Groups = groups;
+
+                    var userInstance = userFactory.GetUserInstance(result.Id, result);
+
+                    if (permissionsService.Groups.TryGetValue(user.Rank!.Value, out var permissionGroup))
+                        userInstance.Permission = permissionGroup;
+
+                    await userInstance.Init();
+
+                    Instance.Users.TryAdd(userInstance.User!.Id, userInstance);
+
+                    await userInstance.EventsService.SubscribeAsync<UserDisconnectedEvent>(userInstance, OnUserDisconnected);
+
+                    return userInstance;
                 }
-
-                groups = [.. user.GroupMemberships.Select(gm => gm.Group).Select(g => g!.Map())];
-                var groupRoomIds = groups.Select(g => g.RoomId).Distinct().ToList();
-                var groupRooms = await mongoDbContext.Rooms.Where(r => groupRoomIds.Contains(r.EntityId)).AsNoTracking().ToListAsync();
-                foreach (var group in groups)
-                    group.Room = groupRooms.FirstOrDefault(gr => gr.EntityId == group.RoomId)?.Map(group);
-
-                var result = user.MapResult();
-                result.Rooms = resultRooms;
-                result.FavoriteRooms = favoriteRooms;
-                result.Groups = groups;
-
-                var userInstance = userFactory.GetUserInstance(result.Id, result);
-
-                if (permissionsService.Groups.TryGetValue(user.Rank!.Value, out var permissionGroup))
-                    userInstance.Permission = permissionGroup;
-
-                await userInstance.Init();
-
-                Instance.Users.TryAdd(userInstance.User!.Id, userInstance);
-
-                await userInstance.EventsService.SubscribeAsync<UserDisconnectedEvent>(userInstance, OnUserDisconnected);
-
-                return userInstance;
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error loading Habbo with auth ticket: {AuthTicket}", authTicket);
-                return default;
-            }
-        }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Error loading Habbo with auth ticket: {AuthTicket}", authTicket);
+                    return default;
+                }
+            });
 
         async Task<User?> IUsersService.Login(UserLoginWrite userLogin)
-        {
-            userLogin?.Validate();
+            => await serviceScopeFactory.Execute(async (serviceProvider) =>
+            {
+                userLogin?.Validate();
 
-            var mysqlDbContext = await serviceScopeFactory.GetRequiredService<MySQLDbContext>();
-            var user = await mysqlDbContext
-                                    .Users
-                                        .FirstOrDefaultAsync(u => u.Username!.ToLower() == userLogin!.Username!.ToLower() || u.Mail! == userLogin!.Username!.ToLower()) ?? throw new DolphinException(Errors.UserNotFound);
+                var mysqlDbContext = serviceProvider.GetRequiredService<MySQLDbContext>();
 
-            if (!userLogin!.Password!.VerifyPassword(user.Password!))
-                throw new DolphinException(Errors.InvalidPassword);
+                var user = await mysqlDbContext
+                                        .Users
+                                            .FirstOrDefaultAsync(u => u.Username!.ToLower() == userLogin!.Username!.ToLower() || u.Mail! == userLogin!.Username!.ToLower()) ?? throw new DolphinException(Errors.UserNotFound);
 
-            return user.MapResult();
-        }
+                if (!userLogin!.Password!.VerifyPassword(user.Password!))
+                    throw new DolphinException(Errors.InvalidPassword);
+
+                return user.MapResult();
+            });
 
         async Task<User> IUsersService.Register(UserRegistrationWrite userRegistration, string? registrationIp)
-        {
-            userRegistration?.Validate();
+            => await serviceScopeFactory.Execute(async (serviceProvider) =>
+            {
+                userRegistration?.Validate();
 
-            var mysqlDbContext = await serviceScopeFactory.GetRequiredService<MySQLDbContext>();
+                var mysqlDbContext = serviceProvider.GetRequiredService<MySQLDbContext>();
 
-            var hotelName = settingsService.GetSetting("hotel_name");
-            var defaultLook = settingsService.GetSetting("default_look");
+                var hotelName = settingsService.GetSetting("hotel_name");
+                var defaultLook = settingsService.GetSetting("default_look");
 
-            if (await mysqlDbContext
-                        .Users
-                            .AsNoTracking()
-                            .AnyAsync(u => u.Username!.Equals(userRegistration!.Username, StringComparison.CurrentCultureIgnoreCase)))
-                throw new DolphinException(Errors.UsernameAlreadyTaked);
+                if (await mysqlDbContext
+                            .Users
+                                .AsNoTracking()
+                                .AnyAsync(u => u.Username!.Equals(userRegistration!.Username, StringComparison.CurrentCultureIgnoreCase)))
+                    throw new DolphinException(Errors.UsernameAlreadyTaked);
 
-            if (await mysqlDbContext
-                        .Users
-                            .AsNoTracking()
-                            .AnyAsync(u => u.Mail!.Equals(userRegistration!.Mail, StringComparison.CurrentCultureIgnoreCase)))
-                throw new DolphinException(Errors.MailAlreadyTaked);
+                if (await mysqlDbContext
+                            .Users
+                                .AsNoTracking()
+                                .AnyAsync(u => u.Mail!.Equals(userRegistration!.Mail, StringComparison.CurrentCultureIgnoreCase)))
+                    throw new DolphinException(Errors.MailAlreadyTaked);
 
-            var newUser = userRegistration!.MapRegistration(registrationIp, hotelName, defaultLook);
+                var newUser = userRegistration!.MapRegistration(registrationIp, hotelName, defaultLook);
 
-            await mysqlDbContext.Users.AddAsync(newUser);
-            await mysqlDbContext.SaveChangesAsync();
+                await mysqlDbContext.Users.AddAsync(newUser);
+                await mysqlDbContext.SaveChangesAsync();
 
-            return newUser.MapResult();
-        }
+                return newUser.MapResult();
+            });
 
         async Task<User?> IUsersService.GetFromToken(int userId)
-        {
-            var mysqlDbContext = await serviceScopeFactory.GetRequiredService<MySQLDbContext>();
+            => await serviceScopeFactory.Execute(async (serviceProvider) =>
+            {
+                var mysqlDbContext = serviceProvider.GetRequiredService<MySQLDbContext>();
 
-            var user = await mysqlDbContext
-                                    .Users
-                                        .FirstOrDefaultAsync(u => u.Id == userId) ?? throw new DolphinException(Errors.UserNotFound);
+                var user = await mysqlDbContext
+                                        .Users
+                                            .FirstOrDefaultAsync(u => u.Id == userId) ?? throw new DolphinException(Errors.UserNotFound);
 
-            return user.MapResult();
-        }
+                return user.MapResult();
+            });
 
         async Task<string?> IUsersService.GetAndSetAuthToken(int userId)
-        {
-            var mysqlDbContext = await serviceScopeFactory.GetRequiredService<MySQLDbContext>();
-
-            var newticket = Guid.NewGuid().ToString("N");
-
-            var ticket = await mysqlDbContext
-                                        .UserTickets
-                                            .FirstOrDefaultAsync(ut => ut.UserId == userId);
-
-            if (ticket == default)
+            => await serviceScopeFactory.Execute(async (serviceProvider) =>
             {
-                ticket = new UserTicketEntity()
+                var mysqlDbContext = serviceProvider.GetRequiredService<MySQLDbContext>();
+
+                var newticket = Guid.NewGuid().ToString("N");
+
+                var ticket = await mysqlDbContext
+                                            .UserTickets
+                                                .FirstOrDefaultAsync(ut => ut.UserId == userId);
+
+                if (ticket == default)
                 {
-                    UserId = userId,
-                    Ticket = newticket
-                };
-                await mysqlDbContext.UserTickets.AddAsync(ticket);
-            }
-            else
-            {
-                ticket.Ticket = newticket;
-                mysqlDbContext.UserTickets.Update(ticket);
-            }
+                    ticket = new UserTicketEntity()
+                    {
+                        UserId = userId,
+                        Ticket = newticket
+                    };
+                    await mysqlDbContext.UserTickets.AddAsync(ticket);
+                }
+                else
+                {
+                    ticket.Ticket = newticket;
+                    mysqlDbContext.UserTickets.Update(ticket);
+                }
 
-            await mysqlDbContext.SaveChangesAsync();
+                await mysqlDbContext.SaveChangesAsync();
 
-            return ticket.Ticket;
-        }
+                return ticket.Ticket;
+            });
 
         #region private methods
 
         async Task OnUserDisconnected(UserDisconnectedEvent @event)
-        {
-            if (Instance.Users.TryGetValue(@event.UserId, out var userInstance) && userInstance.User != default)
+            => await serviceScopeFactory.Execute(async (serviceProvider) =>
             {
-                await userInstance.EventsService.UnsubscribeAsync<UserDisconnectedEvent>(userInstance, OnUserDisconnected);
+                if (Instance.Users.TryGetValue(@event.UserId, out var userInstance) && userInstance.User != default)
+                {
+                    await userInstance.EventsService.UnsubscribeAsync<UserDisconnectedEvent>(userInstance, OnUserDisconnected);
 
-                await userInstance.Dispose();
+                    await userInstance.Dispose();
 
-                (await serviceScopeFactory.GetRequiredService<UserFactory>()).DestroyUserInstance(@event.UserId);
+                    serviceProvider.GetRequiredService<UserFactory>().DestroyUserInstance(@event.UserId);
 
-                (await serviceScopeFactory.GetRequiredService<UserEventsFactory>()).CleanupUser(@event.UserId);
+                    serviceProvider.GetRequiredService<UserEventsFactory>().CleanupUser(@event.UserId);
 
-                Instance.Users.TryRemove(@event.UserId, out _);
-            }
-        }
+                    Instance.Users.TryRemove(@event.UserId, out _);
+                }
+            });
 
         #endregion
     }

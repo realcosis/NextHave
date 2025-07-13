@@ -13,19 +13,21 @@ using NextHave.BL.Mappers;
 using NextHave.BL.Models.Groups;
 using NextHave.BL.Models.Rooms;
 using NextHave.BL.Models.Rooms.Navigators;
+using NextHave.BL.Models.Users;
 using NextHave.BL.Services.Groups;
 using NextHave.BL.Services.Rooms.Factories;
 using NextHave.BL.Services.Rooms.Instances;
 using NextHave.BL.Tasks.Rooms;
+using NextHave.DAL.Enums;
 using NextHave.DAL.Mongo;
+using NextHave.DAL.Mongo.Entities;
 using NextHave.DAL.MySQL;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 
 namespace NextHave.BL.Services.Rooms
 {
     [Service(ServiceLifetime.Singleton)]
-    class RoomsService(IServiceProvider serviceProvider, IServiceScopeFactory serviceScopeFactory, ILogger<IRoomsService> logger, IGroupsService groupsService) : IRoomsService, IStartableService
+    class RoomsService(IServiceScopeFactory serviceScopeFactory, ILogger<IRoomsService> logger, IGroupsService groupsService) : IRoomsService, IStartableService
     {
         IRoomsService Instance => this;
 
@@ -33,9 +35,69 @@ namespace NextHave.BL.Services.Rooms
 
         readonly ConcurrentDictionary<string, RoomModel> RoomModels = [];
 
+        async Task<Room?> IRoomsService.CreateRoom(string name, string description, string modelId, RoomModel model, NavigatorCategory category, User user, int maxPlayers, int tradeType)
+        {
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+
+            var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
+            var mongoDbContext = scope.ServiceProvider.GetRequiredService<MongoDbContext>();
+
+            var roomId = await mysqlDbContext.GetNextSequenceValue("rooms");
+            if (!roomId.HasValue)
+                return default;
+
+            var roomEntity = new RoomEntity
+            {
+                EntityId = roomId,
+                Name = name,
+                Description = description,
+                AccessStatus = RoomAccessStatus.Open,
+                Model = new()
+                {
+                    DoorOrientation = model.DoorOrientation,
+                    DoorX = model.DoorX,
+                    DoorY = model.DoorY,
+                    DoorZ = model.DoorZ,
+                    Heightmap = model.Heightmap,
+                    ModelId = modelId
+                },
+                Category = new()
+                {
+                    Caption = category.Name,
+                    CategoryId = category.Id
+                },
+                MaxUsers = maxPlayers,
+                Author = new()
+                {
+                    AuthorId = user.Id,
+                    Name = user.Username
+                },
+                TradeSettings = tradeType,
+                Wallpaper = "0.0",
+                Floorpaper = "0.0",
+                Landscape = "0.0",
+                MuteSettings = 1,
+                BanSettings = 1,
+                KickSettings = 1,
+                WallHeight = 2,
+                RollerSpeed = 4
+            };
+
+            await mongoDbContext.Rooms.AddAsync(roomEntity);
+            await mongoDbContext.SaveChangesAsync();
+
+            var room = roomEntity.Map();
+
+            user.Rooms.Add(room);
+
+            return room;
+        }
+
         async Task<Room?> IRoomsService.GetRoom(int roomId)
         {
-            var mongoDbContext = serviceProvider.GetRequiredService<MongoDbContext>();
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+
+            var mongoDbContext = scope.ServiceProvider.GetRequiredService<MongoDbContext>();
             var dbRoom = await mongoDbContext.Rooms.AsNoTracking().FirstOrDefaultAsync(g => g.EntityId == roomId);
             if (dbRoom != default)
             {
@@ -46,6 +108,8 @@ namespace NextHave.BL.Services.Rooms
                 return dbRoom.Map(group);
             }
 
+            await scope.DisposeAsync();
+
             return default;
         }
 
@@ -54,10 +118,12 @@ namespace NextHave.BL.Services.Rooms
             if (Instance.ActiveRooms.TryGetValue(roomId, out var roomInstance))
                 return roomInstance;
 
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+
             var room = await Instance.GetRoom(roomId);
             if (room != default)
             {
-                (roomInstance, var firstLoad) = (await serviceScopeFactory.GetRequiredService<RoomFactory>()).GetRoomInstance(roomId, room);
+                (roomInstance, var firstLoad) = scope.ServiceProvider.GetRequiredService<RoomFactory>().GetRoomInstance(roomId, room);
                 if (firstLoad)
                 {
                     await roomInstance.Init();
@@ -75,6 +141,8 @@ namespace NextHave.BL.Services.Rooms
                 return roomInstance;
             }
 
+            await scope.DisposeAsync();
+
             return default;
         }
 
@@ -82,6 +150,8 @@ namespace NextHave.BL.Services.Rooms
         {
             if (Instance.ActiveRooms.TryGetValue(roomId, out var roomInstance))
             {
+                await using var scope = serviceScopeFactory.CreateAsyncScope();
+
                 await roomInstance.EventsService.DispatchAsync<DisposeRoomEvent>(new()
                 {
                     RoomId = roomId
@@ -89,14 +159,16 @@ namespace NextHave.BL.Services.Rooms
 
                 await roomInstance.Dispose();
 
-                (await serviceScopeFactory.GetRequiredService<RoomFactory>()).DestroyRoomInstance(roomId);
+                scope.ServiceProvider.GetRequiredService<RoomFactory>().DestroyRoomInstance(roomId);
 
-                (await serviceScopeFactory.GetRequiredService<RoomEventsFactory>()).CleanupRoom(roomId);
+                scope.ServiceProvider.GetRequiredService<RoomEventsFactory>().CleanupRoom(roomId);
 
                 Instance.ActiveRooms.TryRemove(roomId, out _);
+
+                await scope.DisposeAsync();
             }
         }
-        
+
         async Task<RoomModel?> IRoomsService.GetRoomModel(string modelName, int? roomId)
         {
             if (roomId.HasValue && modelName.Equals("custom", StringComparison.InvariantCultureIgnoreCase))
@@ -107,7 +179,9 @@ namespace NextHave.BL.Services.Rooms
 
         async Task IRoomsService.SaveRoom(Room room, Client client, NavigatorCategory category)
         {
-            var mongoDbContext = await serviceScopeFactory.GetRequiredService<MongoDbContext>();
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+
+            var mongoDbContext = scope.ServiceProvider.GetRequiredService<MongoDbContext>();
 
             try
             {
@@ -125,14 +199,19 @@ namespace NextHave.BL.Services.Rooms
                     ["message"] = string.Join("\n", exception.Messages)
                 });
             }
+
+            await scope.DisposeAsync();
         }
-        
+
         async Task IStartableService.StartAsync()
         {
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+            
             try
             {
-                var backgroundsService = await serviceScopeFactory.GetRequiredService<IBackgroundsService>();
-                var task = await serviceScopeFactory.GetRequiredKeyedService<RoomTickTask>("RoomTickTask");
+
+                var backgroundsService = scope.ServiceProvider.GetRequiredService<IBackgroundsService>();
+                var task = scope.ServiceProvider.GetRequiredKeyedService<RoomTickTask>("RoomTickTask");
                 var cancellationSource = new CancellationTokenSource();
                 _ = Task.Run(async () =>
                 {
@@ -145,28 +224,40 @@ namespace NextHave.BL.Services.Rooms
             {
                 logger.LogWarning("Exception during starting of RoomsService: {ex}", ex);
             }
+            finally
+            {
+                await scope.DisposeAsync();
+            }
         }
 
         #region private methods
 
         async Task<RoomModel?> GetModelData(string modelName)
         {
-            var mysqlDbContext = serviceProvider.GetRequiredService<MySQLDbContext>();
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+
+            var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
 
             var roomModelntity = await mysqlDbContext
                                         .RoomModels
                                             .FirstOrDefaultAsync(rmc => rmc.Id == modelName) ?? throw new DolphinException(Errors.RoomModelNotFound);
+
+            await scope.DisposeAsync();
 
             return new RoomModel(roomModelntity.DoorX!.Value, roomModelntity.DoorY!.Value, roomModelntity.DoorZ!.Value, roomModelntity.DoorDir!.Value, roomModelntity.HeightMap!);
         }
 
         async Task<RoomModel> GetCustomModelData(int roomId)
         {
-            var mysqlDbContext = serviceProvider.GetRequiredService<MySQLDbContext>();
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+
+            var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
 
             var roomModelCustomEntity = await mysqlDbContext
                                                 .RoomModelCustoms
                                                     .FirstOrDefaultAsync(rmc => rmc.RoomId == roomId) ?? throw new DolphinException(Errors.RoomModelNotFound);
+
+            await scope.DisposeAsync();
 
             return new RoomModel(roomModelCustomEntity.DoorX!.Value, roomModelCustomEntity.DoorY!.Value, 0.0, roomModelCustomEntity.DoorDir!.Value, roomModelCustomEntity.ModelData!);
         }

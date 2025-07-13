@@ -1,7 +1,6 @@
 ﻿using NextHave.BL.Utils;
 using NextHave.BL.Enums;
 using System.Collections.Concurrent;
-using NextHave.BL.Services.Rooms.Instances;
 
 namespace NextHave.BL.Models.Rooms
 {
@@ -26,8 +25,6 @@ namespace NextHave.BL.Models.Rooms
         public int MapSizeX;
 
         public int MapSizeY;
-
-        public IRoomInstance? RoomInstance { get; set; }
 
         public RoomModel(int doorX, int doorY, double doorZ, int doorOrientation, string heightmap)
         {

@@ -158,13 +158,15 @@ namespace NextHave.BL.Services.Rooms.Components
             if (_roomInstance == default || _roomInstance?.Room == default || _roomInstance?.RoomModel == default)
                 return;
 
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+
             var roomUserInstance = users.FirstOrDefault(u => u.Value.UserId == @event.UserId).Value;
             if (roomUserInstance?.UserInstance?.Client == default)
                 return;
 
             _roomInstance.RoomModel.RemoveUser(roomUserInstance.Position!, roomUserInstance);
             users.TryRemove(roomUserInstance.VirutalId, out var _);
-            (await serviceScopeFactory.GetRequiredService<RoomUserFactory>()).DestroyRoomUserInstance(roomUserInstance.UserId);
+            scope.ServiceProvider.GetRequiredService<RoomUserFactory>().DestroyRoomUserInstance(roomUserInstance.UserId);
 
             _roomInstance.Room.UsersNow--;
             if (_roomInstance.Room.UsersNow <= 0)
@@ -184,7 +186,9 @@ namespace NextHave.BL.Services.Rooms.Components
             });
 
             if (users.IsEmpty)
-                await (await serviceScopeFactory.GetRequiredService<IRoomsService>()).DisposeRoom(_roomInstance.Room.Id);
+                await scope.ServiceProvider.GetRequiredService<IRoomsService>().DisposeRoom(_roomInstance.Room.Id);
+
+            await scope.DisposeAsync();
         }
 
         async Task OnApplyMovement(ApplyMovementEvent @event)
@@ -262,7 +266,9 @@ namespace NextHave.BL.Services.Rooms.Components
             if (@event?.User?.Client == default || _roomInstance == default || _roomInstance?.Room == default || _roomInstance?.RoomModel == default)
                 return;
 
-            var roomUserInstance = (await serviceScopeFactory.GetRequiredService<RoomUserFactory>()).GetRoomUserInstance(@event.User!.User!.Id, @event.User!.User!.Username!, virtualId++, @event.User, _roomInstance);
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
+
+            var roomUserInstance = scope.ServiceProvider.GetRequiredService<RoomUserFactory>().GetRoomUserInstance(@event.User!.User!.Id, @event.User!.User!.Username!, virtualId++, @event.User, _roomInstance);
 
             roomUserInstance.SetPosition(new ThreeDPoint(_roomInstance.RoomModel.DoorX, _roomInstance.RoomModel.DoorY, _roomInstance.RoomModel.DoorZ));
             roomUserInstance.SetRotation(_roomInstance.RoomModel.DoorOrientation);
@@ -310,6 +316,8 @@ namespace NextHave.BL.Services.Rooms.Components
             await @event.User.Client.Send(new UserUpdateMessageComposer([roomUserInstance]));
 
             _roomInstance.Room.UsersNow++;
+
+            await scope.DisposeAsync();
         }
 
         async Task OnSendRoomPacketEvent(SendRoomPacketEvent @event)

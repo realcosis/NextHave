@@ -32,7 +32,6 @@ using NextHave.BL.Messages.Parsers.Navigators;
 using NextHave.BL.Services.Navigators;
 using NextHave.BL.Services.Packets;
 using NextHave.BL.Services.Rooms;
-using NextHave.BL.Services.Rooms.Instances;
 using NextHave.BL.Services.Texts;
 using NextHave.BL.Services.Users;
 using NextHave.BL.Tasks.Rooms.Settings;
@@ -95,11 +94,13 @@ namespace NextHave.BL.Messages.Input.Handlers
             if (client?.UserInstance?.User == default)
                 return;
 
-            var textsService = await serviceScopeFactory.GetRequiredService<ITextsService>();
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
 
-            var roomsService = await serviceScopeFactory.GetRequiredService<IRoomsService>();
+            var textsService = scope.ServiceProvider.GetRequiredService<ITextsService>();
 
-            var navigatorsService = await serviceScopeFactory.GetRequiredService<INavigatorsService>();
+            var roomsService = scope.ServiceProvider.GetRequiredService<IRoomsService>();
+
+            var navigatorsService = scope.ServiceProvider.GetRequiredService<INavigatorsService>();
 
             if (string.IsNullOrWhiteSpace(message.ModelName))
                 return;
@@ -114,6 +115,14 @@ namespace NextHave.BL.Messages.Input.Handlers
             }
 
             var model = await roomsService.GetRoomModel(message.ModelName!);
+            if (model == default)
+            {
+                await client.SendSystemNotification("generic", new()
+                {
+                    ["message"] = textsService.GetText("nexthave_room_model_not_found", "Room model not found.")
+                });
+                return;
+            }
 
             if (!navigatorsService.NavigatorCategories.TryGetValue(message.CategoryId, out var navigatorCategory))
             {
@@ -137,7 +146,13 @@ namespace NextHave.BL.Messages.Input.Handlers
             if (tradeType < 0 || tradeType > 2)
                 tradeType = 0;
 
-            
+            var room = await roomsService.CreateRoom(message.Name, message.Description ?? string.Empty, message.ModelName, model!, navigatorCategory, client.UserInstance.User, message.MaxPlayers, tradeType);
+            if (room == default)
+                return;
+
+            await client.Send(new FlatCreatedMessageComposer(room.Id, message.Name));
+
+            await scope.DisposeAsync();
         }
 
         async Task OnSaveRoomSettingsMessage(SaveRoomSettingsMessage message, Client client)
@@ -145,15 +160,17 @@ namespace NextHave.BL.Messages.Input.Handlers
             if (client?.UserInstance?.User == default)
                 return;
 
-            var roomsService = serviceProvider.GetRequiredService<IRoomsService>();
+            await using var scope = serviceScopeFactory.CreateAsyncScope();
 
-            var navigatorsService = serviceProvider.GetRequiredService<INavigatorsService>();
+            var roomsService = scope.ServiceProvider.GetRequiredService<IRoomsService>();
 
-            var textsService = serviceProvider.GetRequiredService<ITextsService>();
+            var navigatorsService = scope.ServiceProvider.GetRequiredService<INavigatorsService>();
 
-            var backgroundsService = serviceProvider.GetRequiredService<IBackgroundsService>();
+            var textsService = scope.ServiceProvider.GetRequiredService<ITextsService>();
 
-            var task = await serviceScopeFactory.GetRequiredKeyedService<SaveRoomSettingsTask>("SaveRoomSettingsTask");
+            var backgroundsService = scope.ServiceProvider.GetRequiredService<IBackgroundsService>();
+
+            var task = scope.ServiceProvider.GetRequiredKeyedService<SaveRoomSettingsTask>("SaveRoomSettingsTask");
 
             var roomInstance = await roomsService.GetRoomInstance(message.RoomId);
             if (roomInstance?.Room == default)
@@ -193,6 +210,8 @@ namespace NextHave.BL.Messages.Input.Handlers
             await client.Send(new RoomSettingsSavedMessageComposer(message.RoomId));
             await client.Send(new RoomInfoUpdatedMessageComposer(message.RoomId));
             await client.Send(new RoomVisualizationSettingsMessageComposer(roomInstance.Room.AllowHidewall, roomInstance.Room.WallThickness, roomInstance.Room.FloorThickness));
+
+            await scope.DisposeAsync();
         }
 
         async Task OnGetRoomSettingsMessage(GetRoomSettingsMessage message, Client client)
