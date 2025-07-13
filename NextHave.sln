@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NextHave.DAL", "NextHave.DA
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NextHave.API", "NextHave.API\NextHave.API.csproj", "{A7D0A674-E128-412B-8950-52D062D6B8D7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NextHave.Gateway", "NextHave.Gateway\NextHave.Gateway.csproj", "{06D08C0E-8481-45DA-99E3-8EEDA0933683}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{A7D0A674-E128-412B-8950-52D062D6B8D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A7D0A674-E128-412B-8950-52D062D6B8D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A7D0A674-E128-412B-8950-52D062D6B8D7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{06D08C0E-8481-45DA-99E3-8EEDA0933683}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{06D08C0E-8481-45DA-99E3-8EEDA0933683}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{06D08C0E-8481-45DA-99E3-8EEDA0933683}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{06D08C0E-8481-45DA-99E3-8EEDA0933683}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
