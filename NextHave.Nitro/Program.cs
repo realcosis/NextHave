@@ -1,5 +1,6 @@
 ﻿using Blazored.Toast;
 using Dolphin.Core.Configurations;
+using Dolphin.Core.Database;
 using Dolphin.Core.Injection;
 using Hardware.Info;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -39,8 +40,8 @@ builder.Services.AddBlazoredToast();
 builder.Services.AddHttpContextAccessor();
 builder.Services.RegisterDolphinApplication();
 builder.Services.AddSignalR().AddMessagePackProtocol();
-builder.Services.AddDbContext<MySQLDbContext>();
-builder.Services.AddDbContext<MongoDbContext>();
+builder.Services.AddMySQLDbContext<MySQLDbContext>(builder.Configuration);
+builder.Services.AddMongoDbContext<MongoDbContext>(builder.Configuration);
 builder.Services.AddNextHaveServices(Assembly.GetExecutingAssembly());
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 builder.Services.AddCors(options =>

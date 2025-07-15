@@ -12,6 +12,8 @@ namespace NextHave.BL.Services.Rooms.Commands
 
         string? Usage { get; }
 
+        string? Permission { get; }
+
         string[] Parameters { get; set; }
 
         Task Execute(Client client);

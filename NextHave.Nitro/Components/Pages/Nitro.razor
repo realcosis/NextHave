@@ -11,95 +11,13 @@
 @inject NavigationManager navigation
 @inject NextHaveAuthenticationStateProvider authenticationStateProvider
 
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-<link rel="stylesheet" href="@Assets["tailwind.css"]" />
 <link rel="stylesheet" href="/nitro/index.css" />
 
 <script type="text/javascript" src="/nitro/loader.js"></script>
-<link rel="modulepreload" crossorigin href="/nitro/vendor-C03uLZeS.js" as="script" />
-
-<div id="root" class="absolute inset-0 w-full h-full bg-gradient-to-br from-blue-900 via-purple-900 to-pink-900 z-10"></div>
+<link rel="modulepreload" crossorigin href="/nitro/vendor-DHw_dofZ.js" as="script" />
 
 <noscript>You need to enable JavaScript to run this app.</noscript>
-<div class="relative w-full h-screen overflow-hidden bg-gray-900">
-
-    <div class="absolute top-2 md:top-4 left-2 md:left-4 z-50 flex flex-col gap-1 md:gap-2 z-20">
-
-        <button class="p-2 md:p-3 bg-black/50 backdrop-blur-xl border border-white/20 rounded-lg md:rounded-xl text-white hover:bg-black/70 transition-all duration-200" title="Nascondi UI (Ctrl+M)">
-            <span class="text-xs md:text-sm">👁️</span>
-        </button>
-
-        <div class="grid !grid-cols-2 md:!grid-cols-4 lg:!grid-cols-3 xl:!grid-cols-4 gap-1 md:gap-2 max-w-[120px] md:max-w-[200px]">
-
-            <button class="relative p-1.5 md:p-2.5 bg-white/10 backdrop-blur-xl border border-white/20 rounded-md md:rounded-lg text-white hover:bg-white/20 transition-all duration-200 shadow-lg" title="News">
-
-                <span class="material-symbols-outlined text-white md:w-4 md:h-4" style="font-size: 16px;">newspaper</span>
-
-                <span class="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 md:w-2.5 md:h-2.5 bg-red-500 rounded-full animate-pulse"></span>
-
-            </button>
-
-            <button class="relative p-1.5 md:p-2.5 bg-white/10 backdrop-blur-xl border border-white/20 rounded-md md:rounded-lg text-white hover:bg-white/20 transition-all duration-200 shadow-lg" title="Negozio">
-
-                <span class="material-symbols-outlined text-white md:w-4 md:h-4" style="font-size: 16px;">add_shopping_cart</span>
-
-                <span class="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 md:w-2.5 md:h-2.5 bg-red-500 rounded-full animate-pulse"></span>
-
-            </button>
-
-            <button class="relative p-1.5 md:p-2.5 bg-white/10 backdrop-blur-xl border border-white/20 rounded-md md:rounded-lg text-white hover:bg-white/20 transition-all duration-200 shadow-lg" title="Calendario Eventi">
-
-                <span class="material-symbols-outlined text-white md:w-4 md:h-4" style="font-size: 16px;">calendar_month</span>
-
-                <span class="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 md:w-2.5 md:h-2.5 bg-red-500 rounded-full animate-pulse"></span>
-
-            </button>
-
-            <button class="relative p-1.5 md:p-2.5 bg-white/10 backdrop-blur-xl border border-white/20 rounded-md md:rounded-lg text-white hover:bg-white/20 transition-all duration-200 shadow-lg" title="Battle Pass">
-
-                <span class="material-symbols-outlined text-white md:w-4 md:h-4" style="font-size: 16px;">crown</span>
-
-                <span class="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 md:w-2.5 md:h-2.5 bg-red-500 rounded-full animate-pulse"></span>
-
-            </button>
-
-            <button class="relative p-1.5 md:p-2.5 bg-white/10 backdrop-blur-xl border border-white/20 rounded-md md:rounded-lg text-white hover:bg-white/20 transition-all duration-200 shadow-lg" title="Classifica">
-
-                <span class="material-symbols-outlined text-white md:w-4 md:h-4" style="font-size: 16px;">leaderboard</span>
-
-                <span class="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 md:w-2.5 md:h-2.5 bg-red-500 rounded-full animate-pulse"></span>
-
-            </button>
-
-            <button class="relative p-1.5 md:p-2.5 bg-white/10 backdrop-blur-xl border border-white/20 rounded-md md:rounded-lg text-white hover:bg-white/20 transition-all duration-200 shadow-lg" title="Staff">
-
-                <span class="material-symbols-outlined text-white md:w-4 md:h-4" style="font-size: 16px;">groups</span>
-
-                <span class="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 md:w-2.5 md:h-2.5 bg-red-500 rounded-full animate-pulse"></span>
-
-            </button>
-
-            <button class="relative p-1.5 md:p-2.5 bg-white/10 backdrop-blur-xl border border-white/20 rounded-md md:rounded-lg text-white hover:bg-white/20 transition-all duration-200 shadow-lg" title="Lista Rari">
-
-                <span class="material-symbols-outlined text-white md:w-4 md:h-4" style="font-size: 16px;">diamond</span>
-
-                <span class="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 md:w-2.5 md:h-2.5 bg-red-500 rounded-full animate-pulse"></span>
-
-            </button>
-
-            <button class="relative p-1.5 md:p-2.5 bg-white/10 backdrop-blur-xl border border-white/20 rounded-md md:rounded-lg text-white hover:bg-white/20 transition-all duration-200 shadow-lg" title="Feed Social">
-
-                <span class="material-symbols-outlined text-white md:w-4 md:h-4" style="font-size: 16px;">campaign</span>
-
-                <span class="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 md:w-2.5 md:h-2.5 bg-red-500 rounded-full animate-pulse"></span>
-
-            </button>
-
-        </div>
-
-    </div>
-
-</div>
+<div id="root" class="w-100 h-100"></div>
 
 @code {
     bool isFirstRender = true;

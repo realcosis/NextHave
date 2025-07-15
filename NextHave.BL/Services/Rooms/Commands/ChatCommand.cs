@@ -12,6 +12,8 @@ namespace NextHave.BL.Services.Rooms.Commands
 
         public abstract string? Usage { get; }
 
+        public abstract string? Permission { get; }
+
         public string[] Parameters { get; set; } = [];
 
         async Task IChatCommand.Execute(Client client)

@@ -19,6 +19,8 @@ namespace NextHave.BL.Services.Rooms.Commands.Users
 
         public override string? Usage => string.Empty;
 
+        public override string? Permission => string.Empty;
+
         protected override async Task Handle(Client client)
         {
             var text = new StringBuilder();

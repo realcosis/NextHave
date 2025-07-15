@@ -1,12 +1,10 @@
-﻿using Dolphin.Core.Configurations.Models;
-using Dolphin.Core.Database;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
+﻿using Dolphin.Core.Database;
 using NextHave.DAL.MySQL.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace NextHave.DAL.MySQL
 {
-    public class MySQLDbContext(IOptions<MySQLConfiguration> mysqlConfigurationOptionss, IOptions<PoolConfiguration> poolConfigurationOptionss) : MySQLDBContext(mysqlConfigurationOptionss, poolConfigurationOptionss)
+    public class MySQLDbContext(DbContextOptions<MySQLDbContext> options) : MySQLDBContext<MySQLDbContext>(options)
     {
         public DbSet<ItemDefinitionEntity> ItemDefinitions { get; set; }
 
@@ -71,11 +69,6 @@ namespace NextHave.DAL.MySQL
             builder.Entity<MessengerFriendshipEntity>().HasKey(e => new { e.Sender, e.Receiver });
 
             builder.Entity<MessengerRequestEntity>().HasKey(e => new { e.Sender, e.Receiver });
-        }
-
-        protected override void OnConfiguring(DbContextOptionsBuilder builder)
-        {
-            base.OnConfiguring(builder);
         }
     }
 }

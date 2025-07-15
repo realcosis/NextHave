@@ -9,7 +9,7 @@
 	<ItemGroup>
 		<PackageReference Include="HtmlAgilityPack" Version="1.12.1" />
 		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.7" />
-		<PackageReference Include="RealCosis.Dolphin.Core" Version="2025.711.1805" />
+		<PackageReference Include="RealCosis.Dolphin.Core" Version="2025.715.537" />
 		<PackageReference Include="Yarp.ReverseProxy" Version="2.3.0" />
 	</ItemGroup>
 

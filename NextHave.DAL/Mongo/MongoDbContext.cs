@@ -1,12 +1,10 @@
-﻿using Dolphin.Core.Configurations.Models;
-using Dolphin.Core.Database;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
+﻿using Dolphin.Core.Database;
 using NextHave.DAL.Mongo.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace NextHave.DAL.Mongo
 {
-    public class MongoDbContext(IOptions<MongoConfiguration> mongoConfigurationOptions, IOptions<PoolConfiguration> poolConfigurationOptions) : MongoDBContext(mongoConfigurationOptions, poolConfigurationOptions)
+    public class MongoDbContext(DbContextOptions<MongoDbContext> options) : MongoDBContext<MongoDbContext>(options)
     {
         public DbSet<CatalogPageEntity> CatalogPages { get; set; }
 
@@ -15,11 +13,6 @@ namespace NextHave.DAL.Mongo
         public DbSet<RoomItemEntity> RoomItems { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
-        {
-            base.OnModelCreating(builder);
-        }
-
-        protected override void OnConfiguring(DbContextOptionsBuilder builder)
-            => base.OnConfiguring(builder);
+            => base.OnModelCreating(builder);
     }
 }

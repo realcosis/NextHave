@@ -87,5 +87,7 @@
         public const short RoomInfoUpdatedMessageComposer = 3297;
 
         public const short FlatCreatedMessageComposer = 1304;
+
+        public const short TableAlertMessageComposer = 4009;
     }
 }
