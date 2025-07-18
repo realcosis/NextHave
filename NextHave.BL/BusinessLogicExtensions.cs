@@ -71,7 +71,8 @@ namespace NextHave.BL
         public static async Task<T> Execute<T>(this IServiceScopeFactory serviceScopeFactory, Func<IServiceProvider, Task<T>> action)
         {
             await using var scope = serviceScopeFactory.CreateAsyncScope();
-            return await action(scope.ServiceProvider);
+            var result = await action(scope.ServiceProvider);
+            return result;
         }
         
         static IMappingExpression<E, R> MapProperties<E, R>(this IMappingExpression<E, R> mappingExpression, params (Expression<Func<R, object>> destinationMember, Expression<Func<E, object?>> sourceMember)[] properties)
