@@ -24,6 +24,7 @@ namespace NextHave.BL.Services.Rooms.Commands
             {
                 command.Parameters = [.. parameters.Skip(1)];
                 await command.Execute(client);
+                await scope.DisposeAsync();
                 return true;
             }
 

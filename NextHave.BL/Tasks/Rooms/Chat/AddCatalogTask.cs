@@ -28,8 +28,6 @@ namespace Dolphin.Backgrounds.Tasks
 
             var mysqlDbContext = scope.ServiceProvider.GetRequiredService<MySQLDbContext>();
 
-            await scope.DisposeAsync();
-
             await mysqlDbContext.ChatlogRooms.AddAsync(new()
             {
                 Datetime = DateTime.Now,
@@ -38,6 +36,8 @@ namespace Dolphin.Backgrounds.Tasks
                 UserId = userId
             });
             await mysqlDbContext.SaveChangesAsync();
+
+            await scope.DisposeAsync();
         }
     }
 }
