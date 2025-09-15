@@ -1,7 +1,8 @@
 ﻿using Dolphin.Core.Injection;
+using Microsoft.Extensions.DependencyInjection;
+using NextHave.BL.Models;
 using NextHave.BL.Models.Rooms;
 using NextHave.BL.Services.Rooms.Instances;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace NextHave.BL.Services.Rooms.Factories
 {
@@ -16,15 +17,23 @@ namespace NextHave.BL.Services.Rooms.Factories
             return default;
         }
 
-        public (IRoomInstance roomInstance, bool firstLoad) GetRoomInstance(int roomId, Room room)
+        public TryLoadReference<IRoomInstance> GetRoomInstance(int roomId, Room room)
         {
             if (roomInstanceProvider.HasService(roomId, out var roomInstance))
-                return (roomInstance!, false);
+                return new()
+                {
+                    FirstLoad = false,
+                    Reference = roomInstance
+                };
 
             roomInstance = roomInstanceProvider.GetService(roomId);
             roomInstance.Room = room;
 
-            return (roomInstance, true);
+            return new()
+            {
+                Reference = roomInstance,
+                FirstLoad = true
+            };
         }
 
         public void DestroyRoomInstance(int userId)
