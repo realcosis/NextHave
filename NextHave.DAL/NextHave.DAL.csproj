@@ -7,7 +7,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="RealCosis.Dolphin.Core" Version="2025.715.555" />
+		<PackageReference Include="RealCosis.Dolphin.Core" Version="2025.903.1935" />
 	</ItemGroup>
 
 </Project>

@@ -75,6 +75,7 @@ namespace NextHave.BL.Services.Rooms
                 Wallpaper = "0.0",
                 Floorpaper = "0.0",
                 Landscape = "0.0",
+                AllowDiagonal = true,
                 MuteSettings = 1,
                 BanSettings = 1,
                 KickSettings = 1,

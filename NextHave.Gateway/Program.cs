@@ -23,7 +23,7 @@ builder.WebHost.ConfigureKestrel(serverOptions =>
     if (builder.Configuration.GetSection("SSL").Get<bool>())
         serverOptions.Listen(System.Net.IPAddress.Any, 443, listenOptions =>
         {
-            var cert = X509Certificate2.CreateFromPemFile("/etc/ssl/certs/server/cert.pem", "/etc/ssl/certs/server/key.pem");
+            var cert = X509Certificate2.CreateFromPemFile("C:\\Users\\Administrator\\Desktop\\Gateway\\certs\\cert.pem", "C:\\Users\\Administrator\\Desktop\\Gateway\\certs\\key.pem");
             listenOptions.UseHttps(cert);
         });
     serverOptions.Limits.MaxConcurrentConnections = 1050;
