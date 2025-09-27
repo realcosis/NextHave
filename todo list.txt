@@ -1,0 +1,92 @@
+⸻
+
+🏠 FUNZIONI DI BASE DELLE STANZE
+	•	Cancellazione stanza
+	•	Limitazione accesso per gruppo o lista amici
+	•	Moderazione stanza (mute di massa, kick di massa, ban dalla stanza)
+	•	Floorplan editor (modifica della mappa con muri/pavimenti)
+	•	Salvataggio del floorplan
+	•	Diritti in stanza
+	•	Stato di luci/ambiente (on/off, effetti speciali)
+	•	Altezza pavimenti
+	•	Altezza mura
+	•	Puoi andare o no Afk (custom)
+	•	Pavimenti colorati
+	•	Finestre colorate
+	•	Mura colorate
+
+⸻
+
+👤 UTENTI NELLE STANZE
+	•	Animazioni base: idle, camminata, seduta, sdraiata
+	•	Azioni avatar: sedersi, sdraiarsi, ballare, salutare
+	•	Messaggi in chat (sussurrare)
+	•	Filtri di chat per moderazione automatica
+	•	scambia
+	•	Gestione dei pets: seguono l’utente, interagiscono con furni
+	•	Tracking posizioni e collisioni su griglia stanza
+	•	Assegnazione diritti utente nella stanza 
+
+⸻
+
+🪑 FUNZIONI DEI FURNI
+	•	Caricamento furni nella stanza da DB
+	•	Posizionamento furni (x, y, altezza, rotazione)
+	•	Spostamento furni (drag & drop se permesso)
+	•	prendere furni
+	•	Eject furni di altri 
+	•	Stack di furni su diversi livelli di altezza
+	•	Far passare gli utenti sotto i furni che sono alti più di 2 
+	•	Interazioni furni:
+	•	Sedie e divani → far sedere avatar
+	•	Letti → far sdraiare avatar
+	•	Luci → on/off
+	•	Teleport → sposta avatar in un’altra stanza o coordinate
+	•	Furni interattivi → campanelli, leve, switches
+	•	Wired furni → attiva azioni condizionali (es. muovi, dai punteggio)
+	•	Furni musicali → riproduzione tracce, controllo volume
+	•	Furni giochi → calcio, hockey, snowstorm ecc.
+	•	Furni animati → loop animazioni (es. cascate)
+	•	Furni scriptati → reazioni personalizzate su eventi
+	•	Furni di gruppo → mostrano badge/gruppo associato
+	•	Furni affittabili
+	•	Furni regalo (gift wrap, apertura regali)
+
+⸻
+
+🔄 INTERAZIONI E EVENTI DI STANZA
+	•	Wired: configurazione trigger, condizione, effetto
+	•	Eventi pubblici → annuncio stanza, alert stanza
+	•	Scoreboards → gestione punteggi temporanei
+	•	Timer stanza → countdown per minigiochi
+	•	Regole PvP (per giochi come freeze/snowstorm)
+	•	Sensori → trigger quando un avatar passa su un furni
+	•	Teleport tra stanze → gestione transizioni multiple
+
+⸻
+
+🌎 ELEMENTI AMBIENTALI
+	•	Sfondo pavimento personalizzato
+	•	Sfondo muri personalizzato
+	•	Cambia carta da parati, pavimentazione
+	•	Stato luci → effetti di buio/luci colorate
+	•	Moodlight (modifica colori e intensità luci)
+	•	Effetti globali stanza → nebbia, neve, pioggia (in versioni successive di Habbo)
+	•	Canzoni nella stanza (Habbo Trax)
+
+⸻
+
+🛡 SICUREZZA E MODERAZIONE
+	•	Ban utente dalla stanza
+	•	Kick utente dalla stanza
+	•	Mute utente
+	•	Parole vietate e filtro censura
+	•	Logging chat e azioni per moderatori
+	•	Segnalazione utente (report) al proprietario/moderatori
+
+⸻
+
+📦 ALTRO
+	•	Salvataggio stato della stanza (furni, posizioni, configurazioni)L (una specie di bozze)
+	•	Calcolo utenti online nella stanza
+	•	Supporto bots/NPC → risposte automatiche, movimenti scriptati
